@@ -1,4 +1,4 @@
-# thinkspace
+# Thinkspace-backend
 
 Repositório criado para o ideação do projeto atual.
 
