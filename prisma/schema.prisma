@@ -13,185 +13,277 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum SchoolingLevel {
-  NONE
-  ELEMENTARY
-  MIDDLE_SCHOOL
-  HIGH_SCHOOL
-  UNDERGRADUATE
-  GRADUATE
-  OTHER
-  PREFER_NOT_TO_ANSWER
+enum NivelEscolaridade {
+  FUNDAMENTAL_INCOMPLETO
+  FUNDAMENTAL_COMPLETO
+  MEDIO_INCOMPLETO
+  MEDIO_COMPLETO
+  SUPERIOR_INCOMPLETO
+  SUPERIOR_COMPLETO
+  POS_GRADUACAO
+  MESTRADO
+  DOUTORADO
+  PREFIRO_NAO_INFORMAR
 }
 
-enum ActivityType {
-  TASK
-  EXAM
-  READING
-  PROJECT
-  OTHER
+enum TipoAtividade {
+  FLASHCARDS
+  RESUMOS
+  QUESTOES
+  OUTRO
+
 }
 
-enum Role {
-  STUDENT
-  MOD
+enum Funcao {
+  ESTUDANTE
+  MODERADOR
   ADMIN
 }
 
-enum StudyRoomRole {
-  MEMBER
-  MODERATOR
+enum FuncaoSalaEstudo {
+  MEMBRO
+  MODERADOR
 }
 
-enum MaterialType {
+enum TipoMaterial {
   PDF
-  TOPIC
+  TOPICO
 }
 
-model User {
-  id              String           @id @default(uuid())
-  email           String           @unique
-  dateOfBirth     DateTime
-  password        String
-  fullName        String
-  role            Role             @default(STUDENT)
-  institutionId   String?
-  institution     Institution?     @relation(fields: [institutionId], references: [id])
-  schoolingLevel  SchoolingLevel?
-  metrics         UserMetrics?     
-  studyMaterials  StudyMaterial[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+model Usuario {
+  id                String            @id @default(uuid())
+  email             String            @unique
+  dataNascimento    DateTime
+  senha             String
+  nomeCompleto      String
+  funcao            Funcao            @default(ESTUDANTE)
+  instituicaoId     String?
+  instituicao       Instituicao?      @relation(fields: [instituicaoId], references: [id])
+  escolaridade      NivelEscolaridade?
+  criadoEm          DateTime          @default(now())
+  atualizadoEm      DateTime          @updatedAt
+  
+  metricas          MetricasUsuario?
+  materiais         MaterialEstudo[]
+  salasModeradas    SalaEstudo[]      @relation("SalaEstudoModerador")
+  membroSalas       MembroSala[]
+  postagens         PostagemComunidade[]
+  comentarios       Comentario[]
+  postagensSalvas   PostagemSalva[]
+  denuncias         Denuncia[]
 
+  Revisao Revisao[]
 
-  ManagedRooms    StudyRoom[]      @relation("RoomModerators")
-  StudyRoomMember StudyRoomMember[]
-  Posts           CommunityPost[]
-  Comments        Comment[]
-
-  Report Report[]
+  Calendario Calendario[]
 }
 
-model StudyMaterial {
+model Assunto {
   id              String           @id @default(uuid())
-  title           String
-  type            MaterialType
-  filePath        String?
-  content         String?
-  topicId         String?
-  topic           StudyMaterial?   @relation("MaterialHierarchy", fields: [topicId], references: [id])
-  children        StudyMaterial[]  @relation("MaterialHierarchy")
-  authorId        String
-  author          User             @relation(fields: [authorId], references: [id])
-  aiSummary       String?
+  nome            String           @unique
+  criadoEm        DateTime         @default(now())
+  
+  materiais       MaterialEstudo[]
+  salasEstudo     SalaEstudo[]
+}
+
+model MaterialEstudo {
+  id              String           @id @default(uuid())
+  titulo          String
+  tipo            TipoMaterial
+  caminhoArquivo  String?
+  conteudo        String?
+  assuntoId       String
+  assunto         Assunto          @relation(fields: [assuntoId], references: [id])
+  autorId         String
+  autor           Usuario          @relation(fields: [autorId], references: [id])
+  resumoIA        String?
   flashcards      Flashcard[]
   quizzes         Quiz[]
-  createdAt       DateTime         @default(now())
-
-  StudyRoom StudyRoom[]
+  revisoes        Revisao[]
+  criadoEm        DateTime         @default(now())
+  
+  salasEstudo     SalaEstudoMaterial[]
 }
 
 model Flashcard {
   id              String           @id @default(uuid())
-  question        String
-  answer          String
+  pergunta        String
+  resposta        String
   materialId      String
-  material        StudyMaterial    @relation(fields: [materialId], references: [id])
-  createdAt       DateTime         @default(now())
+  material        MaterialEstudo   @relation(fields: [materialId], references: [id])
+  criadoEm        DateTime         @default(now())
 }
 
 model Quiz {
   id              String           @id @default(uuid())
-  questions       Json
+  perguntas       Json
   materialId      String
-  material        StudyMaterial    @relation(fields: [materialId], references: [id])
-  createdAt       DateTime         @default(now())
+  material        MaterialEstudo   @relation(fields: [materialId], references: [id])
+  criadoEm        DateTime         @default(now())
 }
 
-model StudyRoom {
+model SalaEstudo {
   id              String           @id @default(uuid())
-  name            String
-  modId           String
-  mod             User             @relation("RoomModerators", fields: [modId], references: [id])
-  members         StudyRoomMember[]
-  materials       StudyMaterial[]
-  activities      Activity[]
-  createdAt       DateTime         @default(now())
+  nome            String
+  moderadorId     String
+  moderador       Usuario          @relation(fields: [moderadorId], references: [id], name: "SalaEstudoModerador")
+  assuntoId       String
+  assunto         Assunto          @relation(fields: [assuntoId], references: [id])
+  criadoEm        DateTime         @default(now())
+  
+  membros         MembroSala[]
+  atividades      Atividade[]
+  topicos         TopicoComunidade[]
+  materiais       SalaEstudoMaterial[]
+
+  Calendario Calendario[]
 }
 
-model StudyRoomMember {
+model MembroSala {
   id              String           @id @default(uuid())
-  user            User             @relation(fields: [userId], references: [id])
-  userId          String
-  studyRoom       StudyRoom        @relation(fields: [studyRoomId], references: [id])
-  studyRoomId     String
-  role            StudyRoomRole    @default(MEMBER)
-  joinedAt        DateTime         @default(now())
+  usuarioId       String
+  usuario         Usuario          @relation(fields: [usuarioId], references: [id])
+  salaId          String
+  sala            SalaEstudo       @relation(fields: [salaId], references: [id])
+  funcao          FuncaoSalaEstudo @default(MEMBRO)
+  ingressouEm     DateTime         @default(now())
 }
 
-model Institution {
+model Instituicao {
   id              String           @id @default(uuid())
-  name            String           @unique
-  users           User[]
-  createdAt       DateTime         @default(now())
+  nome            String           @unique
+  criadoEm        DateTime         @default(now())
+  
+  usuarios        Usuario[]
 }
 
-model Activity {
+model Atividade {
   id              String           @id @default(uuid())
-  title           String
-  description     String
-  type            ActivityType
-  dueDate         DateTime?
-  studyRoomId     String
-  studyRoom       StudyRoom        @relation(fields: [studyRoomId], references: [id])
-  createdAt       DateTime         @default(now())
+  titulo          String
+  descricao       String
+  tipo            TipoAtividade
+  dataEntrega     DateTime?
+  salaId          String
+  sala            SalaEstudo       @relation(fields: [salaId], references: [id])
+  criadoEm        DateTime         @default(now())
 }
 
-model CommunityPost {
+model TopicoComunidade {
   id              String           @id @default(uuid())
-  title           String
-  content         String
-  authorId        String
-  author          User             @relation(fields: [authorId], references: [id])
-  comments        Comment[]
-  upvotes         Int              @default(0)
+  nome            String
+  salaId          String
+  sala            SalaEstudo       @relation(fields: [salaId], references: [id])
+  criadoEm        DateTime         @default(now())
+  
+  postagens       PostagemComunidade[]
+}
+
+model PostagemComunidade {
+  id              String           @id @default(uuid())
+  titulo          String
+  conteudo        String
+  autorId         String
+  autor           Usuario          @relation(fields: [autorId], references: [id])
+  topicoId        String
+  topico          TopicoComunidade @relation(fields: [topicoId], references: [id])
+  curtidas        Int              @default(0)
   tags            String[]
-  reports         Report[]
-  createdAt       DateTime         @default(now())
+  criadoEm        DateTime         @default(now())
+  
+  comentarios     Comentario[]
+  salvamentos     PostagemSalva[]
+  denuncias       Denuncia[]
 }
 
-model Comment {
+model Comentario {
   id              String           @id @default(uuid())
-  content         String
-  postId          String
-  post            CommunityPost    @relation(fields: [postId], references: [id])
-  authorId        String
-  author          User             @relation(fields: [authorId], references: [id])
-  reports         Report[]
-  createdAt       DateTime         @default(now())
+  conteudo        String
+  postagemId      String
+  postagem        PostagemComunidade @relation(fields: [postagemId], references: [id])
+  autorId         String
+  autor           Usuario          @relation(fields: [autorId], references: [id])
+  criadoEm        DateTime         @default(now())
+  
+  denuncias       Denuncia[]
 }
 
-model Report {
+model Denuncia {
   id              String           @id @default(uuid())
-  reason          String
-  status          String           @default("PENDING")
-  reporterId      String
-  reporter        User             @relation(fields: [reporterId], references: [id])
-  postId          String?
-  post            CommunityPost?   @relation(fields: [postId], references: [id])
-  commentId       String?
-  comment         Comment?         @relation(fields: [commentId], references: [id])
-  createdAt       DateTime         @default(now())
+  motivo          String
+  status          String           @default("PENDENTE")
+  denuncianteId   String
+  denunciante     Usuario          @relation(fields: [denuncianteId], references: [id])
+  postagemId      String?
+  postagem        PostagemComunidade? @relation(fields: [postagemId], references: [id])
+  comentarioId    String?
+  comentario      Comentario?      @relation(fields: [comentarioId], references: [id])
+  criadoEm        DateTime         @default(now())
 }
 
-model UserMetrics {
+model MetricasUsuario {
+  id                  String           @id @default(uuid())
+  usuarioId           String           @unique
+  usuario             Usuario          @relation(fields: [usuarioId], references: [id])
+  metaSemanal         Int?
+  horasEstudadas      Int              @default(0)
+  conquistas          String[]
+  progresso           Json
+  ultimaAtividade     DateTime
+  sequenciaAtual      Int              @default(0)
+  maiorSequencia      Int              @default(0)
+  experienciaTotal    Int              @default(0)
+  experienciaPorAcertos Int           @default(0)
+  ultimaRevisao       DateTime?
+  criadoEm            DateTime         @default(now())
+}
+
+model SalaEstudoMaterial {
+  materialId      String
+  material        MaterialEstudo   @relation(fields: [materialId], references: [id])
+  salaId          String
+  sala            SalaEstudo       @relation(fields: [salaId], references: [id])
+  atribuidoEm     DateTime         @default(now())
+
+  @@id([materialId, salaId])
+}
+
+model PostagemSalva {
+  usuarioId       String
+  usuario         Usuario          @relation(fields: [usuarioId], references: [id])
+  postagemId      String
+  postagem        PostagemComunidade @relation(fields: [postagemId], references: [id])
+  salvoEm       DateTime         @default(now())
+
+  @@id([usuarioId, postagemId])
+}
+
+model Revisao {
   id              String           @id @default(uuid())
-  userId          String           @unique
-  user            User             @relation(fields: [userId], references: [id])
-  weeklyGoal      Int?
-  hoursStudied    Int              @default(0)
-  achievements    String[]
-  progress        Json
-  lastActive      DateTime
-  createdAt       DateTime         @default(now())
+  usuarioId       String
+  usuario         Usuario          @relation(fields: [usuarioId], references: [id])
+  materialId      String
+  material        MaterialEstudo   @relation(fields: [materialId], references: [id])
+  acertos         Int
+  experiencia     Int
+  criadoEm        DateTime         @default(now())
+}
+
+
+model Calendario {
+  id                      String         @id @default(uuid())
+  titulo                  String
+  descricao               String?
+  dataInicio              DateTime
+  dataFim                 DateTime?
+  tipo                    TipoAtividade  @default(OUTRO)
+  recorrente              Boolean        @default(false)
+  intervaloDias           Int?           // definir a frequência em dias
+  dataTerminoRecorrencia  DateTime?      // data final para eventos recorrentes
+  usuarioId               String?
+  usuario                 Usuario?       @relation(fields: [usuarioId], references: [id])
+  salaId                  String?  // extra
+  sala                    SalaEstudo?    @relation(fields: [salaId], references: [id]) // extra
+  criadoEm                DateTime       @default(now())
+
+  @@index([dataInicio])
 }
