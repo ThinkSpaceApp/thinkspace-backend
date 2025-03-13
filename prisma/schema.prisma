@@ -31,7 +31,14 @@ enum TipoAtividade {
   RESUMOS
   QUESTOES
   OUTRO
+}
 
+enum ObjetivoPlataforma {
+  PREPARACAO_PARA_VESTIBULAR
+  APRENDIZADO_CONTINUO
+  PREFIRO_NAO_INFORMAR
+  REFORÇO_ESCOLAR
+  OUTRO
 }
 
 enum Funcao {
@@ -55,11 +62,15 @@ model Usuario {
   email             String            @unique
   dataNascimento    DateTime
   senha             String
+  primeiroNome      String
+  sobrenome         String
   nomeCompleto      String
   funcao            Funcao            @default(ESTUDANTE)
   instituicaoId     String?
   instituicao       Instituicao?      @relation(fields: [instituicaoId], references: [id])
   escolaridade      NivelEscolaridade?
+  areaDeInteresse   String
+  objetivoNaPlataforma ObjetivoPlataforma  @default(OUTRO)
   criadoEm          DateTime          @default(now())
   atualizadoEm      DateTime          @updatedAt
   
