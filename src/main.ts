@@ -5,10 +5,19 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-  
+
+ app.enableCors({
+    origin: ['http://localhost:3000', 'http://thinkspace.app.br'], // URL do frontend
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // Permite cookies/tokens de autenticação
+    allowedHeaders: 'Content-Type, Authorization, Accept',
+  });
+
+  await app.listen(5000)
+
   app.enableShutdownHooks();
 
-  const port = configService.get<number>('PORT') || 3000;
+  const port = configService.get<number>('PORT') || 5000;
   
   await app.listen(port, () => {
     console.log(`🚀 Servidor rodando na porta http://localhost:${port}`);
