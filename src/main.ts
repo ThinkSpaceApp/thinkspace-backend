@@ -6,14 +6,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
- app.enableCors({
+  app.enableCors({
     origin: ['http://localhost:3000', 'http://thinkspace.app.br'], // URL do frontend
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // Permite cookies/tokens de autenticação
     allowedHeaders: 'Content-Type, Authorization, Accept',
   });
-
-  await app.listen(5000)
 
   app.enableShutdownHooks();
 
