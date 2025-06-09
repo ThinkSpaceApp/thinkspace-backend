@@ -1,11 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
-import { RegisterDto } from './dto/register.dto';
-import * as bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
-import { Resend } from 'resend';
-import * as crypto from 'crypto';
-import * as dotenv from 'dotenv';
+import { Injectable, BadRequestException, UnauthorizedException } from "@nestjs/common";
+import { UsersService } from "../users/users.service";
+import { RegisterDto } from "./dto/register.dto";
+import * as bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
+import { Resend } from "resend";
+import * as crypto from "crypto";
+import * as dotenv from "dotenv";
+import { isEmail } from "class-validator";
 
 dotenv.config();
 
@@ -19,28 +20,28 @@ export class AuthService {
     const { email, password, confirmPassword } = registerDto;
 
     if (password !== confirmPassword) {
-      throw new BadRequestException('As senhas não coincidem.');
+      throw new BadRequestException("As senhas não coincidem.");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const verificationCode = crypto.randomInt(10000, 99999).toString();
-    const expirationTime = new Date(Date.now() + 10 * 60 * 1000); 
-    
+    const expirationTime = new Date(Date.now() + 10 * 60 * 1000);
+
     const user = await this.usersService.create({
       id: uuidv4(),
       ...registerDto,
       senha: hashedPassword,
       codigoVerificado: verificationCode,
-      codigoExpiracao: expirationTime, 
+      codigoExpiracao: expirationTime,
     });
 
     const resend = new Resend(RESEND_API_KEY);
     try {
       await resend.emails.send({
-        from: 'noreply@thinkspace.com',
-        to: email || '',
-        subject: '🎉 Bem-vindo ao ThinkSpace! Verifique seu e-mail',
+        from: "noreply@thinkspace.com",
+        to: email || "",
+        subject: "🎉 Bem-vindo ao ThinkSpace! Verifique seu e-mail",
         html: `
           <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
             <img src="https://seusite.com/logo.png" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
@@ -58,26 +59,129 @@ export class AuthService {
         `,
       });
     } catch (error) {
-      throw new BadRequestException('Erro ao enviar o e-mail de verificação.');
+      throw new BadRequestException("Erro ao enviar o e-mail de verificação.");
     }
 
-    return { message: 'Usuário registrado com sucesso. Por favor, verifique seu e-mail.' };
+    return { message: "Usuário registrado com sucesso. Por favor, verifique seu e-mail." };
   }
 
   async verifyCode(code: string) {
     const user = await this.usersService.findByVerificationCode(code);
 
     if (!user) {
-      throw new BadRequestException('Código de verificação inválido ou expirado.');
+      throw new BadRequestException("Código de verificação inválido ou expirado.");
     }
 
     const now = new Date();
     if (user.codigoExpiracao && now > user.codigoExpiracao) {
-      throw new BadRequestException('O código de verificação expirou. Por favor, solicite um novo.');
+      throw new BadRequestException(
+        "O código de verificação expirou. Por favor, solicite um novo.",
+      );
     }
 
-    await this.usersService.update(user.id, { codigoVerificado: undefined, codigoExpiracao: undefined, emailVerificado: true });
+    await this.usersService.update(user.id, {
+      codigoVerificado: undefined,
+      codigoExpiracao: undefined,
+      emailVerificado: true,
+    });
 
-    return { message: 'E-mail verificado com sucesso.' };
+    return { message: "E-mail verificado com sucesso." };
+  }
+
+  async validateUser(email: string, senha: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      return null;
+    }
+    const isPasswordValid = await bcrypt.compare(senha, user.senha);
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    const { senha: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  async sendPasswordResetCode(email: string) {
+    if (!isEmail(email)) {
+      throw new BadRequestException("Email inválido.");
+    }
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException("Usuário não encontrado.");
+    }
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiration = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.usersService.update(user.id, {
+      codigoVerificado: resetCode,
+      codigoExpiracao: expiration,
+    });
+
+    const resend = new Resend(RESEND_API_KEY);
+    try {
+      await resend.emails.send({
+        from: "noreply@thinkspace.com",
+        to: email,
+        subject: "🔒 Redefinição de senha - ThinkSpace",
+        html: `
+          <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
+            <img src="https://seusite.com/logo.png" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+            <h1 style="color:rgb(146, 102, 204);">🔒 Redefinição de senha</h1>
+            <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>ThinkSpace</strong>.</p>
+            <p>Para continuar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
+            <div style="font-size: 28px; font-weight: bold; color:rgb(153, 98, 175); margin: 24px 0;">
+              ${resetCode}
+            </div>
+            <p>Se você não solicitou a redefinição de senha, pode ignorar este e-mail com segurança.<br>
+            Caso tenha dúvidas, entre em contato com nosso suporte.</p>
+            <p style="margin-top: 30px;">💡 <strong>Equipe ThinkSpace</strong></p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+            <p style="font-size: 12px; color: #777;">Este é um e-mail automático. Por favor, não responda.</p>
+          </div>
+        `,
+      });
+    } catch (error) {
+      throw new BadRequestException("Erro ao enviar o e-mail de redefinição de senha.");
+    }
+    return { message: "Código de redefinição enviado para o e-mail." };
+  }
+
+  async verifyPasswordResetCode(email: string, code: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user || user.codigoVerificado !== code) {
+      throw new BadRequestException("Código inválido.");
+    }
+    if (user.codigoExpiracao && new Date() > user.codigoExpiracao) {
+      throw new BadRequestException("O código expirou.");
+    }
+    return { message: "Código válido. Você pode redefinir sua senha." };
+  }
+
+  async resetPassword(email: string, code: string, novaSenha: string, confirmarSenha: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user || user.codigoVerificado !== code) {
+      throw new BadRequestException("Código inválido.");
+    }
+    if (user.codigoExpiracao && new Date() > user.codigoExpiracao) {
+      throw new BadRequestException("O código expirou.");
+    }
+    if (novaSenha !== confirmarSenha) {
+      throw new BadRequestException("As senhas não coincidem.");
+    }
+
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(novaSenha)) {
+      throw new BadRequestException(
+        "Crie uma nova senha com pelo menos 8 caracteres, incluindo letras, números e símbolos.",
+      );
+    }
+    const hashedPassword = await bcrypt.hash(novaSenha, 10);
+    await this.usersService.update(user.id, {
+      senha: hashedPassword,
+      codigoVerificado: undefined,
+      codigoExpiracao: undefined,
+    });
+    return { message: "Senha redefinida com sucesso." };
   }
 }
