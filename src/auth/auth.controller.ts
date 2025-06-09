@@ -1,6 +1,5 @@
 import { Controller, Post, Body, UnauthorizedException, BadRequestException } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { RegisterDto } from "./dto/register.dto";
 
 @Controller("auth")
 export class AuthController {
@@ -8,13 +7,33 @@ export class AuthController {
 
   @Post("registrar")
   async register(@Body() body: any) {
-    if (!body || !body.email || !body.password || !body.confirmPassword) {
+    if (
+      !body ||
+      !body.primeiroNome ||
+      !body.sobrenome ||
+      !body.email ||
+      !body.senha ||
+      !body.confirmarSenha ||
+      !body.dataNascimento
+    ) {
       throw new BadRequestException("Dados de registro incompletos");
     }
-    if (body.code) {
-      return this.authService.verifyCode(body.code);
+    return this.authService.register({
+      primeiroNome: body.primeiroNome,
+      sobrenome: body.sobrenome,
+      email: body.email,
+      senha: body.senha,
+      confirmarSenha: body.confirmarSenha,
+      dataNascimento: body.dataNascimento,
+    });
+  }
+
+  @Post("verificar-codigo")
+  async verifyCode(@Body() body: { code?: string }) {
+    if (!body || !body.code) {
+      throw new BadRequestException("Código de verificação é obrigatório");
     }
-    return this.authService.register(body as RegisterDto);
+    return this.authService.verifyCode(body.code);
   }
 
   @Post("esqueceu-senha")
