@@ -58,20 +58,20 @@ export class AuthService {
     const resend = new Resend(RESEND_API_KEY);
     try {
       await resend.emails.send({
-        from: "noreply@thinkspace.com",
+        from: "noreply@thinkspace.app.br",
         to: email,
-        subject: "🎉 Bem-vindo ao ThinkSpace! Verifique seu e-mail",
+        subject: "Bem-vindo(a) ao ThinkSpace! Verifique seu e-mail 🎉",
         html: `
           <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-            <img src="https://seusite.com/logo.png" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
-            <h1 style="color:rgb(146, 102, 204);">🎉 Bem-vindo ao ThinkSpace!</h1>
-            <p>Obrigado por se registrar na nossa plataforma. Estamos muito felizes em tê-lo conosco! 😊</p>
-            <p>Por favor, use o código abaixo para verificar seu e-mail. Ele é válido por <strong>10 minutos</strong>:</p>
+            <img src="https://i.ibb.co/HpC6njNJ/Group-4-2.png" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+            <h1 style="color:rgb(146, 102, 204);">Bem-vindo ao ThinkSpace! 🎉</h1>
+            <p style="color:#333;">Obrigado por se registrar na nossa plataforma. Estamos muito felizes em tê-lo conosco! 😊</p>
+            <p style="color:#333;">Por favor, use o código abaixo para verificar seu e-mail. Ele é válido por <strong>10 minutos</strong>:</p>
             <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
               ${codigoVerificado}
             </div>
-            <p>Se você não se registrou, ignore este e-mail. Caso tenha dúvidas, entre em contato conosco.</p>
-            <p style="margin-top: 30px;">💡 <strong>Equipe ThinkSpace</strong></p>
+            <p style="color:#333;">Se você não se registrou, ignore este e-mail. Caso tenha dúvidas, entre em contato conosco.</p>
+            <p style="margin-top: 30px; color:#333;">💡 <strong>Equipe ThinkSpace</strong></p>
             <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
             <p style="font-size: 12px; color: #777;">Este é um e-mail automático. Por favor, não responda.</p>
           </div>
@@ -145,12 +145,12 @@ export class AuthService {
     const resend = new Resend(RESEND_API_KEY);
     try {
       await resend.emails.send({
-        from: "noreply@thinkspace.com",
+        from: "noreply@thinkspace.app.br",
         to: email,
         subject: "🔒 Redefinição de senha - ThinkSpace",
         html: `
           <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-            <img src="https://seusite.com/logo.png" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+            <img src="https://i.ibb.co/HpC6njNJ/Group-4-2.png" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
             <h1 style="color:rgb(146, 102, 204);">🔒 Redefinição de senha</h1>
             <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>ThinkSpace</strong>.</p>
             <p>Para continuar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>

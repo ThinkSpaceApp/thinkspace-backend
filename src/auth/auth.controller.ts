@@ -1,9 +1,13 @@
-import { Controller, Post, Body, UnauthorizedException, BadRequestException } from "@nestjs/common";
+import { Body, Controller, Post, UnauthorizedException, BadRequestException } from "@nestjs/common";
 import { AuthService } from "./auth.service";
+import { UsersService } from "../users/users.service";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post("registrar")
   async register(@Body() body: any) {
@@ -68,5 +72,28 @@ export class AuthController {
       throw new UnauthorizedException("Credenciais inválidas");
     }
     return { message: "Login realizado com sucesso", user };
+  }
+
+  @Post("completar-cadastro")
+  async completeProfile(
+    @Body()
+    body: {
+      email: string;
+      escolaridade: string;
+      objetivoNaPlataforma: string;
+      areaDeInteresse: string;
+      instituicaoNome: string;
+    },
+  ) {
+    const { email, escolaridade, objetivoNaPlataforma, areaDeInteresse, instituicaoNome } = body;
+    if (!email || !escolaridade || !objetivoNaPlataforma || !areaDeInteresse || !instituicaoNome) {
+      throw new BadRequestException("Todos os campos obrigatórios devem ser preenchidos.");
+    }
+    return this.usersService.completeProfile(email, {
+      escolaridade,
+      objetivoNaPlataforma,
+      areaDeInteresse,
+      instituicaoNome,
+    });
   }
 }
