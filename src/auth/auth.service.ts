@@ -125,7 +125,30 @@ export class AuthService {
     }
     temp.codigoVerificado = crypto.randomInt(10000, 99999).toString();
     temp.codigoExpiracao = new Date(Date.now() + 10 * 60 * 1000);
-    await this.sendVerificationEmail(email, temp.codigoVerificado);
+
+    const resend = new Resend(RESEND_API_KEY);
+    await resend.emails.send({
+      from: "noreply@thinkspace.app.br",
+      to: email,
+      subject: "📫 Reenvio do código de verificação - ThinkSpace",
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
+          <img src="https://i.imgur.com/52L55mC_d.webp?maxwidth=760&fidelity=grand" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+          <h1 style="color:rgb(146, 102, 204);">📫 Reenvio do código de verificação</h1>
+          <p style="color:#333;">Você solicitou o reenvio do código de verificação para concluir seu cadastro no <strong>ThinkSpace</strong>.</p>
+          <p style="color:#333;">Use o código abaixo para verificar seu e-mail. Ele é válido por <strong>10 minutos</strong>:</p>
+          <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
+            ${temp.codigoVerificado}
+          </div>
+          <p style="color:#333;">Atenção: você tem até <strong>3 tentativas</strong> para reenviar o código. Caso não conclua a verificação após 3 reenvios, seu cadastro será <strong>deletado</strong> e será necessário refazer todo o processo.</p>
+          <p style="color:#333;">Se você não solicitou o reenvio, ignore este e-mail.</p>
+          <p style="margin-top: 30px; color:#333;">💡 <strong>Equipe ThinkSpace</strong></p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+          <p style="font-size: 12px; color: #777;">Este é um e-mail automático. Por favor, não responda.</p>
+        </div>
+      `,
+    });
+
     return { message: "Novo código enviado para o e-mail." };
   }
 
@@ -166,15 +189,21 @@ export class AuthService {
     await resend.emails.send({
       from: "noreply@thinkspace.app.br",
       to: email,
-      subject: "Código de verificação - ThinkSpace",
+      subject: "🎉Bem-vindo ao ThinkSpace! Verifique seu e-mail",
       html: `
         <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-          <h1 style="color:rgb(146, 102, 204);">Código de verificação</h1>
-          <p>Seu código é:</p>
+          <img src="https://i.imgur.com/52L55mC_d.webp?maxwidth=760&fidelity=grand" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+          <h1 style="color:rgb(146, 102, 204);"> 🎉 Bem-vindo ao ThinkSpace!</h1>
+          <p style="color:#333;">Obrigado por se registrar na nossa plataforma. Estamos muito felizes em tê-lo conosco! 😊</p>
+          <p style="color:#333;">Por favor, use o código abaixo para verificar seu e-mail. Ele é válido por <strong>10 minutos</strong>:</p>
           <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
             ${codigo}
           </div>
-          <p>O código expira em 10 minutos.</p>
+          <p style="color:#333;">Você tem até <strong>3 tentativas</strong> para reenviar o código. Caso não conclua a verificação após 3 reenvios, seu cadastro será <strong>deletado</strong> e será necessário refazer todo o processo.</p>
+          <p style="color:#333;">Se você não se registrou, ignore este e-mail. Caso tenha dúvidas, entre em contato conosco.</p>
+          <p style="margin-top: 30px; color:#333;">💡 <strong>Equipe ThinkSpace</strong></p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+          <p style="font-size: 12px; color: #777;">Este é um e-mail automático. Por favor, não responda.</p>
         </div>
       `,
     });
@@ -201,7 +230,7 @@ export class AuthService {
         subject: "🔒 Redefinição de senha - ThinkSpace",
         html: `
           <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-            <img src="https://i.ibb.co/HpC6njNJ/Group-4-2.png" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+            <img src="https://i.imgur.com/52L55mC_d.webp?maxwidth=760&fidelity=grand" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
             <h1 style="color:rgb(146, 102, 204);">🔒 Redefinição de senha</h1>
             <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>ThinkSpace</strong>.</p>
             <p>Para continuar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
