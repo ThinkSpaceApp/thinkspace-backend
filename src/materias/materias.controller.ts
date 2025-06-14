@@ -7,6 +7,8 @@ import {
   Req,
   UseGuards,
   BadRequestException,
+  Patch,
+  Delete,
 } from "@nestjs/common";
 import { Request } from "express";
 import { UsersService } from "../users/users.service";
@@ -65,5 +67,46 @@ export class MateriasController {
       throw new BadRequestException("Todos os campos são obrigatórios.");
     }
     return this.usersService.createMateria((req.user as any).userId, body);
+  }
+
+  @Patch(":id")
+  async editarMateria(
+    @Req() req: Request,
+    @Param("id") id: string,
+    @Body() body: { nome?: string; cor?: string; icone?: string },
+  ) {
+    const user = await this.usersService.findByEmail((req.user as any).email);
+    if (!user) {
+      throw new BadRequestException("Usuário não encontrado.");
+    }
+    const materia = await this.usersService.getMateriaById(id);
+    if (!materia || materia.usuarioId !== user.id) {
+      throw new BadRequestException("Matéria não encontrada ou não pertence ao usuário.");
+    }
+
+    if (body.cor) {
+      const allowedColors = ["SALMAO", "ROSA", "LILAS", "ROXO"];
+      if (!allowedColors.includes(body.cor)) {
+        throw new BadRequestException("Cor inválida.");
+      }
+    }
+    return this.usersService.editarMateria(id, body);
+  }
+
+  @Delete(":id")
+  async excluirMateria(@Req() req: Request, @Param("id") id: string) {
+    if (!req.user || !(req.user as any).email) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+    const user = await this.usersService.findByEmail((req.user as any).email);
+    if (!user) {
+      throw new BadRequestException("Usuário não encontrado.");
+    }
+    const materia = await this.usersService.getMateriaById(id);
+    if (!materia || materia.usuarioId !== user.id) {
+      throw new BadRequestException("Matéria não encontrada ou não pertence ao usuário.");
+    }
+    await this.usersService.excluirMateria(id);
+    return { message: "Matéria excluída com sucesso." };
   }
 }

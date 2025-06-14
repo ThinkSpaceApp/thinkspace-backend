@@ -223,6 +223,27 @@ export class UsersService {
     return notificacoes;
   }
 
+  async getMateriaById(id: string) {
+    return this.prisma.materia.findUnique({ where: { id } });
+  }
+
+  async editarMateria(id: string, data: { nome?: string; cor?: string; icone?: string }) {
+    return this.prisma.materia.update({
+      where: { id },
+      data: {
+        ...(data.nome && { nome: data.nome }),
+        ...(data.cor && { cor: data.cor as any }),
+        ...(data.icone && { icone: data.icone }),
+      },
+    });
+  }
+
+  async excluirMateria(id: string) {
+    return this.prisma.materia.delete({
+      where: { id },
+    });
+  }
+
   private validatePassword(password: string): string[] {
     const errors: string[] = [];
     if (password.length < 8) {
