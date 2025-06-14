@@ -8,9 +8,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
   app.enableCors({
-    origin: "https://thinkspace.app.br", // string única
-    credentials: true,
-    allowedHeaders: "Content-Type, Authorization, Accept",
+    origin: "https://thinkspace.app.br", // ou ["https://thinkspace.app.br", "http://localhost:3000"] para dev
+    credentials: true,  // ESSENCIAL para cookies cross-origin
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   });
 
   // app.use((req: Request, res: Response, next: NextFunction) => {
