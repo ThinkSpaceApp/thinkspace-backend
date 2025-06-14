@@ -12,21 +12,21 @@ async function bootstrap() {
   console.log(`🗄️ DATABASE_URL em uso: ${configService.get<string>("DATABASE_URL")}`);
 
   app.enableCors({
-    origin: ["http://localhost:3000", "http://thinkspace.app.br"], // URL do frontend
+    origin: ["http://thinkspace.app.br", "http://localhost:3000"], // URL do frontend
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
     allowedHeaders: "Content-Type, Authorization, Accept",
   });
 
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path === "/" || req.path === "") {
-      const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
-      if (!token) {
-        throw new Error("Token de autenticação não encontrado");
-      }
-    }
-    next();
-  });
+  // app.use((req: Request, res: Response, next: NextFunction) => {
+  //   if (req.path === "/" || req.path === "") {
+  //     const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
+  //     if (!token) {
+  //       throw new Error("Token de autenticação não encontrado");
+  //     }
+  //   }
+  //   next();
+  // });
 
   app.enableShutdownHooks();
 
