@@ -71,6 +71,7 @@ export class UsersService {
   async findByEmail(email: string) {
     return this.prisma.usuario.findUnique({
       where: { email },
+      include: { experiencia: true },
     });
   }
 
@@ -130,7 +131,7 @@ export class UsersService {
       },
     });
     if (!user) {
-      throw new BadRequestException('Usuário não encontrado.');
+      throw new BadRequestException("Usuário não encontrado.");
     }
 
     const salasMembro = user.membroSalas.map((m) => m.sala);
@@ -164,9 +165,9 @@ export class UsersService {
   }
 
   async createMateria(userId: string, data: { nome: string; cor: string; icone: string }) {
-    const allowedColors = ['SALMAO', 'ROSA', 'LILAS', 'ROXO'];
+    const allowedColors = ["SALMAO", "ROSA", "LILAS", "ROXO"];
     if (!allowedColors.includes(data.cor)) {
-      throw new BadRequestException('Cor inválida.');
+      throw new BadRequestException("Cor inválida.");
     }
     return this.prisma.materia.create({
       data: {
@@ -201,7 +202,7 @@ export class UsersService {
 
   async getOrCreateInstituicao(nome: string) {
     if (!nome) {
-      throw new BadRequestException('Nome da instituição é obrigatório.');
+      throw new BadRequestException("Nome da instituição é obrigatório.");
     }
     let instituicao = await this.prisma.instituicao.findUnique({
       where: { nome },
@@ -212,6 +213,14 @@ export class UsersService {
       });
     }
     return instituicao;
+  }
+
+  async getNotificacoesByUserId(userId: string) {
+    const notificacoes = await this.prisma.notificacao.findMany({
+      where: { usuarioId: userId },
+      orderBy: { data: "desc" },
+    });
+    return notificacoes;
   }
 
   private validatePassword(password: string): string[] {

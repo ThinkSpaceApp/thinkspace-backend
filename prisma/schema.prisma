@@ -42,7 +42,7 @@ enum ObjetivoPlataforma {
 }
 
 enum Funcao {
-  USUARIO
+  ESTUDANTE
   ADMINISTRADOR_GERAL
 }
 
@@ -63,6 +63,17 @@ enum CorMateria {
   ROXO
 }
 
+model Notificacao {
+  id         String   @id @default(uuid())
+  mensagem   String
+  lida       Boolean  @default(false)
+  data       DateTime @default(now())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("notificacoes")
+}
+
 model Usuario {
   id                   String              @id @default(uuid())
   email                String              @unique
@@ -74,7 +85,8 @@ model Usuario {
   emailVerificado      Boolean             @default(false)
   codigoVerificado     String              @unique
   codigoExpiracao      DateTime
-  funcao               Funcao              @default(USUARIO)
+  funcao               Funcao              @default(ESTUDANTE)
+  foto                 String?             @default("https://ui-avatars.com/api/?name=User&background=8e44ad&color=fff")
   instituicaoId        String?
   escolaridade         NivelEscolaridade?
   areaDeInteresse      String?
@@ -82,6 +94,10 @@ model Usuario {
   criadoEm             DateTime            @default(now())
   atualizadoEm         DateTime            @updatedAt
   verificacaoEmail     VerificacaoEmail?
+  notificacoes         Notificacao[]
+  materias             Materia[]
+  experiencia          ExperienciaUsuario?
+  ultimoLogin          DateTime?
 
   metricas        MetricasUsuario?
   materiais       MaterialEstudo[]
@@ -97,7 +113,7 @@ model Usuario {
   Instituicao Instituicao? @relation(fields: [instituicaoId], references: [id])
 
   @@map("usuarios")
-  Materia Materia[]
+  PerfilUsuario PerfilUsuario[]
 }
 
 model VerificacaoEmail {
@@ -339,4 +355,30 @@ model Materia {
 
   @@unique([nome, usuarioId])
   @@map("materias")
+}
+
+model PerfilUsuario {
+  id           String   @id @default(uuid())
+  usuarioId    String   @unique
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id])
+  avatar       String   @default("https://ui-avatars.com/api/?name=User&background=8e44ad&color=fff")
+  xp           Int      @default(0)
+  nivel        NivelUsuario @default(INICIANTE)
+  progresso    Float    @default(0)
+}
+
+enum NivelUsuario {
+  INICIANTE
+  AVANCADO
+  MASTER
+}
+
+model ExperienciaUsuario {
+  id        String       @id @default(uuid())
+  usuario   Usuario      @relation(fields: [usuarioId], references: [id])
+  usuarioId String       @unique
+  avatar    String       @default("https://ui-avatars.com/api/?name=User&background=8e44ad&color=fff")
+  xp        Int          @default(0)
+  progresso Float        @default(0)
+  nivel     NivelUsuario @default(INICIANTE)
 }

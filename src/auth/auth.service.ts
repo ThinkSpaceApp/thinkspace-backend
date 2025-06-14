@@ -54,28 +54,38 @@ export class AuthService {
       senha: hashedPassword,
       dataNascimento: dataNascimentoDate,
       reenvios: 0,
-      etapa: 'funcao',
+      etapa: "funcao",
     };
 
-    return { message: "Dados iniciais recebidos. Escolha a função (administrador ou usuário comum)." };
+    return {
+      message: "Dados iniciais recebidos. Escolha a função (administrador ou usuário comum).",
+    };
   }
 
   async registrarStep2EscolherFuncao(email: string, funcao: "ADMIN" | "ESTUDANTE") {
     const temp = tempRegisterStore[email];
     if (!temp) throw new BadRequestException("Registro não iniciado.");
     temp.funcao = funcao;
-    temp.etapa = 'completar';
+    temp.etapa = "completar";
     return { message: "Função definida. Complete o cadastro." };
   }
 
-  async registrarStep3Completar(email: string, data: { escolaridade: string; objetivoNaPlataforma: string; areaDeInteresse: string; instituicaoNome: string }) {
+  async registrarStep3Completar(
+    email: string,
+    data: {
+      escolaridade: string;
+      objetivoNaPlataforma: string;
+      areaDeInteresse: string;
+      instituicaoNome: string;
+    },
+  ) {
     const temp = tempRegisterStore[email];
     if (!temp) throw new BadRequestException("Registro não iniciado.");
     temp.escolaridade = data.escolaridade;
     temp.objetivoNaPlataforma = data.objetivoNaPlataforma;
     temp.areaDeInteresse = data.areaDeInteresse;
     temp.instituicaoNome = data.instituicaoNome;
-    temp.etapa = 'verificacao';
+    temp.etapa = "verificacao";
     temp.codigoVerificado = crypto.randomInt(10000, 99999).toString();
     temp.codigoExpiracao = new Date(Date.now() + 10 * 60 * 1000);
     temp.reenvios = 0;
@@ -242,7 +252,20 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException("Senha incorreta.");
     }
-    const { senha: _, ...userWithoutPassword } = user;
+
+    const hoje = new Date();
+    const ultimoLogin = user.ultimoLogin ? new Date(user.ultimoLogin) : null;
+    const mesmoDia =
+      ultimoLogin &&
+      ultimoLogin.getFullYear() === hoje.getFullYear() &&
+      ultimoLogin.getMonth() === hoje.getMonth() &&
+      ultimoLogin.getDate() === hoje.getDate();
+
+    if (!mesmoDia) {
+      await this.usersService.update(user.id, { ultimoLogin: hoje });
+    }
+
+    const { senha: _, ...userWithoutPassword } = { ...user, ultimoLogin: hoje };
     return userWithoutPassword;
   }
 }
