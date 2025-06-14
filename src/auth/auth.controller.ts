@@ -1,6 +1,14 @@
-import { Body, Controller, Post, UnauthorizedException, BadRequestException } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Post,
+  UnauthorizedException,
+  BadRequestException,
+  Res,
+} from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { UsersService } from "../users/users.service";
+import { Response } from "express";
 
 @Controller("auth")
 export class AuthController {
@@ -102,14 +110,22 @@ export class AuthController {
   }
 
   @Post("login")
-  async login(@Body() body: { email?: string; senha?: string }) {
+  async login(@Body() body: { email?: string; senha?: string }, @Res() res: Response) {
     if (!body || !body.email || !body.senha) {
       throw new UnauthorizedException("Email e senha são obrigatórios");
     }
-    const user = await this.authService.validateUser(body.email, body.senha);
-    if (!user) {
+    const userWithToken = await this.authService.validateUser(body.email, body.senha);
+    if (!userWithToken) {
       throw new UnauthorizedException("Credenciais inválidas");
     }
-    return { message: "Login realizado com sucesso", user };
+    // Envia o token como cookie HttpOnly
+    res.cookie("token", userWithToken.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+    });
+    // Retorna também no corpo, se desejar
+    return res.json({ message: "Login realizado com sucesso", user: userWithToken });
   }
 }
