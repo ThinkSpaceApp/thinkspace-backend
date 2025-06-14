@@ -6,6 +6,7 @@ import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
 import * as dotenv from "dotenv";
 import { isEmail } from "class-validator";
+import { JwtService } from "@nestjs/jwt";
 
 dotenv.config();
 
@@ -15,7 +16,10 @@ const tempRegisterStore: Record<string, any> = {};
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async registrarStep1(registerDto: {
     primeiroNome: string;
@@ -133,7 +137,7 @@ export class AuthService {
       subject: "📫 Reenvio do código de verificação - ThinkSpace",
       html: `
         <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-          <img src="https://i.imgur.com/52L55mC_d.webp?maxwidth=760&fidelity=grand" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+          <img src="https://i.imgur.com/2WuveKh.png" alt="ThinkSpace Logo" style="hight: full; width: full; margin-bottom: 20px;" />
           <h1 style="color:rgb(146, 102, 204);">📫 Reenvio do código de verificação</h1>
           <p style="color:#333;">Você solicitou o reenvio do código de verificação para concluir seu cadastro no <strong>ThinkSpace</strong>.</p>
           <p style="color:#333;">Use o código abaixo para verificar seu e-mail. Ele é válido por <strong>10 minutos</strong>:</p>
@@ -162,26 +166,75 @@ export class AuthService {
       throw new BadRequestException("O código expirou.");
     }
 
-    const instituicao = await this.usersService.getOrCreateInstituicao(temp.instituicaoNome);
+    let instituicaoId: string | null = null;
+    if (temp.instituicaoNome) {
+      const instituicao = await this.usersService.getOrCreateInstituicao(temp.instituicaoNome);
+      instituicaoId = instituicao?.id || null;
+    }
 
-    const user = await this.usersService.create({
-      id: temp.id,
-      primeiroNome: temp.primeiroNome,
-      sobrenome: temp.sobrenome,
-      email: temp.email,
-      senha: temp.senha,
-      dataNascimento: temp.dataNascimento,
-      funcao: temp.funcao,
-      escolaridade: temp.escolaridade,
-      objetivoNaPlataforma: temp.objetivoNaPlataforma,
-      areaDeInteresse: temp.areaDeInteresse,
-      instituicaoId: instituicao.id,
-      emailVerificado: true,
-      criadoEm: new Date(),
-      atualizadoEm: new Date(),
-    });
-    delete tempRegisterStore[email];
-    return { message: "E-mail verificado e cadastro concluído.", user };
+    function gerarCodigoUnico() {
+      return crypto.randomInt(10000, 99999).toString() + Date.now();
+    }
+
+    try {
+      const user = await this.usersService.create({
+        id: temp.id,
+        primeiroNome: temp.primeiroNome,
+        sobrenome: temp.sobrenome,
+        email: temp.email,
+        senha: temp.senha,
+        dataNascimento: temp.dataNascimento,
+        funcao: temp.funcao,
+        escolaridade: temp.escolaridade,
+        objetivoNaPlataforma: temp.objetivoNaPlataforma,
+        areaDeInteresse: temp.areaDeInteresse,
+        instituicaoId,
+        emailVerificado: true,
+        criadoEm: new Date(),
+        atualizadoEm: new Date(),
+        codigoVerificado: gerarCodigoUnico(),
+        codigoExpiracao: new Date(),
+      });
+
+      delete tempRegisterStore[email];
+
+      if (!user || !user.id) {
+        throw new BadRequestException("Erro ao criar usuário. Tente novamente.");
+      }
+
+      const payload = { sub: user.id, email: user.email };
+      const token = this.jwtService.sign(payload);
+
+      return { message: "E-mail verificado e cadastro concluído.", user, token };
+    } catch (error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as any).code === "P2002" &&
+        "meta" in error &&
+        (error as any).meta?.target?.includes("email")
+      ) {
+        throw new BadRequestException("O e-mail já está em uso.");
+      }
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as any).code === "P2002" &&
+        "meta" in error &&
+        (error as any).meta?.target?.includes("codigoVerificado")
+      ) {
+        throw new BadRequestException(
+          "Erro interno: conflito de código de verificação. Tente novamente.",
+        );
+      }
+      throw new BadRequestException(
+        typeof error === "object" && error !== null && "message" in error
+          ? (error as any).message
+          : "Erro interno ao criar usuário.",
+      );
+    }
   }
 
   private async sendVerificationEmail(email: string, codigo: string) {
@@ -192,7 +245,7 @@ export class AuthService {
       subject: "🎉Bem-vindo ao ThinkSpace! Verifique seu e-mail",
       html: `
         <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-          <img src="https://i.imgur.com/52L55mC_d.webp?maxwidth=760&fidelity=grand" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+          <img src="https://i.imgur.com/2WuveKh.png" alt="ThinkSpace Logo" style="hight: full; width: full; margin-bottom: 20px;" />
           <h1 style="color:rgb(146, 102, 204);"> 🎉 Bem-vindo ao ThinkSpace!</h1>
           <p style="color:#333;">Obrigado por se registrar na nossa plataforma. Estamos muito felizes em tê-lo conosco! 😊</p>
           <p style="color:#333;">Por favor, use o código abaixo para verificar seu e-mail. Ele é válido por <strong>10 minutos</strong>:</p>
@@ -230,7 +283,7 @@ export class AuthService {
         subject: "🔒 Redefinição de senha - ThinkSpace",
         html: `
           <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-            <img src="https://i.imgur.com/52L55mC_d.webp?maxwidth=760&fidelity=grand" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
+            <img src="https://i.imgur.com/2WuveKh.png" alt="ThinkSpace Logo" style="hight: full; width: full; margin-bottom: 20px;" />
             <h1 style="color:rgb(146, 102, 204);">🔒 Redefinição de senha</h1>
             <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>ThinkSpace</strong>.</p>
             <p>Para continuar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
@@ -316,7 +369,10 @@ export class AuthService {
       await this.usersService.update(user.id, { ultimoLogin: hoje });
     }
 
-    const { senha: _, ...userWithoutPassword } = { ...user, ultimoLogin: hoje };
-    return userWithoutPassword;
+    const { senha: _, ...userWithoutPassword } = user;
+    // Gera o token JWT ao autenticar
+    const payload = { sub: user.id, email: user.email };
+    const token = this.jwtService.sign(payload);
+    return { ...userWithoutPassword, token };
   }
 }
