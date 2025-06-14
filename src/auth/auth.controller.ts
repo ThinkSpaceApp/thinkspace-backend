@@ -121,7 +121,8 @@ export class AuthController {
     // Envia o token como cookie HttpOnly
     res.cookie("token", userWithToken.token, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
+      // editar para true
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     });
