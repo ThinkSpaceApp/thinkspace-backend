@@ -22,7 +22,7 @@ export class AuthController {
     ) {
       throw new BadRequestException("Dados de registro incompletos");
     }
-    return this.authService.register({
+    return this.authService.registrarStep1({
       primeiroNome: body.primeiroNome,
       sobrenome: body.sobrenome,
       email: body.email,
@@ -32,12 +32,51 @@ export class AuthController {
     });
   }
 
-  @Post("verificar-codigo")
-  async verifyCode(@Body() body: { code?: string }) {
-    if (!body || !body.code) {
-      throw new BadRequestException("Código de verificação é obrigatório");
+  @Post("escolher-funcao")
+  async escolherFuncao(@Body() body: { email: string; funcao: "ADMIN" | "ESTUDANTE" }) {
+    if (!body || !body.email || !body.funcao) {
+      throw new BadRequestException("Email e função são obrigatórios.");
     }
-    return this.authService.verifyCode(body.code);
+    return this.authService.registrarStep2EscolherFuncao(body.email, body.funcao);
+  }
+
+  @Post("completar-cadastro")
+  async completeProfile(
+    @Body()
+    body: {
+      email: string;
+      escolaridade: string;
+      objetivoNaPlataforma: string;
+      areaDeInteresse: string;
+      instituicaoNome: string;
+    },
+  ) {
+    const { email, escolaridade, objetivoNaPlataforma, areaDeInteresse, instituicaoNome } = body;
+    if (!email || !escolaridade || !objetivoNaPlataforma || !areaDeInteresse || !instituicaoNome) {
+      throw new BadRequestException("Todos os campos obrigatórios devem ser preenchidos.");
+    }
+    return this.authService.registrarStep3Completar(email, {
+      escolaridade,
+      objetivoNaPlataforma,
+      areaDeInteresse,
+      instituicaoNome,
+    });
+  }
+
+  @Post("reenviar-codigo")
+  async reenviarCodigo(@Body() body: { email: string }) {
+    if (!body || !body.email) {
+      throw new BadRequestException("Email é obrigatório.");
+    }
+    return this.authService.reenviarCodigo(body.email);
+  }
+
+  @Post("verificar-codigo")
+  async verifyCode(@Body() body: { email?: string; code?: string }) {
+    if (!body || !body.email || !body.code) {
+      throw new BadRequestException("Email e código de verificação são obrigatórios");
+    }
+    return this.authService.verificarEmail(body.email, body.code);
   }
 
   @Post("esqueceu-senha")
@@ -72,28 +111,5 @@ export class AuthController {
       throw new UnauthorizedException("Credenciais inválidas");
     }
     return { message: "Login realizado com sucesso", user };
-  }
-
-  @Post("completar-cadastro")
-  async completeProfile(
-    @Body()
-    body: {
-      email: string;
-      escolaridade: string;
-      objetivoNaPlataforma: string;
-      areaDeInteresse: string;
-      instituicaoNome: string;
-    },
-  ) {
-    const { email, escolaridade, objetivoNaPlataforma, areaDeInteresse, instituicaoNome } = body;
-    if (!email || !escolaridade || !objetivoNaPlataforma || !areaDeInteresse || !instituicaoNome) {
-      throw new BadRequestException("Todos os campos obrigatórios devem ser preenchidos.");
-    }
-    return this.usersService.completeProfile(email, {
-      escolaridade,
-      objetivoNaPlataforma,
-      areaDeInteresse,
-      instituicaoNome,
-    });
   }
 }

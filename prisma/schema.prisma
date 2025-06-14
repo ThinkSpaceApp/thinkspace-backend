@@ -42,9 +42,8 @@ enum ObjetivoPlataforma {
 }
 
 enum Funcao {
-  ESTUDANTE
-  MODERADOR
-  ADMIN
+  USUARIO
+  ADMINISTRADOR_GERAL
 }
 
 enum FuncaoSalaEstudo {
@@ -55,6 +54,13 @@ enum FuncaoSalaEstudo {
 enum TipoMaterial {
   PDF
   TOPICO
+}
+
+enum CorMateria {
+  SALMAO
+  ROSA
+  LILAS
+  ROXO
 }
 
 model Usuario {
@@ -68,7 +74,7 @@ model Usuario {
   emailVerificado      Boolean             @default(false)
   codigoVerificado     String              @unique
   codigoExpiracao      DateTime
-  funcao               Funcao              @default(ESTUDANTE)
+  funcao               Funcao              @default(USUARIO)
   instituicaoId        String?
   escolaridade         NivelEscolaridade?
   areaDeInteresse      String?
@@ -91,6 +97,7 @@ model Usuario {
   Instituicao Instituicao? @relation(fields: [instituicaoId], references: [id])
 
   @@map("usuarios")
+  Materia Materia[]
 }
 
 model VerificacaoEmail {
@@ -134,6 +141,7 @@ model MaterialEstudo {
   criadoEm       DateTime     @default(now())
 
   salasEstudo SalaEstudoMaterial[]
+  materias    Materia[] @relation("MateriasMateriais")
 }
 
 model Flashcard {
@@ -316,4 +324,19 @@ model Calendario {
   criadoEm               DateTime      @default(now())
 
   @@index([dataInicio])
+}
+
+model Materia {
+  id            String           @id @default(uuid())
+  nome          String
+  cor           CorMateria
+  icone         String
+  usuarioId     String
+  usuario       Usuario          @relation(fields: [usuarioId], references: [id])
+  materiais     MaterialEstudo[] @relation("MateriasMateriais")
+  tempoAtivo    Int              @default(0)
+  ultimaRevisao DateTime?
+
+  @@unique([nome, usuarioId])
+  @@map("materias")
 }

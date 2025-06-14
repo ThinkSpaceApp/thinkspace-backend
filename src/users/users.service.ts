@@ -117,6 +117,103 @@ export class UsersService {
     });
   }
 
+  async getSalasEstudoByEmail(email: string) {
+    const user = await this.prisma.usuario.findUnique({
+      where: { email },
+      include: {
+        membroSalas: {
+          include: {
+            sala: true,
+          },
+        },
+        salasModeradas: true,
+      },
+    });
+    if (!user) {
+      throw new BadRequestException('Usuário não encontrado.');
+    }
+
+    const salasMembro = user.membroSalas.map((m) => m.sala);
+    const salasModerador = user.salasModeradas;
+    return {
+      salasMembro,
+      salasModerador,
+    };
+  }
+
+  async getMateriasByUserId(userId: string) {
+    const materias = await this.prisma.materia.findMany({
+      where: { usuarioId: userId },
+      include: {
+        materiais: true,
+      },
+    });
+
+    return materias.map((materia) => {
+      let tempoFormatado = `${materia.tempoAtivo} min`;
+      if (materia.tempoAtivo >= 60) {
+        const horas = Math.floor(materia.tempoAtivo / 60);
+        const minutos = materia.tempoAtivo % 60;
+        tempoFormatado = minutos > 0 ? `${horas} h e ${minutos} min` : `${horas} h`;
+      }
+      return {
+        ...materia,
+        tempoAtivoFormatado: tempoFormatado,
+      };
+    });
+  }
+
+  async createMateria(userId: string, data: { nome: string; cor: string; icone: string }) {
+    const allowedColors = ['SALMAO', 'ROSA', 'LILAS', 'ROXO'];
+    if (!allowedColors.includes(data.cor)) {
+      throw new BadRequestException('Cor inválida.');
+    }
+    return this.prisma.materia.create({
+      data: {
+        nome: data.nome,
+        cor: data.cor as any,
+        icone: data.icone,
+        usuarioId: userId,
+      },
+    });
+  }
+
+  async addMaterialToMateria(materiaId: string, materialId: string) {
+    return this.prisma.materia.update({
+      where: { id: materiaId },
+      data: {
+        materiais: {
+          connect: { id: materialId },
+        },
+      },
+    });
+  }
+
+  async atualizarTempoAtivoEMarcarRevisao(materiaId: string, minutos: number) {
+    return this.prisma.materia.update({
+      where: { id: materiaId },
+      data: {
+        tempoAtivo: { increment: minutos },
+        ultimaRevisao: new Date(),
+      },
+    });
+  }
+
+  async getOrCreateInstituicao(nome: string) {
+    if (!nome) {
+      throw new BadRequestException('Nome da instituição é obrigatório.');
+    }
+    let instituicao = await this.prisma.instituicao.findUnique({
+      where: { nome },
+    });
+    if (!instituicao) {
+      instituicao = await this.prisma.instituicao.create({
+        data: { nome },
+      });
+    }
+    return instituicao;
+  }
+
   private validatePassword(password: string): string[] {
     const errors: string[] = [];
     if (password.length < 8) {

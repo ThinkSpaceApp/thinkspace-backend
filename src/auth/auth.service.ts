@@ -11,11 +11,13 @@ dotenv.config();
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
+const tempRegisterStore: Record<string, any> = {};
+
 @Injectable()
 export class AuthService {
   constructor(private readonly usersService: UsersService) {}
 
-  async register(registerDto: {
+  async registrarStep1(registerDto: {
     primeiroNome: string;
     sobrenome: string;
     email: string;
@@ -28,108 +30,125 @@ export class AuthService {
     if (!email || !senha || !confirmarSenha || !primeiroNome || !sobrenome || !dataNascimento) {
       throw new BadRequestException("Todos os campos obrigatórios devem ser preenchidos.");
     }
-
+    if (!isEmail(email)) {
+      throw new BadRequestException("Email inválido.");
+    }
     if (senha !== confirmarSenha) {
       throw new BadRequestException("As senhas não coincidem.");
     }
-
-    // Validação extra: dataNascimento deve ser uma data válida
+    const existingUser = await this.usersService.findByEmail(email);
+    if (existingUser) {
+      throw new BadRequestException("O e-mail já está em uso. Por favor, utilize outro.");
+    }
     const dataNascimentoDate = new Date(dataNascimento);
     if (isNaN(dataNascimentoDate.getTime())) {
       throw new BadRequestException("Data de nascimento inválida.");
     }
-
     const hashedPassword = await bcrypt.hash(senha, 10);
 
-    const codigoVerificado = crypto.randomInt(10000, 99999).toString();
-    const codigoExpiracao = new Date(Date.now() + 10 * 60 * 1000);
-
-    const user = await this.usersService.create({
+    tempRegisterStore[email] = {
       id: uuidv4(),
       primeiroNome,
       sobrenome,
       email,
       senha: hashedPassword,
       dataNascimento: dataNascimentoDate,
-      codigoVerificado,
-      codigoExpiracao,
-    });
+      reenvios: 0,
+      etapa: 'funcao',
+    };
 
-    const resend = new Resend(RESEND_API_KEY);
-    try {
-      await resend.emails.send({
-        from: "noreply@thinkspace.app.br",
-        to: email,
-        subject: "Bem-vindo(a) ao ThinkSpace! Verifique seu e-mail 🎉",
-        html: `
-          <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-            <img src="https://i.ibb.co/HpC6njNJ/Group-4-2.png" alt="ThinkSpace Logo" style="width: 150px; margin-bottom: 20px;" />
-            <h1 style="color:rgb(146, 102, 204);">Bem-vindo ao ThinkSpace! 🎉</h1>
-            <p style="color:#333;">Obrigado por se registrar na nossa plataforma. Estamos muito felizes em tê-lo conosco! 😊</p>
-            <p style="color:#333;">Por favor, use o código abaixo para verificar seu e-mail. Ele é válido por <strong>10 minutos</strong>:</p>
-            <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
-              ${codigoVerificado}
-            </div>
-            <p style="color:#333;">Se você não se registrou, ignore este e-mail. Caso tenha dúvidas, entre em contato conosco.</p>
-            <p style="margin-top: 30px; color:#333;">💡 <strong>Equipe ThinkSpace</strong></p>
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
-            <p style="font-size: 12px; color: #777;">Este é um e-mail automático. Por favor, não responda.</p>
-          </div>
-        `,
-      });
-    } catch (error) {
-      throw new BadRequestException("Erro ao enviar o e-mail de verificação.");
-    }
-
-    return { message: "Usuário registrado com sucesso. Por favor, verifique seu e-mail." };
+    return { message: "Dados iniciais recebidos. Escolha a função (administrador ou usuário comum)." };
   }
 
-  async verifyCode(codigoVerificado: string) {
-    const user = await this.usersService.findByVerificationCode(codigoVerificado);
+  async registrarStep2EscolherFuncao(email: string, funcao: "ADMIN" | "ESTUDANTE") {
+    const temp = tempRegisterStore[email];
+    if (!temp) throw new BadRequestException("Registro não iniciado.");
+    temp.funcao = funcao;
+    temp.etapa = 'completar';
+    return { message: "Função definida. Complete o cadastro." };
+  }
 
-    if (!user) {
-      throw new BadRequestException("Código de verificação inválido ou expirado.");
+  async registrarStep3Completar(email: string, data: { escolaridade: string; objetivoNaPlataforma: string; areaDeInteresse: string; instituicaoNome: string }) {
+    const temp = tempRegisterStore[email];
+    if (!temp) throw new BadRequestException("Registro não iniciado.");
+    temp.escolaridade = data.escolaridade;
+    temp.objetivoNaPlataforma = data.objetivoNaPlataforma;
+    temp.areaDeInteresse = data.areaDeInteresse;
+    temp.instituicaoNome = data.instituicaoNome;
+    temp.etapa = 'verificacao';
+    temp.codigoVerificado = crypto.randomInt(10000, 99999).toString();
+    temp.codigoExpiracao = new Date(Date.now() + 10 * 60 * 1000);
+    temp.reenvios = 0;
+    await this.sendVerificationEmail(email, temp.codigoVerificado);
+    return { message: "Código de verificação enviado para o e-mail." };
+  }
+
+  async reenviarCodigo(email: string) {
+    const temp = tempRegisterStore[email];
+    if (!temp) throw new BadRequestException("Registro não iniciado.");
+    temp.reenvios = (temp.reenvios || 0) + 1;
+    if (temp.reenvios >= 3) {
+      delete tempRegisterStore[email];
+      throw new BadRequestException("Limite de reenvios atingido. Faça o cadastro novamente.");
+    }
+    temp.codigoVerificado = crypto.randomInt(10000, 99999).toString();
+    temp.codigoExpiracao = new Date(Date.now() + 10 * 60 * 1000);
+    await this.sendVerificationEmail(email, temp.codigoVerificado);
+    return { message: "Novo código enviado para o e-mail." };
+  }
+
+  async verificarEmail(email: string, codigo: string) {
+    const temp = tempRegisterStore[email];
+    if (!temp) throw new BadRequestException("Registro não iniciado.");
+    if (temp.codigoVerificado !== codigo) {
+      throw new BadRequestException("Código de verificação inválido.");
+    }
+    if (temp.codigoExpiracao && new Date() > temp.codigoExpiracao) {
+      throw new BadRequestException("O código expirou.");
     }
 
-    const now = new Date();
-    if (user.codigoExpiracao && now > user.codigoExpiracao) {
-      throw new BadRequestException(
-        "O código de verificação expirou. Por favor, solicite um novo.",
-      );
-    }
+    const instituicao = await this.usersService.getOrCreateInstituicao(temp.instituicaoNome);
 
-    await this.usersService.update(user.id, {
-      codigoVerificado: undefined,
-      codigoExpiracao: undefined,
+    const user = await this.usersService.create({
+      id: temp.id,
+      primeiroNome: temp.primeiroNome,
+      sobrenome: temp.sobrenome,
+      email: temp.email,
+      senha: temp.senha,
+      dataNascimento: temp.dataNascimento,
+      funcao: temp.funcao,
+      escolaridade: temp.escolaridade,
+      objetivoNaPlataforma: temp.objetivoNaPlataforma,
+      areaDeInteresse: temp.areaDeInteresse,
+      instituicaoId: instituicao.id,
       emailVerificado: true,
+      criadoEm: new Date(),
+      atualizadoEm: new Date(),
     });
-
-    return { message: "E-mail verificado com sucesso." };
+    delete tempRegisterStore[email];
+    return { message: "E-mail verificado e cadastro concluído.", user };
   }
 
-  async validateUser(email: string, senha: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException("Usuário não encontrado.");
-    }
-    if (!user.emailVerificado) {
-      throw new UnauthorizedException(
-        "E-mail não verificado. Por favor, verifique seu e-mail antes de fazer login.",
-      );
-    }
-    const isPasswordValid = await bcrypt.compare(senha, user.senha);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException("Senha incorreta.");
-    }
-
-    const { senha: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+  private async sendVerificationEmail(email: string, codigo: string) {
+    const resend = new Resend(RESEND_API_KEY);
+    await resend.emails.send({
+      from: "noreply@thinkspace.app.br",
+      to: email,
+      subject: "Código de verificação - ThinkSpace",
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
+          <h1 style="color:rgb(146, 102, 204);">Código de verificação</h1>
+          <p>Seu código é:</p>
+          <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
+            ${codigo}
+          </div>
+          <p>O código expira em 10 minutos.</p>
+        </div>
+      `,
+    });
   }
 
   async sendPasswordResetCode(email: string) {
-    if (!isEmail(email)) {
-      throw new BadRequestException("Email inválido.");
-    }
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new BadRequestException("Usuário não encontrado.");
@@ -207,5 +226,23 @@ export class AuthService {
       codigoExpiracao: undefined,
     });
     return { message: "Senha redefinida com sucesso." };
+  }
+
+  async validateUser(email: string, senha: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException("Usuário não encontrado.");
+    }
+    if (!user.emailVerificado) {
+      throw new UnauthorizedException(
+        "E-mail não verificado. Por favor, verifique seu e-mail antes de fazer login.",
+      );
+    }
+    const isPasswordValid = await bcrypt.compare(senha, user.senha);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException("Senha incorreta.");
+    }
+    const { senha: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 }
