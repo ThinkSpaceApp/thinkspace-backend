@@ -12,7 +12,7 @@ async function bootstrap() {
   console.log(`🗄️ DATABASE_URL em uso: ${configService.get<string>("DATABASE_URL")}`);
 
   app.enableCors({
-    origin: ["http://thinkspace.app.br", "http://localhost:3000"], // URL do frontend
+    origin: ["https://thinkspace.app.br", "http://localhost:3000"], // URL do frontend
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
     allowedHeaders: "Content-Type, Authorization, Accept",
