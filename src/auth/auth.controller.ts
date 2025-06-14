@@ -118,11 +118,12 @@ export class AuthController {
     if (!userWithToken) {
       throw new UnauthorizedException("Credenciais inválidas");
     }
+    // Envia o token como cookie HttpOnly
     res.cookie("token", userWithToken.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     });
     return res.json({ message: "Login realizado com sucesso", user: userWithToken });
   }

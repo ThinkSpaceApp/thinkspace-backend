@@ -7,13 +7,8 @@ import { Request, Response, NextFunction } from "express";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
-  const configService = app.get(ConfigService);
-
-  console.log(`🗄️ DATABASE_URL em uso: ${configService.get<string>("DATABASE_URL")}`);
-
   app.enableCors({
-    origin: ["https://thinkspace.app.br", "http://localhost:3000"], // URL do frontend
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    origin: ["https://thinkspace.app.br", "http://localhost:3000"],
     credentials: true,
     allowedHeaders: "Content-Type, Authorization, Accept",
   });
@@ -30,9 +25,11 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
+  const configService = app.get(ConfigService);
   const port = configService.get<number>("PORT") || 5000;
 
   await app.listen(port, () => {
+    console.log(`🗄️ DATABASE_URL em uso: ${configService.get<string>("DATABASE_URL")}`);
     console.log(`🚀 Servidor rodando na porta http://localhost:${port}`);
     console.log(`📡 Environment: ${configService.get("NODE_ENV")}`);
   });
