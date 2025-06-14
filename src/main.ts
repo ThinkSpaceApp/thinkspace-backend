@@ -8,7 +8,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
   app.enableCors({
-    origin: ["https://thinkspace.app.br", "http://localhost:3000"],
+    origin: (origin, callback) => {
+      const allowedOrigins = ["https://thinkspace.app.br", "http://localhost:3000"];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     allowedHeaders: "Content-Type, Authorization, Accept",
   });
