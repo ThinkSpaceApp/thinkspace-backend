@@ -21,8 +21,8 @@ async function bootstrap() {
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path === "/" || req.path === "") {
       const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
-      if (token) {
-        return res.redirect("/home");
+      if (!token) {
+        throw new Error("Token de autenticação não encontrado");
       }
     }
     next();

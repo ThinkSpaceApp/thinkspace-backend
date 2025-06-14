@@ -109,4 +109,40 @@ export class MateriasController {
     await this.usersService.excluirMateria(id);
     return { message: "Matéria excluída com sucesso." };
   }
+
+  @Get("cumprimento")
+  async cumprimentoUsuario(@Req() req: Request) {
+    const user = await this.usersService.findByEmail((req.user as any).email);
+    if (!user) {
+      throw new BadRequestException("Usuário não encontrado.");
+    }
+    return {
+      cumprimento: `Olá, ${user.primeiroNome}`,
+    };
+  }
+
+  @Get("recentes")
+  async getMateriasRecentes(@Req() req: Request) {
+    if (!req.user || !(req.user as any).email) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+    const user = await this.usersService.findByEmail((req.user as any).email);
+    if (!user) {
+      throw new BadRequestException("Usuário não encontrado.");
+    }
+    const materias = await this.usersService.getMateriasByUserIdOrdenadasPorUltimaRevisao(user.id);
+
+    const materiasRecentes = materias.map((materia, idx) => ({
+      indice: idx + 1,
+      nome: materia.nome,
+      ultimaRevisao: materia.ultimaRevisao
+        ? new Date(materia.ultimaRevisao).toLocaleString("pt-BR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          })
+        : null,
+    }));
+
+    return { materiasRecentes };
+  }
 }

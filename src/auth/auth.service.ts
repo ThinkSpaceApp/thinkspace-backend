@@ -370,7 +370,6 @@ export class AuthService {
     }
 
     const { senha: _, ...userWithoutPassword } = user;
-    // Gera o token JWT ao autenticar
     const payload = { sub: user.id, email: user.email };
     const token = this.jwtService.sign(payload);
     return { ...userWithoutPassword, token };

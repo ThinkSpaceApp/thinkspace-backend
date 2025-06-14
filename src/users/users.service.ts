@@ -164,6 +164,13 @@ export class UsersService {
     });
   }
 
+  async getMateriasByUserIdOrdenadasPorUltimaRevisao(userId: string) {
+    return this.prisma.materia.findMany({
+      where: { usuarioId: userId },
+      orderBy: { ultimaRevisao: "desc" },
+    });
+  }
+
   async createMateria(userId: string, data: { nome: string; cor: string; icone: string }) {
     const allowedColors = ["SALMAO", "ROSA", "LILAS", "ROXO"];
     if (!allowedColors.includes(data.cor)) {
