@@ -6,10 +6,20 @@ import { Request, Response, NextFunction } from "express";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cast to Express to use 'set'
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set("trust proxy", 1);
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log("Protocol:", req.protocol);
+    next();
+  });
+
   app.use(cookieParser());
   app.enableCors({
     origin: "https://thinkspace.app.br", // ou ["https://thinkspace.app.br", "http://localhost:3000"] para dev
-    credentials: true,  // ESSENCIAL para cookies cross-origin
+    credentials: true, // ESSENCIAL para cookies cross-origin
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   });
