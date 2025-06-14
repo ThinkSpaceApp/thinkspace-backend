@@ -33,6 +33,28 @@ export class AuthService {
     if (!isEmail(email)) {
       throw new BadRequestException("Email inválido.");
     }
+    // Validação de senha forte
+    const passwordErrors: string[] = [];
+    if (senha.length < 8) {
+      passwordErrors.push("A senha deve ter pelo menos 8 caracteres");
+    }
+    if (!/[A-Z]/.test(senha)) {
+      passwordErrors.push("A senha deve conter pelo menos uma letra maiúscula");
+    }
+    if (!/[a-z]/.test(senha)) {
+      passwordErrors.push("A senha deve conter pelo menos uma letra minúscula");
+    }
+    if (!/\d/.test(senha)) {
+      passwordErrors.push("A senha deve conter pelo menos um número");
+    }
+    if (!/[@$!%*?&]/.test(senha)) {
+      passwordErrors.push("A senha deve conter pelo menos um caractere especial (@$!%*?&)");
+    }
+    if (passwordErrors.length > 0) {
+      throw new BadRequestException(
+        `A senha não atende aos requisitos: ${passwordErrors.join(", ")}.`,
+      );
+    }
     if (senha !== confirmarSenha) {
       throw new BadRequestException("As senhas não coincidem.");
     }
