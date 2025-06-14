@@ -13,15 +13,15 @@ async function bootstrap() {
     allowedHeaders: "Content-Type, Authorization, Accept",
   });
 
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path === "/" || req.path === "") {
-      const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
-      if (!token) {
-        throw new Error("Token de autenticação não encontrado");
-      }
-    }
-    next();
-  });
+  // app.use((req: Request, res: Response, next: NextFunction) => {
+  //   if (req.path === "/" || req.path === "") {
+  //     const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
+  //     if (!token) {
+  //       throw new Error("Token de autenticação não encontrado");
+  //     }
+  //   }
+  //   next();
+  // });
 
   app.enableShutdownHooks();
 
