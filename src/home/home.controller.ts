@@ -36,12 +36,6 @@ export class HomeController {
       relatorioUrl: `/users/${user.id}/metrica`,
     };
   }
-
-  @Get("teste")
-  async getBannerInfo() {
-    return { test: "route is working" };
-  }
-  
   @Get("salas-estudo")
   async getSalasEstudo(@Req() req: Request) {
     const userJwt = req.user as { email: string };
