@@ -13,29 +13,32 @@ export class HomeController {
   ) {}
 
   @Get("banner")
-  async getBannerInfo(@Req() req: Request) {
-    const userJwt = req.user as { email: string };
-    if (!userJwt || !userJwt.email) {
-      throw new BadRequestException("Usuário não autenticado.");
-    }
-    const user = await this.usersService.findByEmail(userJwt.email);
-    if (!user) {
-      throw new BadRequestException("Usuário não encontrado.");
-    }
-    const now = new Date();
-    const hour = now.getHours();
-    let saudacao = "Bom dia";
-    if (hour >= 12 && hour < 18) {
-      saudacao = "Boa tarde";
-    } else if (hour >= 18 || hour < 5) {
-      saudacao = "Boa noite";
-    }
-    return {
-      mensagem: `${saudacao}, ${user.primeiroNome}`,
-      relatorio: "Veja o relatório das suas metas de estudo semanais",
-      relatorioUrl: `/users/${user.id}/metrica`,
-    };
+  async getBannerInfo() {
+    return { test: "route is working" };
   }
+  // async getBannerInfo(@Req() req: Request) {
+  //   const userJwt = req.user as { email: string };
+  //   if (!userJwt || !userJwt.email) {
+  //     throw new BadRequestException("Usuário não autenticado.");
+  //   }
+  //   const user = await this.usersService.findByEmail(userJwt.email);
+  //   if (!user) {
+  //     throw new BadRequestException("Usuário não encontrado.");
+  //   }
+  //   const now = new Date();
+  //   const hour = now.getHours();
+  //   let saudacao = "Bom dia";
+  //   if (hour >= 12 && hour < 18) {
+  //     saudacao = "Boa tarde";
+  //   } else if (hour >= 18 || hour < 5) {
+  //     saudacao = "Boa noite";
+  //   }
+  //   return {
+  //     mensagem: `${saudacao}, ${user.primeiroNome}`,
+  //     relatorio: "Veja o relatório das suas metas de estudo semanais",
+  //     relatorioUrl: `/users/${user.id}/metrica`,
+  //   };
+  // }
   @Get("salas-estudo")
   async getSalasEstudo(@Req() req: Request) {
     const userJwt = req.user as { email: string };
