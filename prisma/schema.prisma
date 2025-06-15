@@ -63,6 +63,12 @@ enum CorMateria {
   ROXO
 }
 
+enum OrigemMaterial {
+  TOPICOS
+  DOCUMENTO
+  ASSUNTO
+}
+
 model Notificacao {
   id         String   @id @default(uuid())
   mensagem   String
@@ -141,23 +147,28 @@ model Assunto {
 }
 
 model MaterialEstudo {
-  id             String       @id @default(uuid())
-  titulo         String
+  id             String         @id @default(uuid())
   tipo           TipoMaterial
-  caminhoArquivo String?
-  conteudo       String?
-  assuntoId      String
-  assunto        Assunto      @relation(fields: [assuntoId], references: [id])
+  titulo         String
+  origem         OrigemMaterial
+  nomeDesignado  String?        // Nome escolhido pelo usuário para o material
+  materiaId      String         // Matéria designada (referência obrigatória)
+  materia        Materia        @relation(fields: [materiaId], references: [id])
+  topicos        String[]       // Lista de tópicos separados por espaço
+  caminhoArquivo String?        // Caminho do arquivo PDF (se origem = DOCUMENTO)
+  conteudo       String?        // Conteúdo gerado (se aplicável)
+  assuntoId      String?        // Assunto principal (se origem = ASSUNTO)
+  assunto        Assunto?       @relation(fields: [assuntoId], references: [id])
   autorId        String
-  autor          Usuario      @relation(fields: [autorId], references: [id])
+  autor          Usuario        @relation(fields: [autorId], references: [id])
   resumoIA       String?
   flashcards     Flashcard[]
   quizzes        Quiz[]
   revisoes       Revisao[]
-  criadoEm       DateTime     @default(now())
+  criadoEm       DateTime       @default(now())
 
-  salasEstudo SalaEstudoMaterial[]
-  materias    Materia[] @relation("MateriasMateriais")
+  salasEstudo    SalaEstudoMaterial[]
+  materias       Materia[]      @relation("MateriasMateriais")
 }
 
 model Flashcard {
@@ -355,6 +366,7 @@ model Materia {
 
   @@unique([nome, usuarioId])
   @@map("materias")
+  MaterialEstudo MaterialEstudo[]
 }
 
 model PerfilUsuario {
