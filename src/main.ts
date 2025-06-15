@@ -20,10 +20,12 @@ async function bootstrap() {
   const isProduction = process.env.NODE_ENV === "production";
 
   app.enableCors({
-    origin: isProduction ? ["https://thinkspace.app.br"] : ["http://localhost:3000"],
+    origin: isProduction
+      ? ["https://thinkspace.app.br", "https://www.thinkspace.app.br"]
+      : ["http://localhost:3000"],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
     exposedHeaders: ["Set-Cookie"],
   });
 
