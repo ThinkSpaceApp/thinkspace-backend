@@ -25,6 +25,7 @@ async function bootstrap() {
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+    exposedHeaders: ["Set-Cookie"],
   });
 
   // app.use((req: Request, res: Response, next: NextFunction) => {
