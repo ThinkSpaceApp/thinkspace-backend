@@ -89,6 +89,7 @@ export class AuthController {
     return this.authService.verificarEmail(body.email, body.code);
   }
 
+  // 1. Enviar código de recuperação
   @Post("esqueceu-senha/enviar-codigo")
   async forgotPasswordEnviarCodigo(@Body() body: { email?: string }) {
     if (!body.email) {
@@ -97,6 +98,16 @@ export class AuthController {
     return this.authService.sendPasswordResetCode(body.email);
   }
 
+  // 1b. Reenviar código de recuperação
+  @Post("esqueceu-senha/reenviar-codigo")
+  async forgotPasswordReenviarCodigo(@Body() body: { email?: string }) {
+    if (!body.email) {
+      throw new BadRequestException("Email é obrigatório.");
+    }
+    return this.authService.sendPasswordResetCode(body.email);
+  }
+
+  // 2. Verificar código de recuperação
   @Post("esqueceu-senha/verificar-codigo")
   async forgotPasswordVerificarCodigo(@Body() body: { email?: string; code?: string }) {
     if (!body.email || !body.code) {
@@ -105,6 +116,7 @@ export class AuthController {
     return this.authService.verifyPasswordResetCode(body.email, body.code);
   }
 
+  // 3. Redefinir senha
   @Post("esqueceu-senha/redefinir")
   async forgotPasswordRedefinir(
     @Body() body: { email?: string; code?: string; novaSenha?: string; confirmarSenha?: string },
