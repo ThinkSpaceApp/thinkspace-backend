@@ -89,26 +89,35 @@ export class AuthController {
     return this.authService.verificarEmail(body.email, body.code);
   }
 
-  @Post("esqueceu-senha")
-  async forgotPassword(
+  @Post("esqueceu-senha/enviar-codigo")
+  async forgotPasswordEnviarCodigo(@Body() body: { email?: string }) {
+    if (!body.email) {
+      throw new BadRequestException("Email é obrigatório.");
+    }
+    return this.authService.sendPasswordResetCode(body.email);
+  }
+
+  @Post("esqueceu-senha/verificar-codigo")
+  async forgotPasswordVerificarCodigo(@Body() body: { email?: string; code?: string }) {
+    if (!body.email || !body.code) {
+      throw new BadRequestException("Email e código são obrigatórios.");
+    }
+    return this.authService.verifyPasswordResetCode(body.email, body.code);
+  }
+
+  @Post("esqueceu-senha/redefinir")
+  async forgotPasswordRedefinir(
     @Body() body: { email?: string; code?: string; novaSenha?: string; confirmarSenha?: string },
   ) {
-    if (body.email && !body.code && !body.novaSenha) {
-      return this.authService.sendPasswordResetCode(body.email);
+    if (!body.email || !body.code || !body.novaSenha || !body.confirmarSenha) {
+      throw new BadRequestException("Email, código, nova senha e confirmação são obrigatórios.");
     }
-    if (body.email && body.code && !body.novaSenha) {
-      return this.authService.verifyPasswordResetCode(body.email, body.code);
-    }
-
-    if (body.email && body.code && body.novaSenha && body.confirmarSenha) {
-      return this.authService.resetPassword(
-        body.email,
-        body.code,
-        body.novaSenha,
-        body.confirmarSenha,
-      );
-    }
-    throw new BadRequestException("Dados insuficientes para redefinir a senha.");
+    return this.authService.resetPassword(
+      body.email,
+      body.code,
+      body.novaSenha,
+      body.confirmarSenha,
+    );
   }
 
   @Post("login")
@@ -127,7 +136,7 @@ export class AuthController {
       httpOnly: true,
       secure: true,
       sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
     res.cookie("token", userWithToken.token, cookieOptions);
