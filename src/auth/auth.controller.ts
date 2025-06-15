@@ -9,6 +9,7 @@ import {
 import { AuthService } from "./auth.service";
 import { UsersService } from "../users/users.service";
 import { Response } from "express";
+import { CookieOptions } from "express";
 
 @Controller("auth")
 export class AuthController {
@@ -118,14 +119,26 @@ export class AuthController {
     if (!userWithToken) {
       throw new UnauthorizedException("Credenciais inválidas");
     }
-    // Envia o token como cookie HttpOnly
-    res.cookie("token", userWithToken.token, {
+
+    const isProduction = process.env.NODE_ENV === "production";
+
+    const cookieOptions: CookieOptions = {
       httpOnly: true,
-      secure: true, // sempre true em produção com SameSite=None
-      sameSite: "none",
-      domain: "thinkspace.app.br", 
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+      path: "/",
+    };
+
+    if (isProduction) {
+      cookieOptions.domain = "thinkspace.app.br";
+    }
+
+    res.cookie("token", userWithToken.token, cookieOptions);
+
+    return res.json({
+      message: "Login realizado com sucesso",
+      user: userWithToken,
     });
-    return res.json({ message: "Login realizado com sucesso", user: userWithToken });
   }
 }
