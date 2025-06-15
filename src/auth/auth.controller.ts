@@ -142,15 +142,15 @@ export class AuthController {
     });
   }
 
-  @Get("teste-cookie")
-  testeCookie(@Res() res: Response) {
-    res.cookie("meuteste", "valor123", {
-      httpOnly: true,
-      secure: true, // obrigatório para sameSite: 'None'
-      sameSite: "none", // precisa ser 'none' para cookies cross-site
+  @Post("logout")
+  logout(@Res() res: Response) {
+    res.clearCookie("token", {
+      domain: ".thinkspace.app.br",
       path: "/",
-      maxAge: 60000,
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
     });
-    res.send("cookie enviado");
+    return res.status(200).json({ message: "Logout realizado com sucesso" });
   }
 }
