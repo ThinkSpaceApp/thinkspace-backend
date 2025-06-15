@@ -152,10 +152,12 @@ export class HomeController {
     } else if (user.funcao === "ESTUDANTE") {
       cargo = "Estudante";
     }
+
+    const initials = (user.primeiroNome?.charAt(0) ?? "") + (user.sobrenome?.charAt(0) ?? "");
     return {
       primeiroNome: user.primeiroNome,
       cargo,
-      foto: user.foto ?? "https://ui-avatars.com/api/?name=User&background=8e44ad&color=fff",
+      foto: `https://ui-avatars.com/api/?name=${initials}&background=8e44ad&color=fff`,
     };
   }
 }
