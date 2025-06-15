@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   Res,
+  Get,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { UsersService } from "../users/users.service";
@@ -140,5 +141,17 @@ export class AuthController {
       message: "Login realizado com sucesso",
       user: userWithToken,
     });
+  }
+
+  @Get("teste-cookie")
+  testeCookie(@Res() res: Response) {
+    res.cookie("meuteste", "valor123", {
+      httpOnly: true,
+      secure: true, // ou false em local
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60000,
+    });
+    res.send("cookie enviado");
   }
 }
