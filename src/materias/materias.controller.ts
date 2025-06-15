@@ -135,12 +135,6 @@ export class MateriasController {
     const materiasRecentes = materias.map((materia, idx) => ({
       indice: idx + 1,
       nome: materia.nome,
-      ultimaRevisao: materia.ultimaRevisao
-        ? new Date(materia.ultimaRevisao).toLocaleString("pt-BR", {
-            dateStyle: "short",
-            timeStyle: "short",
-          })
-        : null,
     }));
 
     return { materiasRecentes };

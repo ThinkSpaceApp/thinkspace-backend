@@ -150,24 +150,12 @@ export class UsersService {
       },
     });
 
-    return materias.map((materia) => {
-      let tempoFormatado = `${materia.tempoAtivo} min`;
-      if (materia.tempoAtivo >= 60) {
-        const horas = Math.floor(materia.tempoAtivo / 60);
-        const minutos = materia.tempoAtivo % 60;
-        tempoFormatado = minutos > 0 ? `${horas} h e ${minutos} min` : `${horas} h`;
-      }
-      return {
-        ...materia,
-        tempoAtivoFormatado: tempoFormatado,
-      };
-    });
+    return materias;
   }
 
   async getMateriasByUserIdOrdenadasPorUltimaRevisao(userId: string) {
     return this.prisma.materia.findMany({
       where: { usuarioId: userId },
-      orderBy: { ultimaRevisao: "desc" },
     });
   }
 
@@ -198,13 +186,7 @@ export class UsersService {
   }
 
   async atualizarTempoAtivoEMarcarRevisao(materiaId: string, minutos: number) {
-    return this.prisma.materia.update({
-      where: { id: materiaId },
-      data: {
-        tempoAtivo: { increment: minutos },
-        ultimaRevisao: new Date(),
-      },
-    });
+    return { message: "Função desabilitada: campo tempoAtivo/ultimaRevisao não existe mais." };
   }
 
   async getOrCreateInstituicao(nome: string) {
