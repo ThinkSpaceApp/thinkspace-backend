@@ -162,7 +162,7 @@ export class AuthService {
           <h1 style="color:rgb(146, 102, 204);">📫 Reenvio do código de verificação</h1>
           <p style="color:#333;">Você solicitou o reenvio do código de verificação para concluir seu cadastro no <strong>ThinkSpace</strong>.</p>
           <p style="color:#333;">Use o código abaixo para verificar seu e-mail. Ele é válido por <strong>10 minutos</strong>:</p>
-          <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
+          <div style="font-size: 24px; font-weight: bold; color:rgb(151,103,248); margin: 20px 0;">
             ${temp.codigoVerificado}
           </div>
           <p style="color:#333;">Atenção: você tem até <strong>3 tentativas</strong> para reenviar o código. Caso não conclua a verificação após 3 reenvios, seu cadastro será <strong>deletado</strong> e será necessário refazer todo o processo.</p>
