@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.set("trust proxy", 1); // ✅ Obrigatório para HTTPS + cookies
+  expressApp.set("trust proxy", 1);
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     console.log("Protocol:", req.protocol);
@@ -20,9 +20,9 @@ async function bootstrap() {
   const isProduction = process.env.NODE_ENV === "production";
 
   app.enableCors({
-    origin: isProduction
-      ? ["https://thinkspace.app.br", "https://www.thinkspace.app.br"]
-      : ["http://localhost:3000"],
+    origin: ["https://thinkspace.app.br", "http://localhost:3000"],
+    // ? ["https://thinkspace.app.br", "https://www.thinkspace.app.br"]
+    // : ["http://localhost:3000"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
