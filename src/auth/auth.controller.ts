@@ -122,8 +122,6 @@ export class AuthController {
     }
 
     const cookieOptions: CookieOptions = {
-      domain: ".thinkspace.app.br",
-      path: "/",
       httpOnly: true,
       secure: true,
       sameSite: "none",
