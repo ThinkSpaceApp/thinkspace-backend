@@ -92,7 +92,8 @@ export class MateriasController {
         throw new BadRequestException("Cor inválida.");
       }
     }
-    return this.usersService.editarMateria(id, body);
+    const materiaEditada = await this.usersService.editarMateria(id, body);
+    return { message: "Matéria editada com sucesso.", materia: materiaEditada };
   }
 
   @Delete(":id")
