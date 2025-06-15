@@ -59,14 +59,16 @@ export class MateriasController {
   }
 
   @Post()
-  async createMateria(
+  async criarMateria(
     @Req() req: Request,
     @Body() body: { nome: string; cor: string; icone: string },
   ) {
     if (!body.nome || !body.cor || !body.icone) {
-      throw new BadRequestException("Todos os campos são obrigatórios.");
+      throw new BadRequestException("Nome, cor e ícone são obrigatórios.");
     }
-    return this.usersService.createMateria((req.user as any).userId, body);
+    const userId = (req.user as any).userId;
+    const materia = await this.usersService.createMateria(userId, body);
+    return { message: "Matéria criada com sucesso.", materia };
   }
 
   @Patch(":id")

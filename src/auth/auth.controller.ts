@@ -89,7 +89,6 @@ export class AuthController {
     return this.authService.verificarEmail(body.email, body.code);
   }
 
-  // 1. Enviar código de recuperação
   @Post("esqueceu-senha/enviar-codigo")
   async forgotPasswordEnviarCodigo(@Body() body: { email?: string }) {
     if (!body.email) {
@@ -98,7 +97,6 @@ export class AuthController {
     return this.authService.sendPasswordResetCode(body.email);
   }
 
-  // 1b. Reenviar código de recuperação
   @Post("esqueceu-senha/reenviar-codigo")
   async forgotPasswordReenviarCodigo(@Body() body: { email?: string }) {
     if (!body.email) {
@@ -107,7 +105,6 @@ export class AuthController {
     return this.authService.sendPasswordResetCode(body.email);
   }
 
-  // 2. Verificar código de recuperação
   @Post("esqueceu-senha/verificar-codigo")
   async forgotPasswordVerificarCodigo(@Body() body: { email?: string; code?: string }) {
     if (!body.email || !body.code) {
@@ -116,7 +113,6 @@ export class AuthController {
     return this.authService.verifyPasswordResetCode(body.email, body.code);
   }
 
-  // 3. Redefinir senha
   @Post("esqueceu-senha/redefinir")
   async forgotPasswordRedefinir(
     @Body() body: { email?: string; code?: string; novaSenha?: string; confirmarSenha?: string },
@@ -143,11 +139,18 @@ export class AuthController {
     }
 
     const cookieOptions: CookieOptions = {
-      domain: ".thinkspace.app.br",
+      ...(process.env.NODE_ENV === "production"
+        ? {
+            domain: ".thinkspace.app.br",
+            secure: true,
+            sameSite: "none",
+          }
+        : {
+            secure: false,
+            sameSite: "lax",
+          }),
       path: "/",
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
@@ -160,6 +163,7 @@ export class AuthController {
     return res.status(200).json({
       message: "Login realizado com sucesso",
       user: userWithoutToken,
+      token,
     });
   }
 

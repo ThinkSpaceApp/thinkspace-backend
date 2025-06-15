@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { OrigemMaterial, TipoMaterial } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 @Injectable()
 export class MateriaisService {
@@ -31,23 +31,34 @@ export class MateriaisService {
       nomeDesignado: string;
       materiaId: string;
       topicos: string[];
-      tipo: TipoMaterial;
     },
   ) {
     if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por tópicos.");
     }
-    return this.prisma.materialEstudo.create({
-      data: {
-        titulo: data.nomeDesignado,
-        nomeDesignado: data.nomeDesignado,
-        materiaId: data.materiaId,
-        topicos: data.topicos,
-        tipo: data.tipo,
-        origem: "TOPICOS",
-        autorId: userId,
-      },
-    });
+
+    try {
+      return await this.prisma.materialEstudo.create({
+        data: {
+          titulo: data.nomeDesignado,
+          nomeDesignado: data.nomeDesignado,
+          materiaId: data.materiaId,
+          topicos: data.topicos,
+          origem: "TOPICOS",
+          autorId: userId,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === "P2003" &&
+        typeof error.meta?.field_name === "string" &&
+        error.meta.field_name.includes("materiaId")
+      ) {
+        throw new BadRequestException("Matéria informada não existe.");
+      }
+      throw error;
+    }
   }
 
   async criarPorDocumento(
@@ -56,7 +67,6 @@ export class MateriaisService {
       nomeDesignado: string;
       materiaId: string;
       topicos: string[];
-      tipo: TipoMaterial;
       caminhoArquivo: string;
     },
   ) {
@@ -69,7 +79,6 @@ export class MateriaisService {
         nomeDesignado: data.nomeDesignado,
         materiaId: data.materiaId,
         topicos: data.topicos,
-        tipo: data.tipo,
         origem: "DOCUMENTO",
         caminhoArquivo: data.caminhoArquivo,
         autorId: userId,
@@ -83,7 +92,6 @@ export class MateriaisService {
       nomeDesignado: string;
       materiaId: string;
       topicos: string[];
-      tipo: TipoMaterial;
       assuntoId: string;
     },
   ) {
@@ -96,7 +104,6 @@ export class MateriaisService {
         nomeDesignado: data.nomeDesignado,
         materiaId: data.materiaId,
         topicos: data.topicos,
-        tipo: data.tipo,
         origem: "ASSUNTO",
         assuntoId: data.assuntoId,
         autorId: userId,
@@ -112,7 +119,6 @@ export class MateriaisService {
       topicos?: string[];
       caminhoArquivo?: string;
       assuntoId?: string;
-      tipo?: TipoMaterial;
     },
   ) {
     const material = await this.obterPorId(id, userId);
@@ -126,7 +132,6 @@ export class MateriaisService {
         ...(data.topicos && { topicos: data.topicos }),
         ...(data.caminhoArquivo && { caminhoArquivo: data.caminhoArquivo }),
         ...(data.assuntoId && { assuntoId: data.assuntoId }),
-        ...(data.tipo && { tipo: data.tipo }),
       },
     });
   }

@@ -15,7 +15,7 @@ import {
 import { Request } from "express";
 import { AuthGuard } from "@nestjs/passport";
 import { MateriaisService } from "./materiais.service";
-import { TipoMaterial, OrigemMaterial } from "@prisma/client";
+import { OrigemMaterial } from "@prisma/client";
 
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
@@ -63,7 +63,6 @@ export class MateriaisController {
       nomeDesignado: string;
       materiaId: string;
       topicos?: string[];
-      tipo: TipoMaterial;
       caminhoArquivo?: string;
       assuntoId?: string;
     },
@@ -72,7 +71,6 @@ export class MateriaisController {
     if (!body.origem) throw new BadRequestException("Origem do material é obrigatória.");
     if (!body.nomeDesignado) throw new BadRequestException("Nome designado é obrigatório.");
     if (!body.materiaId) throw new BadRequestException("Matéria é obrigatória.");
-    if (!body.tipo) throw new BadRequestException("Tipo é obrigatório.");
 
     if (body.origem === "TOPICOS") {
       if (!body.topicos || !body.topicos.length) {
@@ -82,7 +80,6 @@ export class MateriaisController {
         nomeDesignado: body.nomeDesignado,
         materiaId: body.materiaId,
         topicos: body.topicos,
-        tipo: body.tipo,
       });
       return { message: "Material criado por tópicos com sucesso.", material };
     }
@@ -98,7 +95,6 @@ export class MateriaisController {
         nomeDesignado: body.nomeDesignado,
         materiaId: body.materiaId,
         topicos: body.topicos,
-        tipo: body.tipo,
         caminhoArquivo: body.caminhoArquivo,
       });
       return { message: "Material criado por documento com sucesso.", material };
@@ -115,7 +111,6 @@ export class MateriaisController {
         nomeDesignado: body.nomeDesignado,
         materiaId: body.materiaId,
         topicos: body.topicos,
-        tipo: body.tipo,
         assuntoId: body.assuntoId,
       });
       return { message: "Material criado por assunto com sucesso.", material };
@@ -134,7 +129,6 @@ export class MateriaisController {
       topicos?: string[];
       caminhoArquivo?: string;
       assuntoId?: string;
-      tipo?: TipoMaterial;
     },
   ) {
     try {

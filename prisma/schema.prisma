@@ -51,11 +51,6 @@ enum FuncaoSalaEstudo {
   MODERADOR
 }
 
-enum TipoMaterial {
-  PDF
-  TOPICO
-}
-
 enum CorMateria {
   SALMAO
   ROSA
@@ -149,7 +144,6 @@ model Assunto {
 model MaterialEstudo {
   id             String         @id @default(uuid())
   titulo         String
-  tipo           TipoMaterial
   origem         OrigemMaterial
   nomeDesignado  String?
   materiaId      String
@@ -193,18 +187,22 @@ model Quiz {
 model SalaEstudo {
   id          String   @id @default(uuid())
   nome        String
+  descricao   String?
+  topicos     String[]
+  banner      String?
   moderadorId String
   moderador   Usuario  @relation(fields: [moderadorId], references: [id], name: "SalaEstudoModerador")
-  assuntoId   String
-  assunto     Assunto  @relation(fields: [assuntoId], references: [id])
+  assuntoId   String?    // Torna o campo opcional
+  assunto     Assunto? @relation(fields: [assuntoId], references: [id])
   criadoEm    DateTime @default(now())
 
   membros    MembroSala[]
   atividades Atividade[]
-  topicos    TopicoComunidade[]
   materiais  SalaEstudoMaterial[]
 
   Calendario Calendario[]
+
+  TopicoComunidade TopicoComunidade[]
 }
 
 model MembroSala {
