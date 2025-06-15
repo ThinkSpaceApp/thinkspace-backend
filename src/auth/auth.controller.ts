@@ -122,6 +122,8 @@ export class AuthController {
     }
 
     const cookieOptions: CookieOptions = {
+      domain: ".thinkspace.app.br", // agora permitido!
+      path: "/",
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -143,8 +145,6 @@ export class AuthController {
   @Get("teste-cookie")
   testeCookie(@Res() res: Response) {
     res.cookie("meuteste", "valor123", {
-      domain: ".thinkspace.app.br", // agora permitido!
-      path: "/",
       httpOnly: true,
       secure: true, // obrigatório para sameSite: 'None'
       sameSite: "none", // precisa ser 'none' para cookies cross-site
