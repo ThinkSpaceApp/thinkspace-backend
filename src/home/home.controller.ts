@@ -4,7 +4,7 @@ import { UsersService } from "../users/users.service";
 import { AuthGuard } from "@nestjs/passport";
 import { PrismaService } from "../prisma/prisma.service";
 
-
+@UseGuards(AuthGuard("jwt"))
 @Controller("home")
 export class HomeController {
   constructor(
@@ -12,33 +12,36 @@ export class HomeController {
     private readonly prisma: PrismaService,
   ) {}
 
-  @Get("banner")
+  @Get("teste")
+  async getBannerInfo(@Req() req: Request) {
+    const userJwt = req.user as { email: string };
+    if (!userJwt || !userJwt.email) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+    const user = await this.usersService.findByEmail(userJwt.email);
+    if (!user) {
+      throw new BadRequestException("Usuário não encontrado.");
+    }
+    const now = new Date();
+    const hour = now.getHours();
+    let saudacao = "Bom dia";
+    if (hour >= 12 && hour < 18) {
+      saudacao = "Boa tarde";
+    } else if (hour >= 18 || hour < 5) {
+      saudacao = "Boa noite";
+    }
+    return {
+      mensagem: `${saudacao}, ${user.primeiroNome}`,
+      relatorio: "Veja o relatório das suas metas de estudo semanais",
+      relatorioUrl: `/users/${user.id}/metrica`,
+    };
+  }
+
+  @Get("teste")
   async getBannerInfo() {
     return { test: "route is working" };
   }
-  // async getBannerInfo(@Req() req: Request) {
-  //   const userJwt = req.user as { email: string };
-  //   if (!userJwt || !userJwt.email) {
-  //     throw new BadRequestException("Usuário não autenticado.");
-  //   }
-  //   const user = await this.usersService.findByEmail(userJwt.email);
-  //   if (!user) {
-  //     throw new BadRequestException("Usuário não encontrado.");
-  //   }
-  //   const now = new Date();
-  //   const hour = now.getHours();
-  //   let saudacao = "Bom dia";
-  //   if (hour >= 12 && hour < 18) {
-  //     saudacao = "Boa tarde";
-  //   } else if (hour >= 18 || hour < 5) {
-  //     saudacao = "Boa noite";
-  //   }
-  //   return {
-  //     mensagem: `${saudacao}, ${user.primeiroNome}`,
-  //     relatorio: "Veja o relatório das suas metas de estudo semanais",
-  //     relatorioUrl: `/users/${user.id}/metrica`,
-  //   };
-  // }
+  
   @Get("salas-estudo")
   async getSalasEstudo(@Req() req: Request) {
     const userJwt = req.user as { email: string };
