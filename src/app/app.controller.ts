@@ -1,9 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get } from "@nestjs/common";
 
 @Controller()
 export class AppController {
   @Get()
-  getHello() {
-    return { status: 'Server is running!' };
+  getRoot() {
+    return {
+      status: "ok",
+      message: "Servidor ThinkSpace ativo em https://thinkspace.app.br",
+    };
   }
 }
