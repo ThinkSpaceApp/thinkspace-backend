@@ -121,25 +121,23 @@ export class AuthController {
       throw new UnauthorizedException("Credenciais inválidas");
     }
 
-    const isProduction = process.env.NODE_ENV === "production";
-
     const cookieOptions: CookieOptions = {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
       path: "/",
     };
 
-    if (isProduction) {
-      cookieOptions.domain = "thinkspace.app.br";
-    }
-
     res.cookie("token", userWithToken.token, cookieOptions);
 
-    return res.json({
+    const { token, ...userWithoutToken } = userWithToken;
+
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+
+    return res.status(200).json({
       message: "Login realizado com sucesso",
-      user: userWithToken,
+      user: userWithoutToken,
     });
   }
 
@@ -147,8 +145,8 @@ export class AuthController {
   testeCookie(@Res() res: Response) {
     res.cookie("meuteste", "valor123", {
       httpOnly: true,
-      secure: true, // ou false em local
-      sameSite: "lax",
+      secure: true, // obrigatório para sameSite: 'None'
+      sameSite: "none", // precisa ser 'none' para cookies cross-site
       path: "/",
       maxAge: 60000,
     });

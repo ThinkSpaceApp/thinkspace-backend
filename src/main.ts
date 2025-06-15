@@ -17,9 +17,12 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  const isProduction = process.env.NODE_ENV === "production";
+
   app.enableCors({
-    origin: "https://thinkspace.app.br", // ou ["https://thinkspace.app.br", "http://localhost:3000"] para dev
-    credentials: true, // ESSENCIAL para cookies cross-origin
+    origin: isProduction ? "https://thinkspace.app.br" : ["http://localhost:3000"],
+    credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   });
