@@ -122,8 +122,9 @@ export class AuthController {
     }
 
     const cookieOptions: CookieOptions = {
+      domain: ".thinkspace.app.br",
+      path: "/",
       httpOnly: true,
-      domain: "api.thinkspace.app.br",
       secure: true,
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
