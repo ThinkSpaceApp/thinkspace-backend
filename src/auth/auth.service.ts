@@ -66,9 +66,28 @@ export class AuthService {
     if (existingUser) {
       throw new BadRequestException("O e-mail já está em uso. Por favor, utilize outro.");
     }
-    const dataNascimentoDate = new Date(dataNascimento);
-    if (isNaN(dataNascimentoDate.getTime())) {
-      throw new BadRequestException("Data de nascimento inválida.");
+    // Validação de data de nascimento e idade mínima
+    if (!dataNascimento) {
+      throw new BadRequestException("Data de nascimento é obrigatória.");
+    }
+    let birthDate: Date;
+    if (typeof dataNascimento === "string" && /^\d{2}-\d{2}-\d{4}$/.test(dataNascimento)) {
+      const [day, month, year] = dataNascimento.split("-").map(Number);
+      birthDate = new Date(year, month - 1, day);
+    } else {
+      birthDate = new Date(dataNascimento);
+    }
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    if (age < 13) {
+      throw new BadRequestException("Usuários menores de 13 anos não podem se registrar.");
+    }
+    if (age > 125) {
+      throw new BadRequestException("Data de nascimento inválida. Valor muito alto.");
     }
     const hashedPassword = await bcrypt.hash(senha, 10);
 
@@ -78,7 +97,7 @@ export class AuthService {
       sobrenome,
       email,
       senha: hashedPassword,
-      dataNascimento: dataNascimentoDate,
+      dataNascimento: birthDate,
       reenvios: 0,
       etapa: "funcao",
     };

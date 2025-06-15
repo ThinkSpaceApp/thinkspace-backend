@@ -34,7 +34,16 @@ export class UsersService {
     if (!dataNascimento) {
       throw new BadRequestException("Data de nascimento é obrigatória.");
     }
-    const age = this.calculateAge(new Date(dataNascimento));
+
+    let birthDate: Date;
+    if (typeof dataNascimento === "string" && /^\d{2}-\d{2}-\d{4}$/.test(dataNascimento)) {
+      const [day, month, year] = (dataNascimento as string).split("-").map(Number);
+      birthDate = new Date(year, month - 1, day);
+    } else {
+      birthDate = new Date(dataNascimento as string | number | Date);
+    }
+
+    const age = this.calculateAge(birthDate);
     if (age < 13) {
       throw new BadRequestException("Usuários menores de 13 anos não podem se registrar.");
     }
@@ -57,7 +66,7 @@ export class UsersService {
         instituicaoId: userData.instituicaoId || null,
         email: email as string,
         senha: userData.senha!,
-        dataNascimento: userData.dataNascimento ? new Date(userData.dataNascimento) : new Date(),
+        dataNascimento: birthDate,
         primeiroNome: userData.primeiroNome || "",
         sobrenome: userData.sobrenome || "",
         nomeCompleto: `${userData.primeiroNome || ""} ${userData.sobrenome || ""}`.trim(),
