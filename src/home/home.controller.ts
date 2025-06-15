@@ -12,7 +12,7 @@ export class HomeController {
     private readonly prisma: PrismaService,
   ) {}
 
-  @Get("teste")
+  @Get("banner")
   async getBannerInfo(@Req() req: Request) {
     const userJwt = req.user as { email: string };
     if (!userJwt || !userJwt.email) {
