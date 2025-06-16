@@ -92,6 +92,15 @@ export class UsersService {
   }
 
   async update(userId: string, data: Partial<Usuario>) {
+    // Se for atualizar instituicaoId, verifique se existe
+    if (data.instituicaoId) {
+      const instituicao = await this.prisma.instituicao.findUnique({
+        where: { id: data.instituicaoId },
+      });
+      if (!instituicao) {
+        throw new BadRequestException("Instituição informada não existe.");
+      }
+    }
     return this.prisma.usuario.update({
       where: { id: userId },
       data,
