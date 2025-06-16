@@ -325,7 +325,7 @@ export class AuthService {
         subject: "🔒 Redefinição de senha - ThinkSpace",
         html: `
           <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-            <img src="https://i.imgur.com/2WuveKh.png" alt="ThinkSpace Logo" style="hight: full; width: full; margin-bottom: 20px;" />
+            <img src="https://i.imgur.com/4JBPx3E.png" alt="ThinkSpace Logo" style="hight: full; width: full; margin-bottom: 20px;" />
             <h1 style="color:rgb(146, 102, 204);">🔒 Redefinição de senha</h1>
             <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>ThinkSpace</strong>.</p>
             <p>Para continuar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
