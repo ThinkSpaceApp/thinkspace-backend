@@ -200,4 +200,21 @@ export class UsersController {
     const usuarioAtualizado = await this.usersService.update(userId, { senha: novaSenhaHash });
     return { message: "Senha atualizada com sucesso.", usuario: usuarioAtualizado };
   }
+
+  @Get("instituicao/nome")
+  async getInstituicaoNome(@Req() req: Request) {
+    const userId = (req.user as any)?.userId;
+    if (!userId) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+    const usuario = await this.usersService.findById(userId);
+    if (!usuario || !usuario.instituicaoId) {
+      throw new BadRequestException("Instituição não encontrada para o usuário.");
+    }
+    const instituicao = await this.usersService.getInstituicaoById(usuario.instituicaoId);
+    if (!instituicao) {
+      throw new BadRequestException("Instituição não encontrada.");
+    }
+    return { nome: instituicao.nome };
+  }
 }
