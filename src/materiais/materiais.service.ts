@@ -6,6 +6,8 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import pdfParse from "pdf-parse";
+import axios from "axios";
 
 @Injectable()
 export class MateriaisService {
@@ -139,5 +141,56 @@ export class MateriaisService {
   async excluir(id: string, userId: string) {
     await this.obterPorId(id, userId);
     return this.prisma.materialEstudo.delete({ where: { id } });
+  }
+
+  async criarMaterialComPdf({
+    userId,
+    nomeDesignado,
+    materiaId,
+    topicos,
+    caminhoArquivo,
+  }: {
+    userId: string;
+    nomeDesignado: string;
+    materiaId: string;
+    topicos: string[];
+    caminhoArquivo: string;
+  }) {
+    const fs = await import("fs/promises");
+    const buffer = await fs.readFile(caminhoArquivo);
+    const pdfData = await pdfParse(buffer);
+    const textoExtraido = pdfData.text;
+
+    const huggingFaceApiKey = process.env.HUGGINGFACE_API_KEY;
+    if (!huggingFaceApiKey) throw new Error("HUGGINGFACE_API_KEY não configurada.");
+
+    const hfResponse = await axios.post(
+      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
+      { inputs: textoExtraido.slice(0, 4000) },
+      {
+        headers: {
+          Authorization: `Bearer ${huggingFaceApiKey}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 60000,
+      },
+    );
+    const resumoIA = Array.isArray(hfResponse.data)
+      ? hfResponse.data[0]?.summary_text || ""
+      : hfResponse.data?.summary_text || "";
+
+    return this.prisma.materialEstudo.create({
+      data: {
+        titulo: nomeDesignado,
+        nomeDesignado,
+        materiaId,
+        topicos,
+        origem: "DOCUMENTO",
+        caminhoArquivo,
+        conteudo: textoExtraido,
+        resumoIA,
+        autorId: userId,
+      },
+    });
   }
 }

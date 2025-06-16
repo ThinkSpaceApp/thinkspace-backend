@@ -169,6 +169,10 @@ export class UsersService {
   }
 
   async createMateria(userId: string, data: { nome: string; cor: string; icone: string }) {
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: userId } });
+    if (!usuario) {
+      throw new BadRequestException("Usuário informado não existe.");
+    }
     const allowedColors = ["SALMAO", "ROSA", "LILAS", "ROXO"];
     if (!allowedColors.includes(data.cor)) {
       throw new BadRequestException("Cor inválida.");

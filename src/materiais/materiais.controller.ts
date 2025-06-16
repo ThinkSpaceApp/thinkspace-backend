@@ -11,11 +11,15 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  UseInterceptors,
+  UploadedFile,
 } from "@nestjs/common";
 import { Request } from "express";
 import { AuthGuard } from "@nestjs/passport";
 import { MateriaisService } from "./materiais.service";
 import { OrigemMaterial } from "@prisma/client";
+import { FileInterceptor } from "@nestjs/platform-express";
+import * as multer from "multer";
 
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
@@ -159,5 +163,43 @@ export class MateriaisController {
       }
       throw error;
     }
+  }
+
+  @Post("upload-pdf")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: multer.diskStorage({
+        destination: "./uploads/pdfs",
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + "-" + file.originalname);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype !== "application/pdf") {
+          return cb(new BadRequestException("Apenas arquivos PDF são permitidos."), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async uploadPdfMaterial(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: { nomeDesignado: string; materiaId: string; topicos: string[] },
+    @Req() req: Request,
+  ) {
+    if (!file) throw new BadRequestException("Arquivo PDF é obrigatório.");
+    if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length) {
+      throw new BadRequestException("Campos obrigatórios ausentes.");
+    }
+    const userId = (req.user as any).userId;
+    return this.materiaisService.criarMaterialComPdf({
+      userId,
+      nomeDesignado: body.nomeDesignado,
+      materiaId: body.materiaId,
+      topicos: body.topicos,
+      caminhoArquivo: file.path,
+    });
   }
 }
