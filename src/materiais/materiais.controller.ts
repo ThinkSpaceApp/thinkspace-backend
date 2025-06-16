@@ -202,4 +202,9 @@ export class MateriaisController {
       caminhoArquivo: file.path,
     });
   }
+
+  @Get("upload-pdf")
+  getUploadPdfStatus() {
+    return { status: "Endpoint de upload de PDF ativo!" };
+  }
 }
