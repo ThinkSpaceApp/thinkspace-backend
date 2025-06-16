@@ -17,9 +17,9 @@ import {
 import { Request } from "express";
 import { AuthGuard } from "@nestjs/passport";
 import { MateriaisService } from "./materiais.service";
-import { OrigemMaterial } from "@prisma/client";
 import { FileInterceptor } from "@nestjs/platform-express";
 import * as multer from "multer";
+import { OrigemMaterial } from "@prisma/client";
 
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
