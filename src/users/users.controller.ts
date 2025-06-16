@@ -13,6 +13,7 @@ import { UsersService } from "./users.service";
 import { Usuario } from "@prisma/client";
 import { AuthGuard } from "@nestjs/passport";
 import { Request } from "express";
+import * as bcrypt from "bcrypt";
 
 @UseGuards(AuthGuard("jwt"))
 @Controller("users")
@@ -129,5 +130,61 @@ export class UsersController {
 
     const usuarioAtualizado = await this.usersService.update(userId, updateData);
     return { message: "Configurações atualizadas com sucesso.", usuario: usuarioAtualizado };
+  }
+
+  @Patch("editar-email")
+  async editarEmail(@Req() req: Request, @Body() body: { novoEmail: string }) {
+    const userId = (req.user as any)?.userId;
+    if (!userId) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+    if (!body.novoEmail) {
+      throw new BadRequestException("Novo e-mail é obrigatório.");
+    }
+    const existente = await this.usersService.findByEmail(body.novoEmail);
+    if (existente) {
+      throw new BadRequestException("E-mail já está em uso.");
+    }
+    const usuarioAtualizado = await this.usersService.update(userId, { email: body.novoEmail });
+    return { message: "E-mail atualizado com sucesso.", usuario: usuarioAtualizado };
+  }
+
+  @Patch("editar-senha")
+  async editarSenha(@Req() req: Request, @Body() body: { novaSenha: string }) {
+    const userId = (req.user as any)?.userId;
+    if (!userId) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+    if (!body.novaSenha) {
+      throw new BadRequestException("Todos os campos são obrigatórios.");
+    }
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new BadRequestException("Usuário não encontrado.");
+    }
+    const passwordErrors: string[] = [];
+    if (body.novaSenha.length < 8) {
+      passwordErrors.push("A senha deve ter pelo menos 8 caracteres");
+    }
+    if (!/[A-Z]/.test(body.novaSenha)) {
+      passwordErrors.push("A senha deve conter pelo menos uma letra maiúscula");
+    }
+    if (!/[a-z]/.test(body.novaSenha)) {
+      passwordErrors.push("A senha deve conter pelo menos uma letra minúscula");
+    }
+    if (!/\d/.test(body.novaSenha)) {
+      passwordErrors.push("A senha deve conter pelo menos um número");
+    }
+    if (!/[@$!%*?&]/.test(body.novaSenha)) {
+      passwordErrors.push("A senha deve conter pelo menos um caractere especial (@$!%*?&)");
+    }
+    if (passwordErrors.length > 0) {
+      throw new BadRequestException(
+        `A nova senha não atende aos requisitos: ${passwordErrors.join(", ")}.`,
+      );
+    }
+    const novaSenhaHash = await bcrypt.hash(body.novaSenha, 10);
+    const usuarioAtualizado = await this.usersService.update(userId, { senha: novaSenhaHash });
+    return { message: "Senha atualizada com sucesso.", usuario: usuarioAtualizado };
   }
 }

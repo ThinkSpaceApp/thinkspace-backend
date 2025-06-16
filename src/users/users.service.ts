@@ -8,6 +8,12 @@ import { addDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findById(userId: string) {
+    return this.prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+  }
+
   async create(userData: Partial<Usuario>) {
     const { email, senha, dataNascimento, escolaridade, objetivoNaPlataforma } = userData;
 
