@@ -4,8 +4,8 @@ import {
   Body,
   BadRequestException,
   Get,
-  UseGuards,
   Req,
+  UseGuards,
   Param,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
@@ -91,5 +91,11 @@ export class UsersController {
     const userId = (req.user as any)?.userId;
     if (!userId) throw new BadRequestException("Usuário não autenticado.");
     return this.usersService.getMetricaSemanal(userId);
+  }
+
+  @Get("email")
+  async getEmail(@Req() req: Request) {
+    const email = (req.user as any)?.email;
+    return { email };
   }
 }
