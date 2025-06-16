@@ -219,4 +219,22 @@ export class UsersController {
     }
     return { nome: instituicao.nome };
   }
+
+@Delete("deletar-usuario")
+export const deleteAccount = async (req: Request, res: Response) => {
+  try {
+    const Id = req.params.id;
+
+    const deletedUser = await User.findByIdAndDelete(Id);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+
+    return res.status(200).json({ message: "Conta excluída com sucesso." });
+  } catch (error) {
+    return res.status(500).json({ message: "Erro ao excluir conta.", error });
+  }
+};
+
 }
