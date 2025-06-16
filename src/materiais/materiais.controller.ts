@@ -207,4 +207,22 @@ export class MateriaisController {
   getUploadPdfStatus() {
     return { status: "Endpoint de upload de PDF ativo!" };
   }
+
+  @Post("resumo-assunto")
+  async criarResumoPorAssunto(
+    @Req() req: Request,
+    @Body() body: { nomeDesignado: string; materiaId: string; topicos: string[]; assunto: string },
+  ) {
+    if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length || !body.assunto) {
+      throw new BadRequestException("Campos obrigatórios ausentes.");
+    }
+    const userId = (req.user as any).userId;
+    return this.materiaisService.criarMaterialComResumoAssunto({
+      userId,
+      nomeDesignado: body.nomeDesignado,
+      materiaId: body.materiaId,
+      topicos: body.topicos,
+      assunto: body.assunto,
+    });
+  }
 }

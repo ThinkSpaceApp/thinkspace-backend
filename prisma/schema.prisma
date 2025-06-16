@@ -199,7 +199,6 @@ model SalaEstudo {
   membros    MembroSala[]
   atividades Atividade[]
   materiais  SalaEstudoMaterial[]
-
   Calendario Calendario[]
 
   TopicoComunidade TopicoComunidade[]
@@ -359,6 +358,8 @@ model Materia {
   cor        CorMateria
   icone      String
   usuarioId  String
+  tempoAtivo Int? @default(0)
+  ultimaRevisao DateTime?
   usuario    Usuario          @relation(fields: [usuarioId], references: [id])
   materiais  MaterialEstudo[] @relation("MateriaParaMaterial")
 

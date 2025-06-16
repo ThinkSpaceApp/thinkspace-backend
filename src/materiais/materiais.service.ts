@@ -223,4 +223,54 @@ export class MateriaisService {
       },
     });
   }
+
+  async criarMaterialComResumoAssunto({
+    userId,
+    nomeDesignado,
+    materiaId,
+    topicos,
+    assunto,
+  }: {
+    userId: string;
+    nomeDesignado: string;
+    materiaId: string;
+    topicos: string[];
+    assunto: string;
+  }) {
+    // Monta o texto base para o resumo
+    const textoParaResumo = `Assunto: ${assunto}\nTópicos: ${topicos.join(", ")}`;
+
+    // Chama a API do Hugging Face para resumir o texto
+    const huggingFaceApiKey = process.env.HUGGINGFACE_API_KEY;
+    if (!huggingFaceApiKey) throw new Error("HUGGINGFACE_API_KEY não configurada.");
+
+    const hfResponse = await axios.post(
+      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
+      { inputs: textoParaResumo.slice(0, 4000) },
+      {
+        headers: {
+          Authorization: `Bearer ${huggingFaceApiKey}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 60000,
+      },
+    );
+    const resumoIA = Array.isArray(hfResponse.data)
+      ? hfResponse.data[0]?.summary_text || ""
+      : hfResponse.data?.summary_text || "";
+
+    // Salva no banco
+    return this.prisma.materialEstudo.create({
+      data: {
+        titulo: nomeDesignado,
+        nomeDesignado,
+        materiaId,
+        topicos,
+        origem: "ASSUNTO",
+        conteudo: textoParaResumo,
+        resumoIA,
+        autorId: userId,
+      },
+    });
+  }
 }
