@@ -101,6 +101,19 @@ export class UsersController {
     return { email };
   }
 
+  @Get("configuracoes")
+  async getConfiguracoes(@Req() req: Request) {
+    const userId = (req.user as any)?.userId;
+    if (!userId) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+    const usuario = await this.usersService.findById(userId);
+    if (!usuario) {
+      throw new BadRequestException("Usuário não encontrado.");
+    }
+    return { usuario };
+  }
+
   @Patch("configuracoes")
   async atualizarConfiguracoes(
     @Req() req: Request,
