@@ -125,7 +125,7 @@ export class UsersController {
       instituicaoId?: string;
       nomeCompleto?: string;
       escolaridade?: string;
-      // funcao?: string; // Removido para evitar alteração da função pelo usuário
+      funcao?: string; 
     },
   ) {
     const userId = (req.user as any)?.userId;
@@ -140,6 +140,8 @@ export class UsersController {
     if (body.instituicaoId) updateData.instituicaoId = body.instituicaoId;
     if (body.nomeCompleto) updateData.nomeCompleto = body.nomeCompleto;
     if (body.escolaridade) updateData.escolaridade = body.escolaridade;
+    if (body.funcao) updateData.funcao = body.funcao;
+
 
     const usuarioAtualizado = await this.usersService.update(userId, updateData);
     return { message: "Configurações atualizadas com sucesso.", usuario: usuarioAtualizado };
