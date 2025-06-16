@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { NivelEscolaridade, ObjetivoPlataforma, Usuario } from "@prisma/client";
 import { isEmail } from "class-validator";
+import { addDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
 
 @Injectable()
 export class UsersService {
@@ -251,6 +252,70 @@ export class UsersService {
     return this.prisma.materia.delete({
       where: { id },
     });
+  }
+
+  async registrarAtividadeDiaria(userId: string, data: Date) {
+    const dataDia = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+    const atividade = await this.prisma.atividadeUsuario.findFirst({
+      where: {
+        usuarioId: userId,
+        data: dataDia,
+      },
+    });
+    if (atividade) {
+      await this.prisma.atividadeUsuario.update({
+        where: { id: atividade.id },
+        data: { quantidade: { increment: 1 } },
+      });
+    } else {
+      await this.prisma.atividadeUsuario.create({
+        data: {
+          usuarioId: userId,
+          data: dataDia,
+          quantidade: 1,
+        },
+      });
+    }
+  }
+
+  async getMetricaSemanal(userId: string) {
+    const hoje = new Date();
+    const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 }); // Domingo
+    const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
+
+    const atividades = await this.prisma.atividadeUsuario.findMany({
+      where: {
+        usuarioId: userId,
+        data: {
+          gte: inicioSemana,
+          lte: fimSemana,
+        },
+      },
+      orderBy: { data: "asc" },
+    });
+
+    const diasSemana = [];
+    let totalSemana = 0;
+    for (let i = 0; i < 7; i++) {
+      const dia = addDays(inicioSemana, i);
+      const atividadeDia = atividades.find((a) => isSameDay(a.data, dia));
+      diasSemana.push({
+        data: dia.toISOString().split("T")[0],
+        feito: !!atividadeDia,
+        quantidade: atividadeDia?.quantidade || 0,
+      });
+      totalSemana += atividadeDia?.quantidade || 0;
+    }
+
+    const diaHoje = hoje.getDay();
+    const diasCompletos = diasSemana.slice(0, diaHoje + 1);
+    const rendimentoSemanal = diasCompletos.filter((d) => d.feito).length / diasCompletos.length;
+
+    return {
+      diasSemana,
+      totalSemana,
+      rendimentoSemanal: Number(rendimentoSemanal.toFixed(2)),
+    };
   }
 
   private validatePassword(password: string): string[] {

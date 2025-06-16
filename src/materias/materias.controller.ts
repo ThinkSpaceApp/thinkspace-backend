@@ -146,7 +146,6 @@ export class MateriasController {
     const materiasRecentes = materias.slice(0, 5).map((materia, idx) => ({
       indice: idx + 1,
       nome: materia.nome,
-      // ...adicione outros campos se necessário...
     }));
 
     return { materiasRecentes };

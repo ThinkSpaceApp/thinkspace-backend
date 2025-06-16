@@ -115,6 +115,7 @@ model Usuario {
 
   @@map("Usuario")
   PerfilUsuario PerfilUsuario[]
+  AtividadeUsuario AtividadeUsuario[]
 }
 
 model VerificacaoEmail {
@@ -391,4 +392,12 @@ model ExperienciaUsuario {
   xp        Int          @default(0)
   progresso Float        @default(0)
   nivel     NivelUsuario @default(INICIANTE)
+}
+
+model AtividadeUsuario {
+  id        String   @id @default(uuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  data      DateTime
+  quantidade Int     @default(1)
 }
