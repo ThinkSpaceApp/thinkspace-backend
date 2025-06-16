@@ -7,6 +7,7 @@ import {
   Req,
   UseGuards,
   Param,
+  Patch,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { Usuario } from "@prisma/client";
@@ -97,5 +98,39 @@ export class UsersController {
   async getEmail(@Req() req: Request) {
     const email = (req.user as any)?.email;
     return { email };
+  }
+
+  @Patch("configuracoes")
+  async atualizarConfiguracoes(
+    @Req() req: Request,
+    @Body()
+    body: {
+      primeiroNome?: string;
+      sobrenome?: string;
+      dataNascimento?: string;
+      instituicaoId?: string;
+      nomeCompleto?: string;
+      foto?: string;
+      escolaridade?: string;
+      funcao?: string;
+    },
+  ) {
+    const userId = (req.user as any)?.userId;
+    if (!userId) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+
+    const updateData: any = {};
+    if (body.primeiroNome) updateData.primeiroNome = body.primeiroNome;
+    if (body.sobrenome) updateData.sobrenome = body.sobrenome;
+    if (body.dataNascimento) updateData.dataNascimento = new Date(body.dataNascimento);
+    if (body.instituicaoId) updateData.instituicaoId = body.instituicaoId;
+    if (body.nomeCompleto) updateData.nomeCompleto = body.nomeCompleto;
+    if (body.foto) updateData.foto = body.foto;
+    if (body.escolaridade) updateData.escolaridade = body.escolaridade;
+    if (body.funcao) updateData.funcao = body.funcao;
+
+    const usuarioAtualizado = await this.usersService.update(userId, updateData);
+    return { message: "Configurações atualizadas com sucesso.", usuario: usuarioAtualizado };
   }
 }
