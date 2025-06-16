@@ -9,6 +9,7 @@ import {
   BadRequestException,
   Patch,
   Delete,
+  Headers,
 } from "@nestjs/common";
 import { Request } from "express";
 import { UsersService } from "../users/users.service";
@@ -48,6 +49,7 @@ export class MateriasController {
   async getMaterias(@Req() req: Request) {
     return this.usersService.getMateriasByUserId((req.user as any).userId);
   }
+
   @Get(":id")
   async getMateriaById(@Req() req: Request, @Param("id") id: string) {
     const materias = await this.usersService.getMateriasByUserId((req.user as any).userId);
@@ -126,18 +128,25 @@ export class MateriasController {
 
   @Get("recentes")
   async getMateriasRecentes(@Req() req: Request) {
-    if (!req.user || !(req.user as any).email) {
+    let userId = (req.user as any)?.userId;
+    if (!userId && (req.user as any)?.email) {
+      const user = await this.usersService.findByEmail((req.user as any).email);
+      userId = user?.id;
+    }
+    if (!userId) {
       throw new BadRequestException("Usuário não autenticado.");
     }
-    const user = await this.usersService.findByEmail((req.user as any).email);
-    if (!user) {
-      throw new BadRequestException("Usuário não encontrado.");
-    }
-    const materias = await this.usersService.getMateriasByUserIdOrdenadasPorUltimaRevisao(user.id);
 
-    const materiasRecentes = materias.map((materia, idx) => ({
+    const materias = await this.usersService.getMateriasByUserIdOrdenadasPorUltimaRevisao(userId);
+
+    if (!materias || materias.length === 0) {
+      return { message: "O usuário não possui nehuma matéria recente" };
+    }
+
+    const materiasRecentes = materias.slice(0, 5).map((materia, idx) => ({
       indice: idx + 1,
       nome: materia.nome,
+      // ...adicione outros campos se necessário...
     }));
 
     return { materiasRecentes };
