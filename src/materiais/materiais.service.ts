@@ -157,27 +157,57 @@ export class MateriaisService {
     caminhoArquivo: string;
   }) {
     const fs = await import("fs/promises");
-    const buffer = await fs.readFile(caminhoArquivo);
-    const pdfData = await pdfParse(buffer);
+    const pdfData = await pdfParse(await fs.readFile(caminhoArquivo));
     const textoExtraido = pdfData.text;
 
     const huggingFaceApiKey = process.env.HUGGINGFACE_API_KEY;
     if (!huggingFaceApiKey) throw new Error("HUGGINGFACE_API_KEY não configurada.");
 
-    const hfResponse = await axios.post(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
-      { inputs: textoExtraido.slice(0, 4000) },
-      {
-        headers: {
-          Authorization: `Bearer ${huggingFaceApiKey}`,
-          "Content-Type": "application/json",
-        },
-        timeout: 60000,
-      },
-    );
-    const resumoIA = Array.isArray(hfResponse.data)
-      ? hfResponse.data[0]?.summary_text || ""
-      : hfResponse.data?.summary_text || "";
+    const huggingFaceModel = "csebuetnlp/mT5_multilingual_XLSum";
+
+    async function gerarResumo(texto: string): Promise<string> {
+      try {
+        const hfResponse = await axios.post(
+          `https://api-inference.huggingface.co/models/${huggingFaceModel}`,
+          { inputs: texto },
+          {
+            headers: {
+              Authorization: `Bearer ${huggingFaceApiKey}`,
+              "Content-Type": "application/json",
+            },
+            timeout: 90000,
+          },
+        );
+
+        if (Array.isArray(hfResponse.data)) {
+          return hfResponse.data[0]?.summary_text || "";
+        }
+
+        if (hfResponse.data?.error) {
+          throw new Error(`Erro HuggingFace: ${hfResponse.data.error}`);
+        }
+
+        return hfResponse.data?.summary_text || "";
+      } catch (err) {
+        console.error("Erro ao gerar resumo:", err);
+        return "";
+      }
+    }
+
+    const limiteTokens = 4000;
+    const partes = textoExtraido.match(new RegExp(`(.|\\s){1,${limiteTokens}}`, "g")) || [];
+
+    const resumosParciais: string[] = [];
+
+    for (const parte of partes) {
+      const resumo = await gerarResumo(parte);
+      resumosParciais.push(resumo);
+    }
+
+    const resumoFinal =
+      resumosParciais.length > 1
+        ? await gerarResumo(resumosParciais.join(" "))
+        : resumosParciais[0] || "";
 
     return this.prisma.materialEstudo.create({
       data: {
@@ -188,7 +218,7 @@ export class MateriaisService {
         origem: "DOCUMENTO",
         caminhoArquivo,
         conteudo: textoExtraido,
-        resumoIA,
+        resumoIA: resumoFinal,
         autorId: userId,
       },
     });

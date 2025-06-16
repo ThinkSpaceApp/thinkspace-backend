@@ -131,12 +131,32 @@ export class AuthService {
     temp.areaDeInteresse = data.areaDeInteresse;
     temp.instituicaoNome = data.instituicaoNome;
     temp.etapa = "verificacao";
-    // Gera código de 5 dígitos
-    temp.codigoVerificado = Math.floor(10000 + Math.random() * 90000).toString();
+    // Gera código de 5 dígitos e salva corretamente
+    temp.codigoVerificado = await this.gerarCodigoVerificadoUnico();
     temp.codigoExpiracao = new Date(Date.now() + 10 * 60 * 1000);
     temp.reenvios = 0;
+    // Salva o código também em tempRegisterStore para garantir leitura correta na verificação
+    tempRegisterStore[email] = temp;
     await this.sendVerificationEmail(email, temp.codigoVerificado);
     return { message: "Código de verificação enviado para o e-mail." };
+  }
+
+  async gerarCodigoVerificadoUnico() {
+    let codigo: string;
+    let tentativas = 0;
+    do {
+      codigo = Math.floor(10000 + Math.random() * 90000).toString();
+      // Verifica se já existe no registro temporário
+      const existeNoTemp = Object.values(tempRegisterStore).some(
+        (t) => t.codigoVerificado === codigo,
+      );
+      // Verifica se já existe no banco
+      const existente = await this.usersService.findByVerificationCode(codigo);
+      if (!existeNoTemp && !existente) break;
+      tentativas++;
+    } while (tentativas < 10);
+    if (tentativas >= 10) throw new Error("Não foi possível gerar um código de verificação único.");
+    return codigo;
   }
 
   async reenviarCodigo(email: string) {
@@ -147,9 +167,9 @@ export class AuthService {
       delete tempRegisterStore[email];
       throw new BadRequestException("Limite de reenvios atingido. Faça o cadastro novamente.");
     }
-    // Gera código de 5 dígitos
-    temp.codigoVerificado = Math.floor(10000 + Math.random() * 90000).toString();
+    temp.codigoVerificado = await this.gerarCodigoVerificadoUnico();
     temp.codigoExpiracao = new Date(Date.now() + 10 * 60 * 1000);
+    tempRegisterStore[email] = temp;
 
     const resend = new Resend(RESEND_API_KEY);
     await resend.emails.send({
@@ -180,7 +200,8 @@ export class AuthService {
   async verificarEmail(email: string, codigo: string) {
     const temp = tempRegisterStore[email];
     if (!temp) throw new BadRequestException("Registro não iniciado.");
-    if (temp.codigoVerificado !== codigo) {
+    // Corrija para comparar como string e garantir igualdade exata
+    if (String(temp.codigoVerificado) !== String(codigo)) {
       throw new BadRequestException("Código de verificação inválido.");
     }
     if (temp.codigoExpiracao && new Date() > temp.codigoExpiracao) {
@@ -288,7 +309,7 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException("Usuário não encontrado.");
     }
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCode = Math.floor(10000 + Math.random() * 90000).toString();
     const expiration = new Date(Date.now() + 10 * 60 * 1000);
 
     await this.usersService.update(user.id, {
@@ -304,7 +325,7 @@ export class AuthService {
         subject: "🔒 Redefinição de senha - ThinkSpace",
         html: `
           <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-            <img src="https://i.imgur.com/4JBPx3E.png" alt="ThinkSpace Logo" style="hight: full; width: full; margin-bottom: 20px;" />
+            <img src="https://i.imgur.com/2WuveKh.png" alt="ThinkSpace Logo" style="hight: full; width: full; margin-bottom: 20px;" />
             <h1 style="color:rgb(146, 102, 204);">🔒 Redefinição de senha</h1>
             <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>ThinkSpace</strong>.</p>
             <p>Para continuar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
