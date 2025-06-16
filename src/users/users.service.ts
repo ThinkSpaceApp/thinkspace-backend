@@ -215,6 +215,13 @@ export class UsersService {
     });
   }
 
+  async getInstituicaoById(instituicaoId: string) {
+  return this.prisma.instituicao.findUnique({
+    where: { id: instituicaoId },
+    select: { nome: true },
+  });
+  }
+
   async atualizarTempoAtivoEMarcarRevisao(materiaId: string, minutos: number) {
     return this.prisma.materia.update({
       where: { id: materiaId },
