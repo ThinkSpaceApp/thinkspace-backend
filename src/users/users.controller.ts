@@ -110,7 +110,6 @@ export class UsersController {
       dataNascimento?: string;
       instituicaoId?: string;
       nomeCompleto?: string;
-      foto?: string;
       escolaridade?: string;
       funcao?: string;
     },
@@ -126,7 +125,6 @@ export class UsersController {
     if (body.dataNascimento) updateData.dataNascimento = new Date(body.dataNascimento);
     if (body.instituicaoId) updateData.instituicaoId = body.instituicaoId;
     if (body.nomeCompleto) updateData.nomeCompleto = body.nomeCompleto;
-    if (body.foto) updateData.foto = body.foto;
     if (body.escolaridade) updateData.escolaridade = body.escolaridade;
     if (body.funcao) updateData.funcao = body.funcao;
 
