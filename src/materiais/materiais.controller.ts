@@ -225,4 +225,20 @@ export class MateriaisController {
       assunto: body.assunto,
     });
   }
+
+  @Get("resumo-assunto/:id")
+  async getResumoPorAssunto(@Req() req: Request, @Param("id") id: string) {
+    const userId = (req.user as any).userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || material.origem !== "ASSUNTO") {
+      throw new NotFoundException("Resumo por assunto não encontrado.");
+    }
+    return {
+      resumoIA: material.resumoIA,
+      conteudo: material.conteudo,
+      titulo: material.titulo,
+      topicos: material.topicos,
+      assuntoId: material.assuntoId,
+    };
+  }
 }

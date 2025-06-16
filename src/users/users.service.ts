@@ -183,7 +183,6 @@ export class UsersService {
         cor: data.cor as any,
         icone: data.icone,
         usuarioId: userId,
-        tempoAtivo: 0,
         ultimaRevisao: null,
       },
     });
@@ -201,7 +200,6 @@ export class UsersService {
   }
 
   async atualizarTempoAtivoEMarcarRevisao(materiaId: string, minutos: number) {
-    // Incrementa tempoAtivo e atualiza ultimaRevisao
     return this.prisma.materia.update({
       where: { id: materiaId },
       data: {
