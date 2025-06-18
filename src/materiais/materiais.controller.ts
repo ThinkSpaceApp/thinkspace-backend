@@ -26,11 +26,6 @@ import { OrigemMaterial } from "@prisma/client";
 export class MateriaisController {
   constructor(private readonly materiaisService: MateriaisService) {}
 
-  // @Get("/")
-  // getStatus() {
-  //   return { status: "Servidor de materiais ativo!" };
-  // }
-
   @Get("/")
   async listarMateriais(@Req() req: Request) {
     const materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
