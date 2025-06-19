@@ -30,7 +30,7 @@ export class MateriaisController {
   getStatus() {
     return { status: "Servidor de materiais ativo!" };
   }
-  
+
   @Get()
   async listarMateriais(@Req() req: Request) {
     const materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
