@@ -369,4 +369,10 @@ export class UsersService {
     }
     return age;
   }
+
+  async deleteById(userId: string) {
+    return this.prisma.usuario.delete({
+      where: { id: userId },
+    });
+  }
 }
