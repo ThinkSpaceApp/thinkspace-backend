@@ -10,16 +10,30 @@ import {
   Patch,
   Delete,
   Headers,
+  NotFoundException,
 } from "@nestjs/common";
 import { Request } from "express";
 import { UsersService } from "../users/users.service";
 import { AuthGuard } from "@nestjs/passport";
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+} from "@nestjs/swagger";
 
+@ApiTags("Matérias")
+@ApiBearerAuth()
 @UseGuards(AuthGuard("jwt"))
 @Controller("materias")
 export class MateriasController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ApiOperation({ summary: "Obter perfil do usuário para matérias" })
+  @ApiResponse({ status: 200, description: "Perfil retornado com sucesso." })
+  @ApiResponse({ status: 400, description: "Usuário não autenticado ou perfil não encontrado." })
   @Get("perfil")
   async getPerfilUsuario(@Req() req: Request) {
     if (!req.user || !(req.user as any).email) {
@@ -45,11 +59,17 @@ export class MateriasController {
     };
   }
 
+  @ApiOperation({ summary: "Listar matérias do usuário" })
+  @ApiResponse({ status: 200, description: "Lista de matérias retornada com sucesso." })
   @Get()
   async getMaterias(@Req() req: Request) {
     return this.usersService.getMateriasByUserId((req.user as any).userId);
   }
 
+  @ApiOperation({ summary: "Obter matéria por ID" })
+  @ApiParam({ name: "id", required: true, description: "ID da matéria" })
+  @ApiResponse({ status: 200, description: "Matéria retornada com sucesso." })
+  @ApiResponse({ status: 400, description: "Matéria não encontrada." })
   @Get(":id")
   async getMateriaById(@Req() req: Request, @Param("id") id: string) {
     const materias = await this.usersService.getMateriasByUserId((req.user as any).userId);
@@ -60,6 +80,20 @@ export class MateriasController {
     return materia;
   }
 
+  @ApiOperation({ summary: "Criar nova matéria" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nome: { type: "string" },
+        cor: { type: "string" },
+        icone: { type: "string" },
+      },
+      required: ["nome", "cor", "icone"],
+    },
+  })
+  @ApiResponse({ status: 201, description: "Matéria criada com sucesso." })
+  @ApiResponse({ status: 400, description: "Nome, cor e ícone são obrigatórios." })
   @Post()
   async criarMateria(
     @Req() req: Request,
@@ -73,6 +107,20 @@ export class MateriasController {
     return { message: "Matéria criada com sucesso.", materia };
   }
 
+  @ApiOperation({ summary: "Editar matéria" })
+  @ApiParam({ name: "id", required: true, description: "ID da matéria" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nome: { type: "string" },
+        cor: { type: "string" },
+        icone: { type: "string" },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: "Matéria editada com sucesso." })
+  @ApiResponse({ status: 400, description: "Matéria não encontrada ou não pertence ao usuário." })
   @Patch(":id")
   async editarMateria(
     @Req() req: Request,
@@ -98,6 +146,10 @@ export class MateriasController {
     return { message: "Matéria editada com sucesso.", materia: materiaEditada };
   }
 
+  @ApiOperation({ summary: "Excluir matéria" })
+  @ApiParam({ name: "id", required: true, description: "ID da matéria" })
+  @ApiResponse({ status: 200, description: "Matéria excluída com sucesso." })
+  @ApiResponse({ status: 400, description: "Matéria não encontrada ou não pertence ao usuário." })
   @Delete(":id")
   async excluirMateria(@Req() req: Request, @Param("id") id: string) {
     if (!req.user || !(req.user as any).email) {
@@ -115,6 +167,8 @@ export class MateriasController {
     return { message: "Matéria excluída com sucesso." };
   }
 
+  @ApiOperation({ summary: "Cumprimento do usuário" })
+  @ApiResponse({ status: 200, description: "Cumprimento retornado com sucesso." })
   @Get("cumprimento")
   async cumprimentoUsuario(@Req() req: Request) {
     const user = await this.usersService.findByEmail((req.user as any).email);
@@ -126,6 +180,8 @@ export class MateriasController {
     };
   }
 
+  @ApiOperation({ summary: "Listar matérias recentes do usuário (até 5)" })
+  @ApiResponse({ status: 200, description: "Matérias recentes retornadas com sucesso." })
   @Get("recentes")
   async getMateriasRecentes(@Req() req: Request) {
     let userId = (req.user as any)?.userId;
