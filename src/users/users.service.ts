@@ -216,10 +216,10 @@ export class UsersService {
   }
 
   async getInstituicaoById(instituicaoId: string) {
-  return this.prisma.instituicao.findUnique({
-    where: { id: instituicaoId },
-    select: { nome: true },
-  });
+    return this.prisma.instituicao.findUnique({
+      where: { id: instituicaoId },
+      select: { nome: true },
+    });
   }
 
   async atualizarTempoAtivoEMarcarRevisao(materiaId: string, minutos: number) {
@@ -373,6 +373,15 @@ export class UsersService {
   async deleteById(userId: string) {
     return this.prisma.usuario.delete({
       where: { id: userId },
+    });
+  }
+
+  async atualizarUltimaEntradaMateria(materiaId: string) {
+    return this.prisma.materia.update({
+      where: { id: materiaId },
+      data: {
+        ultimaRevisao: new Date(),
+      },
     });
   }
 }

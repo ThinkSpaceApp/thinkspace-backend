@@ -66,20 +66,6 @@ export class MateriasController {
     return this.usersService.getMateriasByUserId((req.user as any).userId);
   }
 
-  @ApiOperation({ summary: "Obter matéria por ID" })
-  @ApiParam({ name: "id", required: true, description: "ID da matéria" })
-  @ApiResponse({ status: 200, description: "Matéria retornada com sucesso." })
-  @ApiResponse({ status: 400, description: "Matéria não encontrada." })
-  @Get(":id")
-  async getMateriaById(@Req() req: Request, @Param("id") id: string) {
-    const materias = await this.usersService.getMateriasByUserId((req.user as any).userId);
-    const materia = materias.find((m: any) => m.id === id);
-    if (!materia) {
-      throw new BadRequestException("Matéria não encontrada.");
-    }
-    return materia;
-  }
-
   @ApiOperation({ summary: "Criar nova matéria" })
   @ApiBody({
     schema: {
@@ -202,8 +188,31 @@ export class MateriasController {
     const materiasRecentes = materias.slice(0, 5).map((materia, idx) => ({
       indice: idx + 1,
       nome: materia.nome,
+      id: materia.id,
+      cor: materia.cor,
+      icone: materia.icone,
+      ultimaRevisao: materia.ultimaRevisao,
+      tempoAtivo: materia.tempoAtivo,
     }));
 
     return { materiasRecentes };
+  }
+
+  @ApiOperation({ summary: "Obter matéria por ID" })
+  @ApiParam({ name: "id", required: true, description: "ID da matéria" })
+  @ApiResponse({ status: 200, description: "Matéria retornada com sucesso." })
+  @ApiResponse({ status: 400, description: "Matéria não encontrada." })
+  @Get(":id")
+  async getMateriaById(@Req() req: Request, @Param("id") id: string) {
+    const materia = await this.usersService.getMateriaById(id);
+    if (!materia) {
+      throw new BadRequestException("Matéria não encontrada.");
+    }
+    if (materia.usuarioId !== (req.user as any).userId) {
+      throw new BadRequestException("Matéria não encontrada ou não pertence ao usuário.");
+    }
+    await this.usersService.atualizarUltimaEntradaMateria(id);
+    const materiaAtualizada = await this.usersService.getMateriaById(id);
+    return materiaAtualizada;
   }
 }
