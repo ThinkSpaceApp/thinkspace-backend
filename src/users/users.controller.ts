@@ -8,11 +8,13 @@ import {
   UseGuards,
   Param,
   Patch,
+  Res,
+  Delete,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { Usuario } from "@prisma/client";
 import { AuthGuard } from "@nestjs/passport";
-import { Request } from "express";
+import { Request, Response } from "express";
 import * as bcrypt from "bcrypt";
 
 @UseGuards(AuthGuard("jwt"))
@@ -125,7 +127,7 @@ export class UsersController {
       instituicaoId?: string;
       nomeCompleto?: string;
       escolaridade?: string;
-      funcao?: string; 
+      funcao?: string;
     },
   ) {
     const userId = (req.user as any)?.userId;
@@ -141,7 +143,6 @@ export class UsersController {
     if (body.nomeCompleto) updateData.nomeCompleto = body.nomeCompleto;
     if (body.escolaridade) updateData.escolaridade = body.escolaridade;
     if (body.funcao) updateData.funcao = body.funcao;
-
 
     const usuarioAtualizado = await this.usersService.update(userId, updateData);
     return { message: "Configurações atualizadas com sucesso.", usuario: usuarioAtualizado };
@@ -220,25 +221,24 @@ export class UsersController {
     return { nome: instituicao.nome };
   }
 
-@Delete("deletar-usuario")
-async deleteAccount(@Req() req: Request, @Res() res: Response) {
-  try {
-    const userId = (req.user as any)?.userId;
+  @Delete("deletar-usuario")
+  async deleteAccount(@Req() req: Request, @Res() res: Response) {
+    try {
+      const userId = (req.user as any)?.userId;
 
-    if (!userId) {
-      return res.status(401).json({ message: "Usuário não autenticado." });
+      if (!userId) {
+        return res.status(401).json({ message: "Usuário não autenticado." });
+      }
+
+      const deletedUser = await this.usersService.deleteById(userId);
+
+      if (!deletedUser) {
+        return res.status(404).json({ message: "Usuário não encontrado." });
+      }
+
+      return res.status(200).json({ message: "Conta excluída com sucesso." });
+    } catch (error) {
+      return res.status(500).json({ message: "Erro ao excluir conta.", error });
     }
-    
-    const deletedUser = await this.usersService.deleteById(userId);
-    
-    if (!deletedUser) {
-      return res.status(404).json({ message: "Usuário não encontrado." });
-    }
-    
-    return res.status(200).json({ message: "Conta excluída com sucesso." });
-  } catch (error) {
-    return res.status(500).json({ message: "Erro ao excluir conta.", error });
   }
-};
-
 }
