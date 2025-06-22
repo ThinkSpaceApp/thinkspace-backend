@@ -14,6 +14,14 @@ import {
   UseInterceptors,
   UploadedFile,
 } from "@nestjs/common";
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+} from "@nestjs/swagger";
 import { Request } from "express";
 import { AuthGuard } from "@nestjs/passport";
 import { MateriaisService } from "./materiais.service";
@@ -21,16 +29,22 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import * as multer from "multer";
 import { OrigemMaterial } from "@prisma/client";
 
+@ApiTags("Materiais")
+@ApiBearerAuth()
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
 export class MateriaisController {
   constructor(private readonly materiaisService: MateriaisService) {}
 
+  @ApiOperation({ summary: "Status do serviço de materiais" })
+  @ApiResponse({ status: 200, description: "Servidor de materiais ativo!" })
   @Get("/")
   getStatus() {
     return { status: "Servidor de materiais ativo!" };
   }
 
+  @ApiOperation({ summary: "Listar materiais do usuário" })
+  @ApiResponse({ status: 200, description: "Materiais encontrados com sucesso." })
   @Get()
   async listarMateriais(@Req() req: Request) {
     const materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
@@ -42,6 +56,10 @@ export class MateriaisController {
     };
   }
 
+  @ApiOperation({ summary: "Obter material por ID" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Material encontrado com sucesso." })
+  @ApiResponse({ status: 404, description: "Material não encontrado." })
   @Get(":id")
   async obterMaterial(@Req() req: Request, @Param("id") id: string) {
     try {
@@ -58,6 +76,23 @@ export class MateriaisController {
     }
   }
 
+  @ApiOperation({ summary: "Criar material" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"] },
+        nomeDesignado: { type: "string" },
+        materiaId: { type: "string" },
+        topicos: { type: "array", items: { type: "string" } },
+        caminhoArquivo: { type: "string" },
+        assuntoId: { type: "string" },
+      },
+      required: ["origem", "nomeDesignado", "materiaId"],
+    },
+  })
+  @ApiResponse({ status: 201, description: "Material criado com sucesso." })
+  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
   @Post()
   async criarMaterial(
     @Req() req: Request,
@@ -123,6 +158,21 @@ export class MateriaisController {
     throw new BadRequestException("Origem do material inválida.");
   }
 
+  @ApiOperation({ summary: "Editar material" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nomeDesignado: { type: "string" },
+        topicos: { type: "array", items: { type: "string" } },
+        caminhoArquivo: { type: "string" },
+        assuntoId: { type: "string" },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: "Material atualizado com sucesso." })
+  @ApiResponse({ status: 404, description: "Material não encontrado." })
   @Patch(":id")
   async editarMaterial(
     @Req() req: Request,
@@ -149,6 +199,10 @@ export class MateriaisController {
     }
   }
 
+  @ApiOperation({ summary: "Excluir material" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Material excluído com sucesso." })
+  @ApiResponse({ status: 404, description: "Material não encontrado." })
   @Delete(":id")
   async excluirMaterial(@Req() req: Request, @Param("id") id: string) {
     try {
@@ -165,6 +219,9 @@ export class MateriaisController {
     }
   }
 
+  @ApiOperation({ summary: "Upload de PDF para material" })
+  @ApiResponse({ status: 201, description: "Material criado com sucesso a partir do PDF." })
+  @ApiResponse({ status: 400, description: "Arquivo PDF ou campos obrigatórios ausentes." })
   @Post("upload-pdf")
   @UseInterceptors(
     FileInterceptor("file", {
@@ -203,11 +260,28 @@ export class MateriaisController {
     });
   }
 
+  @ApiOperation({ summary: "Status do endpoint de upload de PDF" })
+  @ApiResponse({ status: 200, description: "Endpoint de upload de PDF ativo!" })
   @Get("upload-pdf")
   getUploadPdfStatus() {
     return { status: "Endpoint de upload de PDF ativo!" };
   }
 
+  @ApiOperation({ summary: "Criar resumo automático por assunto" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nomeDesignado: { type: "string" },
+        materiaId: { type: "string" },
+        topicos: { type: "array", items: { type: "string" } },
+        assunto: { type: "string" },
+      },
+      required: ["nomeDesignado", "materiaId", "topicos", "assunto"],
+    },
+  })
+  @ApiResponse({ status: 201, description: "Resumo criado com sucesso." })
+  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes." })
   @Post("resumo-assunto")
   async criarResumoPorAssunto(
     @Req() req: Request,
@@ -226,6 +300,10 @@ export class MateriaisController {
     });
   }
 
+  @ApiOperation({ summary: "Obter resumo automático por assunto" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Resumo retornado com sucesso." })
+  @ApiResponse({ status: 404, description: "Resumo por assunto não encontrado." })
   @Get("resumo-assunto/:id")
   async getResumoPorAssunto(@Req() req: Request, @Param("id") id: string) {
     const userId = (req.user as any).userId;
