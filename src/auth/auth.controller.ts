@@ -7,11 +7,13 @@ import {
   Res,
   Get,
 } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { UsersService } from "../users/users.service";
 import { Response } from "express";
 import { CookieOptions } from "express";
 
+@ApiTags("Autenticação")
 @Controller("auth")
 export class AuthController {
   constructor(
@@ -19,6 +21,22 @@ export class AuthController {
     private readonly usersService: UsersService,
   ) {}
 
+  @ApiOperation({ summary: "Iniciar registro de usuário" })
+  @ApiResponse({ status: 201, description: "Dados iniciais recebidos." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        primeiroNome: { type: "string" },
+        sobrenome: { type: "string" },
+        email: { type: "string" },
+        senha: { type: "string" },
+        confirmarSenha: { type: "string" },
+        dataNascimento: { type: "string" },
+      },
+      required: ["primeiroNome", "sobrenome", "email", "senha", "confirmarSenha", "dataNascimento"],
+    },
+  })
   @Post("registrar")
   async register(@Body() body: any) {
     if (
@@ -42,6 +60,18 @@ export class AuthController {
     });
   }
 
+  @ApiOperation({ summary: "Escolher função do usuário" })
+  @ApiResponse({ status: 200, description: "Função definida. Complete o cadastro." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+        funcao: { type: "string", enum: ["ADMIN", "ESTUDANTE"] },
+      },
+      required: ["email", "funcao"],
+    },
+  })
   @Post("escolher-funcao")
   async escolherFuncao(@Body() body: { email: string; funcao: "ADMIN" | "ESTUDANTE" }) {
     if (!body || !body.email || !body.funcao) {
@@ -50,6 +80,27 @@ export class AuthController {
     return this.authService.registrarStep2EscolherFuncao(body.email, body.funcao);
   }
 
+  @ApiOperation({ summary: "Completar cadastro do usuário" })
+  @ApiResponse({ status: 200, description: "Cadastro completado, código enviado." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+        escolaridade: { type: "string" },
+        objetivoNaPlataforma: { type: "string" },
+        areaDeInteresse: { type: "string" },
+        instituicaoNome: { type: "string" },
+      },
+      required: [
+        "email",
+        "escolaridade",
+        "objetivoNaPlataforma",
+        "areaDeInteresse",
+        "instituicaoNome",
+      ],
+    },
+  })
   @Post("completar-cadastro")
   async completeProfile(
     @Body()
@@ -73,6 +124,17 @@ export class AuthController {
     });
   }
 
+  @ApiOperation({ summary: "Reenviar código de verificação" })
+  @ApiResponse({ status: 200, description: "Novo código enviado para o e-mail." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+      },
+      required: ["email"],
+    },
+  })
   @Post("reenviar-codigo")
   async reenviarCodigo(@Body() body: { email: string }) {
     if (!body || !body.email) {
@@ -81,6 +143,18 @@ export class AuthController {
     return this.authService.reenviarCodigo(body.email);
   }
 
+  @ApiOperation({ summary: "Verificar código de verificação" })
+  @ApiResponse({ status: 200, description: "E-mail verificado e cadastro concluído." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+        code: { type: "string" },
+      },
+      required: ["email", "code"],
+    },
+  })
   @Post("verificar-codigo")
   async verifyCode(@Body() body: { email?: string; code?: string }) {
     if (!body || !body.email || !body.code) {
@@ -89,6 +163,17 @@ export class AuthController {
     return this.authService.verificarEmail(body.email, body.code);
   }
 
+  @ApiOperation({ summary: "Enviar código para redefinição de senha" })
+  @ApiResponse({ status: 200, description: "Código de redefinição enviado para o e-mail." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+      },
+      required: ["email"],
+    },
+  })
   @Post("esqueceu-senha/enviar-codigo")
   async forgotPasswordEnviarCodigo(@Body() body: { email?: string }) {
     if (!body.email) {
@@ -97,6 +182,17 @@ export class AuthController {
     return this.authService.sendPasswordResetCode(body.email);
   }
 
+  @ApiOperation({ summary: "Reenviar código de redefinição de senha" })
+  @ApiResponse({ status: 200, description: "Código de redefinição reenviado para o e-mail." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+      },
+      required: ["email"],
+    },
+  })
   @Post("esqueceu-senha/reenviar-codigo")
   async forgotPasswordReenviarCodigo(@Body() body: { email?: string }) {
     if (!body.email) {
@@ -105,6 +201,18 @@ export class AuthController {
     return this.authService.sendPasswordResetCode(body.email);
   }
 
+  @ApiOperation({ summary: "Verificar código de redefinição de senha" })
+  @ApiResponse({ status: 200, description: "Código válido. Você pode redefinir sua senha." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+        code: { type: "string" },
+      },
+      required: ["email", "code"],
+    },
+  })
   @Post("esqueceu-senha/verificar-codigo")
   async forgotPasswordVerificarCodigo(@Body() body: { email?: string; code?: string }) {
     if (!body.email || !body.code) {
@@ -113,6 +221,20 @@ export class AuthController {
     return this.authService.verifyPasswordResetCode(body.email, body.code);
   }
 
+  @ApiOperation({ summary: "Redefinir senha" })
+  @ApiResponse({ status: 200, description: "Senha redefinida com sucesso." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+        code: { type: "string" },
+        novaSenha: { type: "string" },
+        confirmarSenha: { type: "string" },
+      },
+      required: ["email", "code", "novaSenha", "confirmarSenha"],
+    },
+  })
   @Post("esqueceu-senha/redefinir")
   async forgotPasswordRedefinir(
     @Body() body: { email?: string; code?: string; novaSenha?: string; confirmarSenha?: string },
@@ -128,6 +250,18 @@ export class AuthController {
     );
   }
 
+  @ApiOperation({ summary: "Login do usuário" })
+  @ApiResponse({ status: 200, description: "Login realizado com sucesso." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+        senha: { type: "string" },
+      },
+      required: ["email", "senha"],
+    },
+  })
   @Post("login")
   async login(@Body() body: { email?: string; senha?: string }, @Res() res: Response) {
     if (!body || !body.email || !body.senha) {
@@ -167,6 +301,8 @@ export class AuthController {
     });
   }
 
+  @ApiOperation({ summary: "Logout do usuário" })
+  @ApiResponse({ status: 200, description: "Logout realizado com sucesso." })
   @Post("logout")
   logout(@Res() res: Response) {
     res.clearCookie("token", {
