@@ -3,7 +3,10 @@ import { Request } from "express";
 import { UsersService } from "../users/users.service";
 import { AuthGuard } from "@nestjs/passport";
 import { PrismaService } from "../prisma/prisma.service";
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 
+@ApiTags("Home")
+@ApiBearerAuth()
 @UseGuards(AuthGuard("jwt"))
 @Controller("home")
 export class HomeController {
@@ -12,6 +15,8 @@ export class HomeController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @ApiOperation({ summary: "Obter informações do banner de saudação" })
+  @ApiResponse({ status: 200, description: "Banner retornado com sucesso." })
   @Get("banner")
   async getBannerInfo(@Req() req: Request) {
     const userJwt = req.user as { email: string };
@@ -36,18 +41,25 @@ export class HomeController {
       relatorioUrl: `/users/${user.id}/metrica`,
     };
   }
+
+  @ApiOperation({ summary: "Obter salas de estudo do usuário" })
+  @ApiResponse({ status: 200, description: "Salas de estudo retornadas com sucesso." })
   @Get("salas-estudo")
   async getSalasEstudo(@Req() req: Request) {
     const userJwt = req.user as { email: string };
     return this.usersService.getSalasEstudoByEmail(userJwt.email);
   }
 
+  @ApiOperation({ summary: "Obter matérias do usuário" })
+  @ApiResponse({ status: 200, description: "Matérias retornadas com sucesso." })
   @Get("materias")
   async getMaterias(@Req() req: Request) {
     const userJwt = req.user as { userId: string };
     return this.usersService.getMateriasByUserId(userJwt.userId);
   }
 
+  @ApiOperation({ summary: "Obter calendário do mês atual" })
+  @ApiResponse({ status: 200, description: "Calendário retornado com sucesso." })
   @Get("calendario")
   async getCalendario(@Req() req: Request) {
     const now = new Date();
@@ -89,6 +101,8 @@ export class HomeController {
     };
   }
 
+  @ApiOperation({ summary: "Registrar ofensiva (atividade do dia)" })
+  @ApiResponse({ status: 200, description: "Atividade registrada com sucesso." })
   @Post("ofensiva")
   async marcarOfensiva(
     @Req() req: Request & { user: { id: string } },
@@ -110,6 +124,8 @@ export class HomeController {
     };
   }
 
+  @ApiOperation({ summary: "Obter status da ofensiva do dia" })
+  @ApiResponse({ status: 200, description: "Status retornado com sucesso." })
   @Get("ofensiva")
   async getOfensivaStatus(@Req() req: Request & { user: { id: string } }) {
     if (!req.user || !req.user.id) {
@@ -123,6 +139,8 @@ export class HomeController {
     };
   }
 
+  @ApiOperation({ summary: "Obter notificações do usuário" })
+  @ApiResponse({ status: 200, description: "Notificações retornadas com sucesso." })
   @Get("notificacoes")
   async getNotificacoes(@Req() req: Request & { user: { userId: string } }) {
     const userId = req.user.userId;
@@ -140,6 +158,8 @@ export class HomeController {
     };
   }
 
+  @ApiOperation({ summary: "Obter identificação do usuário" })
+  @ApiResponse({ status: 200, description: "Identificação retornada com sucesso." })
   @Get("identificacao")
   async getIdentificacao(@Req() req: Request) {
     const user = await this.usersService.findByEmail((req.user as { email: string }).email);
