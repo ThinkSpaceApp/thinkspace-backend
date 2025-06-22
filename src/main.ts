@@ -3,6 +3,10 @@ import { AppModule } from "./app/app.module";
 import cookieParser from "cookie-parser";
 import { ConfigService } from "@nestjs/config";
 import { Request, Response, NextFunction } from "express";
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+
+const SWAGGER_USER = process.env.SWAGGER_USER;
+const SWAGGER_PASS = process.env.SWAGGER_PASS;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,8 +25,6 @@ async function bootstrap() {
 
   app.enableCors({
     origin: ["https://thinkspace.app.br", "http://localhost:3000"],
-    // ? ["https://thinkspace.app.br", "https://www.thinkspace.app.br"]
-    // : ["http://localhost:3000"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
@@ -30,6 +32,30 @@ async function bootstrap() {
   });
 
   app.enableShutdownHooks();
+
+  app.use("/docs", (req: Request, res: Response, next: NextFunction) => {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith("Basic ")) {
+      res.setHeader("WWW-Authenticate", 'Basic realm="Swagger"');
+      return res.status(401).send("Autenticação necessária");
+    }
+    const base64Credentials = auth.split(" ")[1];
+    const [user, pass] = Buffer.from(base64Credentials, "base64").toString().split(":");
+    if (user !== SWAGGER_USER || pass !== SWAGGER_PASS) {
+      res.setHeader("WWW-Authenticate", 'Basic realm="Swagger"');
+      return res.status(401).send("Credenciais inválidas");
+    }
+    next();
+  });
+
+  const config = new DocumentBuilder()
+    .setTitle("ThinkSpace API")
+    .setDescription("Documentação da API ThinkSpace")
+    .setVersion("1.0")
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup("docs", app, document);
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>("PORT") || 5000;
