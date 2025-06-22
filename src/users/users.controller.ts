@@ -16,12 +16,17 @@ import { Usuario } from "@prisma/client";
 import { AuthGuard } from "@nestjs/passport";
 import { Request, Response } from "express";
 import * as bcrypt from "bcrypt";
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 
+@ApiTags("Usuários")
+@ApiBearerAuth()
 @UseGuards(AuthGuard("jwt"))
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ApiOperation({ summary: "Registrar novo usuário" })
+  @ApiResponse({ status: 201, description: "Usuário registrado com sucesso." })
   @Post("cadastramento")
   async register(@Body() userData: Partial<Usuario>) {
     try {
@@ -30,6 +35,9 @@ export class UsersController {
       throw new BadRequestException((error as any).message);
     }
   }
+
+  @ApiOperation({ summary: "Obter salas de estudo do usuário" })
+  @ApiResponse({ status: 200, description: "Lista de salas de estudo." })
   @Get("salas-estudo")
   async getSalasEstudo(@Req() req: Request) {
     const email = req.user && (req.user as any).email;
@@ -39,11 +47,15 @@ export class UsersController {
     return this.usersService.getSalasEstudoByEmail(email);
   }
 
+  @ApiOperation({ summary: "Obter matérias do usuário" })
+  @ApiResponse({ status: 200, description: "Lista de matérias do usuário." })
   @Get("materias")
   async getMaterias(@Req() req: Request) {
     return this.usersService.getMateriasByUserId((req.user as any).userId);
   }
 
+  @ApiOperation({ summary: "Criar nova matéria" })
+  @ApiResponse({ status: 201, description: "Matéria criada com sucesso." })
   @Post("materias")
   async createMateria(
     @Req() req: Request,
@@ -58,6 +70,8 @@ export class UsersController {
     return this.usersService.createMateria((req.user as any).userId, body);
   }
 
+  @ApiOperation({ summary: "Adicionar material a uma matéria" })
+  @ApiResponse({ status: 200, description: "Material adicionado à matéria com sucesso." })
   @Post("materias/:materiaId/material/:materialId")
   async addMaterialToMateria(
     @Param("materiaId") materiaId: string,
@@ -66,6 +80,11 @@ export class UsersController {
     return this.usersService.addMaterialToMateria(materiaId, materialId);
   }
 
+  @ApiOperation({ summary: "Atualizar tempo ativo e marcar revisão" })
+  @ApiResponse({
+    status: 200,
+    description: "Tempo ativo atualizado e revisão marcada com sucesso.",
+  })
   @Post("materias/:materiaId/tempo-ativo")
   async atualizarTempoAtivoEMarcarRevisao(
     @Param("materiaId") materiaId: string,
@@ -77,6 +96,8 @@ export class UsersController {
     return this.usersService.atualizarTempoAtivoEMarcarRevisao(materiaId, body.minutos);
   }
 
+  @ApiOperation({ summary: "Registrar atividade" })
+  @ApiResponse({ status: 200, description: "Atividade registrada com sucesso." })
   @Post("metrica/registrar-atividade")
   async registrarAtividade(@Req() req: Request, @Body() body: { data?: string }) {
     const userId = (req.user as any)?.userId;
@@ -90,6 +111,8 @@ export class UsersController {
     return { message: "Atividade registrada com sucesso." };
   }
 
+  @ApiOperation({ summary: "Obter métrica semanal" })
+  @ApiResponse({ status: 200, description: "Métrica semanal obtida com sucesso." })
   @Get("metrica/semanal")
   async getMetricaSemanal(@Req() req: Request) {
     const userId = (req.user as any)?.userId;
@@ -97,12 +120,16 @@ export class UsersController {
     return this.usersService.getMetricaSemanal(userId);
   }
 
+  @ApiOperation({ summary: "Obter e-mail do usuário" })
+  @ApiResponse({ status: 200, description: "E-mail do usuário retornado com sucesso." })
   @Get("email")
   async getEmail(@Req() req: Request) {
     const email = (req.user as any)?.email;
     return { email };
   }
 
+  @ApiOperation({ summary: "Obter configurações do usuário" })
+  @ApiResponse({ status: 200, description: "Configurações do usuário retornadas com sucesso." })
   @Get("configuracoes")
   async getConfiguracoes(@Req() req: Request) {
     const userId = (req.user as any)?.userId;
@@ -116,6 +143,8 @@ export class UsersController {
     return { usuario };
   }
 
+  @ApiOperation({ summary: "Atualizar configurações do usuário" })
+  @ApiResponse({ status: 200, description: "Configurações atualizadas com sucesso." })
   @Patch("configuracoes")
   async atualizarConfiguracoes(
     @Req() req: Request,
@@ -148,6 +177,8 @@ export class UsersController {
     return { message: "Configurações atualizadas com sucesso.", usuario: usuarioAtualizado };
   }
 
+  @ApiOperation({ summary: "Editar e-mail do usuário" })
+  @ApiResponse({ status: 200, description: "E-mail atualizado com sucesso." })
   @Patch("editar-email")
   async editarEmail(@Req() req: Request, @Body() body: { novoEmail: string }) {
     const userId = (req.user as any)?.userId;
@@ -165,6 +196,8 @@ export class UsersController {
     return { message: "E-mail atualizado com sucesso.", usuario: usuarioAtualizado };
   }
 
+  @ApiOperation({ summary: "Editar senha do usuário" })
+  @ApiResponse({ status: 200, description: "Senha atualizada com sucesso." })
   @Patch("editar-senha")
   async editarSenha(@Req() req: Request, @Body() body: { novaSenha: string }) {
     const userId = (req.user as any)?.userId;
@@ -204,6 +237,8 @@ export class UsersController {
     return { message: "Senha atualizada com sucesso.", usuario: usuarioAtualizado };
   }
 
+  @ApiOperation({ summary: "Obter nome da instituição do usuário" })
+  @ApiResponse({ status: 200, description: "Nome da instituição retornado com sucesso." })
   @Get("instituicao/nome")
   async getInstituicaoNome(@Req() req: Request) {
     const userId = (req.user as any)?.userId;
@@ -221,6 +256,8 @@ export class UsersController {
     return { nome: instituicao.nome };
   }
 
+  @ApiOperation({ summary: "Excluir conta do usuário" })
+  @ApiResponse({ status: 200, description: "Conta excluída com sucesso." })
   @Delete("deletar-usuario")
   async deleteAccount(@Req() req: Request, @Res() res: Response) {
     try {
