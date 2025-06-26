@@ -181,10 +181,8 @@ export class MateriasController {
       throw new BadRequestException("Usuário não autenticado.");
     }
 
-    // Busca as matérias ordenadas por últimaRevisao (última entrada), mais recente primeiro
     const materias = await this.usersService.getMateriasByUserIdOrdenadasPorUltimaRevisao(userId);
 
-    // Ordena decrescente pela últimaRevisao (mais recente primeiro)
     const materiasOrdenadas = [...materias].sort((a, b) => {
       const dataA = a.ultimaRevisao ? new Date(a.ultimaRevisao).getTime() : 0;
       const dataB = b.ultimaRevisao ? new Date(b.ultimaRevisao).getTime() : 0;
