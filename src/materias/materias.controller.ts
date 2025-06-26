@@ -166,7 +166,9 @@ export class MateriasController {
     };
   }
 
-  @ApiOperation({ summary: "Listar matérias recentes do usuário (até 5)" })
+  @ApiOperation({
+    summary: "Listar matérias recentes do usuário (até 5, ordem dinâmica pela última entrada)",
+  })
   @ApiResponse({ status: 200, description: "Matérias recentes retornadas com sucesso." })
   @Get("recentes")
   async getMateriasRecentes(@Req() req: Request) {
@@ -179,13 +181,21 @@ export class MateriasController {
       throw new BadRequestException("Usuário não autenticado.");
     }
 
+    // Busca as matérias ordenadas por últimaRevisao (última entrada), mais recente primeiro
     const materias = await this.usersService.getMateriasByUserIdOrdenadasPorUltimaRevisao(userId);
 
-    if (!materias || materias.length === 0) {
+    // Ordena decrescente pela últimaRevisao (mais recente primeiro)
+    const materiasOrdenadas = [...materias].sort((a, b) => {
+      const dataA = a.ultimaRevisao ? new Date(a.ultimaRevisao).getTime() : 0;
+      const dataB = b.ultimaRevisao ? new Date(b.ultimaRevisao).getTime() : 0;
+      return dataB - dataA;
+    });
+
+    if (!materiasOrdenadas || materiasOrdenadas.length === 0) {
       return { message: "O usuário não possui nehuma matéria recente" };
     }
 
-    const materiasRecentes = materias.slice(0, 5).map((materia, idx) => ({
+    const materiasRecentes = materiasOrdenadas.slice(0, 5).map((materia, idx) => ({
       indice: idx + 1,
       nome: materia.nome,
       id: materia.id,
