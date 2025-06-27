@@ -36,16 +36,16 @@ import { OrigemMaterial } from "@prisma/client";
 export class MateriaisController {
   constructor(private readonly materiaisService: MateriaisService) {}
 
-  @ApiOperation({ summary: "Status do serviço de materiais" })
-  @ApiResponse({ status: 200, description: "Servidor de materiais ativo!" })
-  @Get("/")
-  getStatus() {
-    return { status: "Servidor de materiais ativo!" };
-  }
+  // @ApiOperation({ summary: "Status do serviço de materiais" })
+  // @ApiResponse({ status: 200, description: "Servidor de materiais ativo!" })
+  // @Get("/")
+  // getStatus() {
+  //   return { status: "Servidor de materiais ativo!" };
+  // }
 
   @ApiOperation({ summary: "Listar materiais do usuário" })
   @ApiResponse({ status: 200, description: "Materiais encontrados com sucesso." })
-  @Get()
+  @Get("/")
   async listarMateriais(@Req() req: Request) {
     const materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
     return {
