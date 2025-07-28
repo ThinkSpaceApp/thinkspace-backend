@@ -36,15 +36,49 @@ export class UsersController {
     }
   }
 
+  @ApiOperation({ summary: "Teste de autenticação e dados do usuário" })
+  @ApiResponse({ status: 200, description: "Dados do usuário autenticado." })
+  @Get("test-auth")
+  async testAuth(@Req() req: Request) {
+    try {
+      const user = req.user as any;
+      if (!user) {
+        throw new BadRequestException("Usuário não autenticado");
+      }
+      
+      return {
+        message: "Autenticação funcionando",
+        user: {
+          userId: user.userId,
+          email: user.email
+        },
+        headers: req.headers,
+        cookies: req.cookies
+      };
+    } catch (error) {
+      console.error('Erro no teste de autenticação:', error);
+      throw new BadRequestException("Erro no teste de autenticação");
+    }
+  }
+
   @ApiOperation({ summary: "Obter salas de estudo do usuário" })
   @ApiResponse({ status: 200, description: "Lista de salas de estudo." })
   @Get("salas-estudo")
   async getSalasEstudo(@Req() req: Request) {
-    const email = req.user && (req.user as any).email;
-    if (!email) {
-      throw new BadRequestException("Email é obrigatório");
+    try {
+      const user = req.user as any;
+      if (!user || !user.email) {
+        throw new BadRequestException("Usuário não autenticado ou email não encontrado");
+      }
+      
+      return this.usersService.getSalasEstudoByEmail(user.email);
+    } catch (error) {
+      console.error('Erro no endpoint getSalasEstudo:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException("Erro interno ao buscar salas de estudo");
     }
-    return this.usersService.getSalasEstudoByEmail(email);
   }
 
   @ApiOperation({ summary: "Obter matérias do usuário" })
@@ -276,6 +310,39 @@ export class UsersController {
       return res.status(200).json({ message: "Conta excluída com sucesso." });
     } catch (error) {
       return res.status(500).json({ message: "Erro ao excluir conta.", error });
+    }
+  }
+
+  @ApiOperation({ summary: "Teste de consulta do banco de dados" })
+  @ApiResponse({ status: 200, description: "Teste de consulta." })
+  @Get("test-db")
+  async testDb(@Req() req: Request) {
+    try {
+      const email = req.query.email as string;
+      const result = await this.usersService.testDatabase(email);
+      
+      return {
+        message: "Teste de banco de dados",
+        ...result
+      };
+    } catch (error) {
+      console.error('Erro no teste de banco de dados:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new BadRequestException(`Erro no teste de banco de dados: ${errorMessage}`);
+    }
+  }
+
+  @ApiOperation({ summary: "Teste da sala padrão" })
+  @ApiResponse({ status: 200, description: "Teste da sala padrão." })
+  @Get("test-default-room")
+  async testDefaultRoom() {
+    try {
+      const result = await this.usersService.testDefaultRoom();
+      return result;
+    } catch (error) {
+      console.error('Erro no teste da sala padrão:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new BadRequestException(`Erro no teste da sala padrão: ${errorMessage}`);
     }
   }
 }

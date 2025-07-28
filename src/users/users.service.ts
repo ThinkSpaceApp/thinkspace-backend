@@ -3,10 +3,14 @@ import { PrismaService } from "../prisma/prisma.service";
 import { NivelEscolaridade, ObjetivoPlataforma, Usuario } from "@prisma/client";
 import { isEmail } from "class-validator";
 import { addDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
+import { SetupService } from "../salaEstudo/setup.service";
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly setupService: SetupService
+  ) {}
 
   async findById(userId: string) {
     return this.prisma.usuario.findUnique({
@@ -67,7 +71,7 @@ export class UsersService {
       );
     }
 
-    return this.prisma.usuario.create({
+    const user = await this.prisma.usuario.create({
       data: {
         ...userData,
         instituicaoId: userData.instituicaoId || null,
@@ -82,6 +86,10 @@ export class UsersService {
         codigoExpiracao: userData.codigoExpiracao ? new Date(userData.codigoExpiracao) : new Date(),
       },
     });
+
+    await this.setupService.addUserToDefaultRoom(user.id);
+
+    return user;
   }
 
   async findByEmail(email: string) {
@@ -144,27 +152,35 @@ export class UsersService {
   }
 
   async getSalasEstudoByEmail(email: string) {
-    const user = await this.prisma.usuario.findUnique({
-      where: { email },
-      include: {
-        membroSalas: {
-          include: {
-            sala: true,
+    try {
+      const user = await this.prisma.usuario.findUnique({
+        where: { email },
+        include: {
+          membroSalas: {
+            include: {
+              sala: true,
+            },
           },
+          salasModeradas: true,
         },
-        salasModeradas: true,
-      },
-    });
-    if (!user) {
-      throw new BadRequestException("Usuário não encontrado.");
-    }
+      });
+      
+      if (!user) {
+        throw new BadRequestException("Usuário não encontrado.");
+      }
 
-    const salasMembro = user.membroSalas.map((m) => m.sala);
-    const salasModerador = user.salasModeradas;
-    return {
-      salasMembro,
-      salasModerador,
-    };
+      const salasMembro = user.membroSalas.map((m) => m.sala);
+      const salasModerador = user.salasModeradas;
+      
+      return {
+        salasMembro,
+        salasModerador,
+      };
+    } catch (error) {
+      console.error('Erro em getSalasEstudoByEmail:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new BadRequestException(`Erro ao buscar salas de estudo: ${errorMessage}`);
+    }
   }
 
   async getMateriasByUserId(userId: string) {
@@ -383,5 +399,95 @@ export class UsersService {
         ultimaRevisao: new Date(),
       },
     });
+  }
+
+  async testDatabase(email?: string) {
+    try {
+      const userCount = await this.prisma.usuario.count();
+      
+      const salaCount = await this.prisma.salaEstudo.count();
+      
+      const membroCount = await this.prisma.membroSala.count();
+      
+      let userTest = null;
+      if (email) {
+        userTest = await this.prisma.usuario.findUnique({
+          where: { email },
+          include: {
+            membroSalas: {
+              include: {
+                sala: true,
+              },
+            },
+            salasModeradas: true,
+          },
+        });
+      }
+      
+      return {
+        counts: {
+          usuarios: userCount,
+          salas: salaCount,
+          membros: membroCount
+        },
+        userTest: userTest ? {
+          id: userTest.id,
+          email: userTest.email,
+          membroSalasCount: userTest.membroSalas.length,
+          salasModeradasCount: userTest.salasModeradas.length
+        } : null
+      };
+    } catch (error) {
+      console.error('Erro no teste de banco de dados:', error);
+      throw error;
+    }
+  }
+
+  async testDefaultRoom() {
+    try {
+      const defaultRoom = await this.prisma.salaEstudo.findFirst({
+        where: { nome: 'thinkspace' },
+        include: {
+          membros: {
+            include: {
+              usuario: {
+                select: {
+                  id: true,
+                  email: true,
+                  primeiroNome: true,
+                  sobrenome: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!defaultRoom) {
+        return {
+          exists: false,
+          message: "Sala padrão não encontrada"
+        };
+      }
+
+      return {
+        exists: true,
+        message: "Sala padrão encontrada",
+        sala: {
+          id: defaultRoom.id,
+          nome: defaultRoom.nome,
+          descricao: defaultRoom.descricao,
+          totalMembros: defaultRoom.membros.length
+        },
+        membros: defaultRoom.membros.map(membro => ({
+          usuarioId: membro.usuarioId,
+          funcao: membro.funcao,
+          usuario: membro.usuario
+        }))
+      };
+    } catch (error) {
+      console.error('Erro no teste da sala padrão:', error);
+      throw error;
+    }
   }
 }

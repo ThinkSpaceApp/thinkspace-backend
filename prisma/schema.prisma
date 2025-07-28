@@ -206,13 +206,14 @@ model SalaEstudo {
 }
 
 model MembroSala {
-  id          String           @id @default(uuid())
   usuarioId   String
   usuario     Usuario          @relation(fields: [usuarioId], references: [id])
   salaId      String
   sala        SalaEstudo       @relation(fields: [salaId], references: [id])
   funcao      FuncaoSalaEstudo @default(MEMBRO)
   ingressouEm DateTime         @default(now())
+
+  @@id([usuarioId, salaId])
 }
 
 model Instituicao {

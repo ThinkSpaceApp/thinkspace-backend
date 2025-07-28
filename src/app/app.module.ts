@@ -6,6 +6,7 @@ import { MateriaisModule } from "../materiais/materiais.module";
 import { MateriasModule } from "../materias/materias.module";
 import { HomeModule } from "../home/home.module";
 import { AppController } from "./app.controller";
+import { SetupModule } from "../salaEstudo/setup.module";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AppController } from "./app.controller";
     MateriasModule,
     MateriaisModule,
     HomeModule,
+    SetupModule,
   ],
   controllers: [AppController],
 })
