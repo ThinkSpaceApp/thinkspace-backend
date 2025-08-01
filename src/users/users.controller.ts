@@ -45,18 +45,18 @@ export class UsersController {
       if (!user) {
         throw new BadRequestException("Usuário não autenticado");
       }
-      
+
       return {
         message: "Autenticação funcionando",
         user: {
           userId: user.userId,
-          email: user.email
+          email: user.email,
         },
         headers: req.headers,
-        cookies: req.cookies
+        cookies: req.cookies,
       };
     } catch (error) {
-      console.error('Erro no teste de autenticação:', error);
+      console.error("Erro no teste de autenticação:", error);
       throw new BadRequestException("Erro no teste de autenticação");
     }
   }
@@ -70,10 +70,10 @@ export class UsersController {
       if (!user || !user.email) {
         throw new BadRequestException("Usuário não autenticado ou email não encontrado");
       }
-      
+
       return this.usersService.getSalasEstudoByEmail(user.email);
     } catch (error) {
-      console.error('Erro no endpoint getSalasEstudo:', error);
+      console.error("Erro no endpoint getSalasEstudo:", error);
       if (error instanceof BadRequestException) {
         throw error;
       }
@@ -320,14 +320,14 @@ export class UsersController {
     try {
       const email = req.query.email as string;
       const result = await this.usersService.testDatabase(email);
-      
+
       return {
         message: "Teste de banco de dados",
-        ...result
+        ...result,
       };
     } catch (error) {
-      console.error('Erro no teste de banco de dados:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error("Erro no teste de banco de dados:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       throw new BadRequestException(`Erro no teste de banco de dados: ${errorMessage}`);
     }
   }
@@ -340,8 +340,8 @@ export class UsersController {
       const result = await this.usersService.testDefaultRoom();
       return result;
     } catch (error) {
-      console.error('Erro no teste da sala padrão:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error("Erro no teste da sala padrão:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       throw new BadRequestException(`Erro no teste da sala padrão: ${errorMessage}`);
     }
   }
