@@ -4,15 +4,18 @@ import { UsersService } from "../users/users.service";
 import { AuthGuard } from "@nestjs/passport";
 import { PrismaService } from "../prisma/prisma.service";
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { salaEstudoService } from "../salaEstudo/salaEstudo.service";
 
 @ApiTags("Home")
 @ApiBearerAuth()
 @UseGuards(AuthGuard("jwt"))
 @Controller("home")
+
 export class HomeController {
   constructor(
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
+    private readonly salaEstudoService: salaEstudoService,
   ) {}
 
   @ApiOperation({ summary: "Obter informações do banner de saudação" })
@@ -46,6 +49,8 @@ export class HomeController {
   @ApiResponse({ status: 200, description: "Salas de estudo retornadas com sucesso." })
   @Get("salas-estudo")
   async getSalasEstudo(@Req() req: Request) {
+    await this.salaEstudoService.ensureDefaultRoom();
+    await this.salaEstudoService.ensureAllUsersInDefaultRoom();
     const userJwt = req.user as { email: string };
     return this.usersService.getSalasEstudoByEmail(userJwt.email);
   }

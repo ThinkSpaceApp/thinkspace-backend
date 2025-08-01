@@ -3,13 +3,13 @@ import { PrismaService } from "../prisma/prisma.service";
 import { NivelEscolaridade, ObjetivoPlataforma, Usuario } from "@prisma/client";
 import { isEmail } from "class-validator";
 import { addDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
-import { SetupService } from "../salaEstudo/setup.service";
+import { salaEstudoService } from "../salaEstudo/salaEstudo.service";
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly setupService: SetupService
+    private readonly salaEstudoService: salaEstudoService
   ) {}
 
   async findById(userId: string) {
@@ -87,7 +87,7 @@ export class UsersService {
       },
     });
 
-    await this.setupService.addUserToDefaultRoom(user.id);
+    await this.salaEstudoService.addUserToDefaultRoom(user.id);
 
     return user;
   }

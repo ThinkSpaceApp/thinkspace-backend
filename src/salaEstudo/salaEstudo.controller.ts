@@ -1,20 +1,25 @@
 import { Controller, Get, Res, HttpStatus, Post } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
-import { SetupService } from './setup.service';
+import { salaEstudoService } from './salaEstudo.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+@ApiTags('Sala de Estudo')
 @Controller('sala-estudo')
-export class SetupController {
+export class salaEstudoController {
   constructor(
-    private readonly setupService: SetupService,
+    private readonly salaEstudoService: salaEstudoService,
     private readonly prisma: PrismaService
   ) {}
 
+  @ApiOperation({ summary: 'Criar sala padrão "thinkspace"' })
+  @ApiResponse({ status: 201, description: 'Sala padrão criada com sucesso.' })
+  @ApiResponse({ status: 200, description: 'Sala padrão já existe.' })
+  @ApiResponse({ status: 500, description: 'Erro ao criar sala padrão.' })
   @Post('create-default-room')
   async createDefaultRoom(@Res() res: Response) {
     try {
-      const result = await this.setupService.ensureDefaultRoom();
-      
+      const result = await this.salaEstudoService.ensureDefaultRoom();
       if (result.topico) {
         return res.status(HttpStatus.CREATED).json({ 
           message: 'Sala padrão criada com sucesso.',
@@ -35,13 +40,14 @@ export class SetupController {
     }
   }
 
-  @Get('setup-defaults')
-  async setupDefaults(@Res() res: Response) {
+  @ApiOperation({ summary: 'Garantir sala padrão e adicionar todos os usuários nela' })
+  @ApiResponse({ status: 200, description: 'Defaults ensured.' })
+  @ApiResponse({ status: 500, description: 'Erro ao garantir dados padrão.' })
+  @Get('salaEstudo-defaults')
+  async salaEstudoDefaults(@Res() res: Response) {
     try {
-      await this.setupService.ensureDefaultRoom();
-      
-      const result = await this.setupService.ensureAllUsersInDefaultRoom();
-
+      await this.salaEstudoService.ensureDefaultRoom();
+      const result = await this.salaEstudoService.ensureAllUsersInDefaultRoom();
       return res.status(HttpStatus.OK).json({ 
         message: 'Defaults ensured.',
         addedUsers: result.addedUsers,
@@ -55,6 +61,10 @@ export class SetupController {
     }
   }
 
+  @ApiOperation({ summary: 'Obter status da sala padrão' })
+  @ApiResponse({ status: 200, description: 'Status da sala padrão retornado com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Sala padrão não encontrada.' })
+  @ApiResponse({ status: 500, description: 'Erro ao obter status da sala padrão.' })
   @Get('status')
   async getStatus(@Res() res: Response) {
     try {
@@ -76,13 +86,11 @@ export class SetupController {
           TopicoComunidade: true
         }
       });
-
       if (!defaultRoom) {
         return res.status(HttpStatus.NOT_FOUND).json({
           message: 'Sala padrão não encontrada'
         });
       }
-
       return res.status(HttpStatus.OK).json({
         sala: {
           id: defaultRoom.id,

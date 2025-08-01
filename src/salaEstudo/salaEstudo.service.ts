@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class SetupService {
+export class salaEstudoService {
   constructor(private readonly prisma: PrismaService) {}
 
   async ensureDefaultRoom() {
@@ -18,7 +18,7 @@ export class SetupService {
           topicos: ['geral', 'estudo'],
           banner: 'https://ui-avatars.com/api/?name=Thinkspace&background=8e44ad&color=fff',
           moderador: {
-            connect: { id: '27736e40-85b4-41f4-bdc3-3c64894f3172' }
+            connect: { id: '7c40658f-f4e5-44de-a5ec-b50d0805c313' }
           }
         }
       });
@@ -43,7 +43,7 @@ export class SetupService {
     });
     
     if (!defaultRoom) {
-      throw new Error('Sala padrão não encontrada. Execute o setup primeiro.');
+      throw new Error('Sala padrão não encontrada. Execute o salaEstudo primeiro.');
     }
 
     const existingMember = await this.prisma.membroSala.findFirst({
@@ -58,7 +58,7 @@ export class SetupService {
         data: {
           usuarioId: userId,
           salaId: defaultRoom.id,
-          funcao: userId === '27736e40-85b4-41f4-bdc3-3c64894f3172' ? 'MODERADOR' : 'MEMBRO'
+          funcao: userId === '7c40658f-f4e5-44de-a5ec-b50d0805c313' ? 'MODERADOR' : 'MEMBRO'
         }
       });
     }
@@ -72,7 +72,7 @@ export class SetupService {
     });
     
     if (!defaultRoom) {
-      throw new Error('Sala padrão não encontrada. Execute o setup primeiro.');
+      throw new Error('Sala padrão não encontrada. Execute o salaEstudo primeiro.');
     }
 
     const users = await this.prisma.usuario.findMany();
@@ -91,7 +91,7 @@ export class SetupService {
           data: {
             usuarioId: user.id,
             salaId: defaultRoom.id,
-            funcao: user.id === '27736e40-85b4-41f4-bdc3-3c64894f3172' ? 'MODERADOR' : 'MEMBRO'
+            funcao: user.id === '7c40658f-f4e5-44de-a5ec-b50d0805c313' ? 'MODERADOR' : 'MEMBRO'
           }
         });
         addedUsers.push(user.id);

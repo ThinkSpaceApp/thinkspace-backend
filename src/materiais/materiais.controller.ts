@@ -26,8 +26,11 @@ import { Request } from "express";
 import { AuthGuard } from "@nestjs/passport";
 import { MateriaisService } from "./materiais.service";
 import { FileInterceptor } from "@nestjs/platform-express";
-import * as multer from "multer";
+import { MulterOptions } from "@nestjs/platform-express/multer/interfaces/multer-options.interface";
 import { OrigemMaterial } from "@prisma/client";
+// import { UploadPdfDto } from "./dto/upload-pdf.dto";
+// import { ResumoAssuntoDto } from "./dto/resumo-assunto.dto";
+import { uploadPdfConfig } from "./config/upload.config";
 
 @ApiTags("Materiais")
 @ApiBearerAuth()
@@ -77,20 +80,6 @@ export class MateriaisController {
   }
 
   @ApiOperation({ summary: "Criar material" })
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: {
-        origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"] },
-        nomeDesignado: { type: "string" },
-        materiaId: { type: "string" },
-        topicos: { type: "array", items: { type: "string" } },
-        caminhoArquivo: { type: "string" },
-        assuntoId: { type: "string" },
-      },
-      required: ["origem", "nomeDesignado", "materiaId"],
-    },
-  })
   @ApiResponse({ status: 201, description: "Material criado com sucesso." })
   @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
   @Post()
@@ -160,17 +149,6 @@ export class MateriaisController {
 
   @ApiOperation({ summary: "Editar material" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: {
-        nomeDesignado: { type: "string" },
-        topicos: { type: "array", items: { type: "string" } },
-        caminhoArquivo: { type: "string" },
-        assuntoId: { type: "string" },
-      },
-    },
-  })
   @ApiResponse({ status: 200, description: "Material atualizado com sucesso." })
   @ApiResponse({ status: 404, description: "Material não encontrado." })
   @Patch(":id")
@@ -219,45 +197,79 @@ export class MateriaisController {
     }
   }
 
-  @ApiOperation({ summary: "Upload de PDF para material" })
+  @ApiOperation({ 
+    summary: "Upload de PDF para material",
+    description: "Faz upload de um arquivo PDF, extrai o texto, gera um resumo usando IA e cria um material de estudo"
+  })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nomeDesignado: { type: "string", example: "Introdução à Programação" },
+        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
+        topicos: { type: "array", items: { type: "string" }, example: ["Variáveis", "Loops", "Funções"] },
+        descricao: { type: "string", example: "Material sobre conceitos básicos de programação" },
+      },
+      required: ["nomeDesignado", "materiaId", "topicos"],
+    },
+  })
   @ApiResponse({ status: 201, description: "Material criado com sucesso a partir do PDF." })
   @ApiResponse({ status: 400, description: "Arquivo PDF ou campos obrigatórios ausentes." })
+  @ApiResponse({ status: 413, description: "Arquivo muito grande (máximo 10MB)." })
+  @ApiResponse({ status: 500, description: "Erro interno do servidor." })
   @Post("upload-pdf")
-  @UseInterceptors(
-    FileInterceptor("file", {
-      storage: multer.diskStorage({
-        destination: "./uploads/pdfs",
-        filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-          cb(null, uniqueSuffix + "-" + file.originalname);
-        },
-      }),
-      fileFilter: (req, file, cb) => {
-        if (file.mimetype !== "application/pdf") {
-          return cb(new BadRequestException("Apenas arquivos PDF são permitidos."), false);
-        }
-        cb(null, true);
-      },
-      limits: { fileSize: 10 * 1024 * 1024 },
-    }),
-  )
+  @UseInterceptors(FileInterceptor("file", uploadPdfConfig as MulterOptions))
   async uploadPdfMaterial(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: { nomeDesignado: string; materiaId: string; topicos: string[] },
+    @Body() body: any,
     @Req() req: Request,
   ) {
-    if (!file) throw new BadRequestException("Arquivo PDF é obrigatório.");
-    if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length) {
-      throw new BadRequestException("Campos obrigatórios ausentes.");
+    try {
+      if (!file) {
+        throw new BadRequestException("Arquivo PDF é obrigatório.");
+      }
+
+      if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length) {
+        throw new BadRequestException("Nome designado, matéria ID e tópicos são obrigatórios.");
+      }
+
+      if (!Array.isArray(body.topicos) || body.topicos.length === 0) {
+        throw new BadRequestException("Pelo menos um tópico deve ser fornecido.");
+      }
+
+      const userId = (req.user as any).userId;
+      
+      const resultado = await this.materiaisService.processarPdfEgerarResumo({
+        userId,
+        nomeDesignado: body.nomeDesignado,
+        materiaId: body.materiaId,
+        topicos: body.topicos,
+        caminhoArquivo: file.path,
+        descricao: body.descricao,
+        nomeArquivo: file.originalname,
+      });
+
+      return {
+        message: "Material criado com sucesso a partir do PDF.",
+        material: resultado,
+        estatisticas: {
+          tamanhoArquivo: file.size,
+          nomeArquivo: file.originalname,
+          dataUpload: new Date().toISOString(),
+        }
+      };
+
+    } catch (error) {
+      console.error("Erro no upload de PDF:", error);
+      
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      throw new BadRequestException(
+        "Erro ao processar o arquivo PDF. Verifique se o arquivo é válido e tente novamente."
+      );
     }
-    const userId = (req.user as any).userId;
-    return this.materiaisService.criarMaterialComPdf({
-      userId,
-      nomeDesignado: body.nomeDesignado,
-      materiaId: body.materiaId,
-      topicos: body.topicos,
-      caminhoArquivo: file.path,
-    });
   }
 
   @ApiOperation({ summary: "Status do endpoint de upload de PDF" })
@@ -267,37 +279,74 @@ export class MateriaisController {
     return { status: "Endpoint de upload de PDF ativo!" };
   }
 
-  @ApiOperation({ summary: "Criar resumo automático por assunto" })
+  @ApiOperation({ 
+    summary: "Criar resumo automático por assunto",
+    description: "Cria um material de estudo com resumo gerado por IA baseado em um assunto específico"
+  })
   @ApiBody({
     schema: {
       type: "object",
       properties: {
-        nomeDesignado: { type: "string" },
-        materiaId: { type: "string" },
-        topicos: { type: "array", items: { type: "string" } },
-        assunto: { type: "string" },
+        nomeDesignado: { type: "string", example: "Resumo de História" },
+        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
+        topicos: { type: "array", items: { type: "string" }, example: ["Revolução Francesa", "Iluminismo"] },
+        assunto: { type: "string", example: "A Revolução Francesa foi um período de grandes mudanças..." },
       },
       required: ["nomeDesignado", "materiaId", "topicos", "assunto"],
     },
   })
   @ApiResponse({ status: 201, description: "Resumo criado com sucesso." })
-  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes." })
+  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
+  @ApiResponse({ status: 500, description: "Erro interno do servidor." })
   @Post("resumo-assunto")
   async criarResumoPorAssunto(
     @Req() req: Request,
-    @Body() body: { nomeDesignado: string; materiaId: string; topicos: string[]; assunto: string },
+    @Body() body: any,
   ) {
-    if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length || !body.assunto) {
-      throw new BadRequestException("Campos obrigatórios ausentes.");
+    try {
+      if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length || !body.assunto) {
+        throw new BadRequestException("Todos os campos são obrigatórios: nomeDesignado, materiaId, topicos e assunto.");
+      }
+
+      if (!Array.isArray(body.topicos) || body.topicos.length === 0) {
+        throw new BadRequestException("Pelo menos um tópico deve ser fornecido.");
+      }
+
+      if (body.assunto.trim().length < 10) {
+        throw new BadRequestException("O assunto deve ter pelo menos 10 caracteres para gerar um resumo adequado.");
+      }
+
+      const userId = (req.user as any).userId;
+      
+      const resultado = await this.materiaisService.criarMaterialComResumoAssunto({
+        userId,
+        nomeDesignado: body.nomeDesignado,
+        materiaId: body.materiaId,
+        topicos: body.topicos,
+        assunto: body.assunto,
+      });
+
+      return {
+        message: "Resumo por assunto criado com sucesso.",
+        material: resultado,
+        estatisticas: {
+          assunto: body.assunto,
+          quantidadeTopicos: body.topicos.length,
+          dataCriacao: new Date().toISOString(),
+        }
+      };
+
+    } catch (error) {
+      console.error("Erro ao criar resumo por assunto:", error);
+      
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      throw new BadRequestException(
+        "Erro ao criar resumo por assunto. Verifique os dados fornecidos e tente novamente."
+      );
     }
-    const userId = (req.user as any).userId;
-    return this.materiaisService.criarMaterialComResumoAssunto({
-      userId,
-      nomeDesignado: body.nomeDesignado,
-      materiaId: body.materiaId,
-      topicos: body.topicos,
-      assunto: body.assunto,
-    });
   }
 
   @ApiOperation({ summary: "Obter resumo automático por assunto" })
