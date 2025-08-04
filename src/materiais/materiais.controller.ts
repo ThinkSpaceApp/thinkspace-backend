@@ -37,6 +37,19 @@ import { uploadPdfConfig } from "./config/upload.config";
 export class MateriaisController {
   constructor(private readonly materiaisService: MateriaisService) {}
 
+  @ApiOperation({ summary: "Listar materiais do usuário" })
+  @ApiResponse({ status: 200, description: "Materiais encontrados com sucesso." })
+  @Get("/")
+  async listarMateriais(@Req() req: Request) {
+    const materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
+    return {
+      message: materiais.length
+        ? "Materiais encontrados com sucesso."
+        : "Nenhum material encontrado.",
+      materiais,
+    };
+  }
+
   @ApiOperation({ summary: "Etapa 1 - Selecionar origem do material" })
   @ApiBody({
     schema: {
@@ -152,27 +165,6 @@ export class MateriaisController {
       await this.materiaisService.limparProgressoMaterial(userId);
       return { message: "Material criado com sucesso.", etapa: 3, material: materialCriado };
     }
-  }
-
-
-  @ApiOperation({ summary: "Status do serviço de materiais" })
-  @ApiResponse({ status: 200, description: "Servidor de materiais ativo!" })
-  @Get("/")
-  getStatus() {
-    return { status: "Servidor de materiais ativo!" };
-  }
-
-  @ApiOperation({ summary: "Listar materiais do usuário" })
-  @ApiResponse({ status: 200, description: "Materiais encontrados com sucesso." })
-  @Get()
-  async listarMateriais(@Req() req: Request) {
-    const materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
-    return {
-      message: materiais.length
-        ? "Materiais encontrados com sucesso."
-        : "Nenhum material encontrado.",
-      materiais,
-    };
   }
 
   @ApiOperation({ summary: "Obter material por ID" })
@@ -441,10 +433,10 @@ export class MateriaisController {
       type: "object",
       properties: {
         nomeDesignado: { type: "string", example: "Resumo de Programação" },
-        nomeMateria: { type: "string", example: "Programação" },
+        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
         topicos: { type: "array", items: { type: "string" }, example: ["Variáveis", "Loops"] },
       },
-      required: ["nomeDesignado", "nomeMateria", "topicos"],
+      required: ["nomeDesignado", "materiaId", "topicos"],
     },
   })
   @ApiResponse({ status: 201, description: "Resumo IA gerado e material criado com sucesso." })
@@ -452,19 +444,14 @@ export class MateriaisController {
   @ApiResponse({ status: 500, description: "Erro interno do servidor." })
   @Post("resumo-ia-topicos")
   async gerarResumoIaPorTopicos(@Req() req: Request, @Body() body: any) {
-    if (!body.nomeDesignado || !body.nomeMateria || !body.topicos?.length) {
-      throw new BadRequestException("Todos os campos são obrigatórios: nomeDesignado, nomeMateria, topicos.");
+    if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length) {
+      throw new BadRequestException("Todos os campos são obrigatórios: nomeDesignado, materiaId, topicos.");
     }
     if (!Array.isArray(body.topicos) || body.topicos.length === 0) {
       throw new BadRequestException("Pelo menos um tópico deve ser fornecido.");
     }
 
-    const materia = await this.materiaisService.buscarMateriaPorNome(body.nomeMateria);
-    if (!materia) {
-      throw new BadRequestException("Matéria não encontrada pelo nome informado.");
-    }
-    const materiaId = materia.id;
-
+    const materiaId = body.materiaId;
     const userId = (req.user as any).userId;
     try {
       const resultado = await this.materiaisService.gerarResumoIaPorTopicos({
@@ -505,156 +492,155 @@ export class MateriaisController {
       topicos: material.topicos,
     };
   }
-
   
-  // @ApiOperation({ summary: "Gerar quizzes automáticos via IA" })
-  // @ApiBody({
-  //   schema: {
-  //     type: "object",
-  //     properties: {
-  //       nomeDesignado: { type: "string", example: "Quiz de História" },
-  //       materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
-  //       topicos: { type: "array", items: { type: "string" }, example: ["Revolução Francesa", "Iluminismo"] },
-  //       caminhoArquivo: { type: "string", example: "uploads/pdfs/historia.pdf" },
-  //       tipoMaterial: { type: "string", example: "QUIZZ" },
-  //       quantidade: { type: "number", example: 10 },
-  //       origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"], example: "TOPICOS" },
-  //       textoConteudo: { type: "string", example: "Texto extraído do PDF ou digitado" },
-  //       assunto: { type: "string", example: "A Revolução Francesa foi um período de grandes mudanças..." },
-  //     },
-  //     required: ["nomeDesignado", "materiaId", "quantidade", "origem"],
-  //   },
-  // })
-  // @ApiResponse({ status: 201, description: "Quizzes gerados com sucesso.", schema: {
-  //   type: "object",
-  //   properties: {
-  //     message: { type: "string" },
-  //     material: { type: "object" },
-  //     quizzes: { type: "array", items: { type: "object" } },
-  //     estatisticas: {
-  //       type: "object",
-  //       properties: {
-  //         quantidadeQuestoes: { type: "number" },
-  //         dataCriacao: { type: "string", format: "date-time" },
-  //       },
-  //     },
-  //   },
-  // }})
-  // @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
-  // @Post('quizzes')
-  // async gerarQuizzes(@Req() req: Request, @Body() body: any) {
-  //   if (!body || typeof body !== 'object') {
-  //     throw new BadRequestException('Body da requisição ausente ou inválido.');
-  //   }
-  //   const userId = (req.user as any).userId;
-  //   const {
-  //     nomeDesignado,
-  //     materiaId,
-  //     topicos,
-  //     caminhoArquivo,
-  //     tipoMaterial,
-  //     quantidade,
-  //     origem,
-  //     textoConteudo,
-  //     assunto,
-  //   } = body;
-  //   if (!nomeDesignado || !materiaId || !quantidade || !origem) {
-  //     throw new BadRequestException('Campos obrigatórios ausentes: nomeDesignado, materiaId, quantidade, origem.');
-  //   }
-  //   const resultado = await this.materiaisService.gerarQuizzes({
-  //     userId,
-  //     nomeDesignado,
-  //     materiaId,
-  //     topicos,
-  //     caminhoArquivo,
-  //     tipoMaterial,
-  //     quantidade,
-  //     origem,
-  //     textoConteudo,
-  //     assunto,
-  //   });
-  //   return {
-  //     message: 'Quizzes gerados com sucesso.',
-  //     material: resultado.material,
-  //     quizzes: resultado.quizzes,
-  //     estatisticas: {
-  //       quantidadeQuestoes: resultado.quizzes.length,
-  //       dataCriacao: new Date().toISOString(),
-  //     },
-  //   };
-  // }
+  @ApiOperation({ summary: "Gerar quizzes automáticos via IA" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nomeDesignado: { type: "string", example: "Quiz de História" },
+        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
+        topicos: { type: "array", items: { type: "string" }, example: ["Revolução Francesa", "Iluminismo"] },
+        caminhoArquivo: { type: "string", example: "uploads/pdfs/historia.pdf" },
+        tipoMaterial: { type: "string", example: "QUIZZ" },
+        quantidade: { type: "number", example: 10 },
+        origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"], example: "TOPICOS" },
+        textoConteudo: { type: "string", example: "Texto extraído do PDF ou digitado" },
+        assunto: { type: "string", example: "A Revolução Francesa foi um período de grandes mudanças..." },
+      },
+      required: ["nomeDesignado", "materiaId", "quantidade", "origem"],
+    },
+  })
+  @ApiResponse({ status: 201, description: "Quizzes gerados com sucesso.", schema: {
+    type: "object",
+    properties: {
+      message: { type: "string" },
+      material: { type: "object" },
+      quizzes: { type: "array", items: { type: "object" } },
+      estatisticas: {
+        type: "object",
+        properties: {
+          quantidadeQuestoes: { type: "number" },
+          dataCriacao: { type: "string", format: "date-time" },
+        },
+      },
+    },
+  }})
+  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
+  @Post('quizzes')
+  async gerarQuizzes(@Req() req: Request, @Body() body: any) {
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestException('Body da requisição ausente ou inválido.');
+    }
+    const userId = (req.user as any).userId;
+    const {
+      nomeDesignado,
+      materiaId,
+      topicos,
+      caminhoArquivo,
+      tipoMaterial,
+      quantidade,
+      origem,
+      textoConteudo,
+      assunto,
+    } = body;
+    if (!nomeDesignado || !materiaId || !quantidade || !origem) {
+      throw new BadRequestException('Campos obrigatórios ausentes: nomeDesignado, materiaId, quantidade, origem.');
+    }
+    const resultado = await this.materiaisService.gerarQuizzes({
+      userId,
+      nomeDesignado,
+      materiaId,
+      topicos,
+      caminhoArquivo,
+      tipoMaterial,
+      quantidade,
+      origem,
+      textoConteudo,
+      assunto,
+    });
+    return {
+      message: 'Quizzes gerados com sucesso.',
+      material: resultado.material,
+      quizzes: resultado.quizzes,
+      estatisticas: {
+        quantidadeQuestoes: resultado.quizzes.length,
+        dataCriacao: new Date().toISOString(),
+      },
+    };
+  }
 
-  // @ApiOperation({ summary: "Gerar flashcards automáticos via IA" })
-  // @ApiBody({
-  //   schema: {
-  //     type: "object",
-  //     properties: {
-  //       nomeDesignado: { type: "string", example: "Flashcards de Biologia" },
-  //       materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
-  //       topicos: { type: "array", items: { type: "string" }, example: ["Células", "Genética"] },
-  //       caminhoArquivo: { type: "string", example: "uploads/pdfs/biologia.pdf" },
-  //       tipoMaterial: { type: "string", example: "FLASHCARD" },
-  //       quantidade: { type: "number", example: 10 },
-  //       origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"], example: "TOPICOS" },
-  //       textoConteudo: { type: "string", example: "Texto extraído do PDF ou digitado" },
-  //     },
-  //     required: ["nomeDesignado", "materiaId", "quantidade", "origem"],
-  //   },
-  // })
-  // @ApiResponse({ status: 201, description: "Flashcards gerados com sucesso.", schema: {
-  //   type: "object",
-  //   properties: {
-  //     message: { type: "string" },
-  //     material: { type: "object" },
-  //     flashcards: { type: "array", items: { type: "object" } },
-  //     estatisticas: {
-  //       type: "object",
-  //       properties: {
-  //         quantidadeFlashcards: { type: "number" },
-  //         dataCriacao: { type: "string", format: "date-time" },
-  //       },
-  //     },
-  //   },
-  // }})
-  // @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
-  // @Post('flashcards')
-  // async gerarFlashcards(@Req() req: Request, @Body() body: any) {
-  //   if (!body || typeof body !== 'object') {
-  //     throw new BadRequestException('Body da requisição ausente ou inválido.');
-  //   }
-  //   const userId = (req.user as any).userId;
-  //   const {
-  //     nomeDesignado,
-  //     materiaId,
-  //     topicos,
-  //     caminhoArquivo,
-  //     tipoMaterial,
-  //     quantidade,
-  //     origem,
-  //     textoConteudo,
-  //   } = body;
-  //   if (!nomeDesignado || !materiaId || !quantidade || !origem) {
-  //     throw new BadRequestException('Campos obrigatórios ausentes: nomeDesignado, materiaId, quantidade, origem.');
-  //   }
-  //   const resultado = await this.materiaisService.gerarFlashcards({
-  //     userId,
-  //     nomeDesignado,
-  //     materiaId,
-  //     topicos,
-  //     caminhoArquivo,
-  //     tipoMaterial,
-  //     quantidade,
-  //     origem,
-  //     textoConteudo,
-  //   });
-  //   return {
-  //     message: 'Flashcards gerados com sucesso.',
-  //     material: resultado.material,
-  //     flashcards: resultado.flashcards,
-  //     estatisticas: {
-  //       quantidadeFlashcards: resultado.flashcards.length,
-  //       dataCriacao: new Date().toISOString(),
-  //     },
-  //   };
-  // }
+  @ApiOperation({ summary: "Gerar flashcards automáticos via IA" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nomeDesignado: { type: "string", example: "Flashcards de Biologia" },
+        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
+        topicos: { type: "array", items: { type: "string" }, example: ["Células", "Genética"] },
+        caminhoArquivo: { type: "string", example: "uploads/pdfs/biologia.pdf" },
+        tipoMaterial: { type: "string", example: "FLASHCARD" },
+        quantidade: { type: "number", example: 10 },
+        origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"], example: "TOPICOS" },
+        textoConteudo: { type: "string", example: "Texto extraído do PDF ou digitado" },
+      },
+      required: ["nomeDesignado", "materiaId", "quantidade", "origem"],
+    },
+  })
+  @ApiResponse({ status: 201, description: "Flashcards gerados com sucesso.", schema: {
+    type: "object",
+    properties: {
+      message: { type: "string" },
+      material: { type: "object" },
+      flashcards: { type: "array", items: { type: "object" } },
+      estatisticas: {
+        type: "object",
+        properties: {
+          quantidadeFlashcards: { type: "number" },
+          dataCriacao: { type: "string", format: "date-time" },
+        },
+      },
+    },
+  }})
+  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
+  @Post('flashcards')
+  async gerarFlashcards(@Req() req: Request, @Body() body: any) {
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestException('Body da requisição ausente ou inválido.');
+    }
+    const userId = (req.user as any).userId;
+    const {
+      nomeDesignado,
+      materiaId,
+      topicos,
+      caminhoArquivo,
+      tipoMaterial,
+      quantidade,
+      origem,
+      textoConteudo,
+    } = body;
+    if (!nomeDesignado || !materiaId || !quantidade || !origem) {
+      throw new BadRequestException('Campos obrigatórios ausentes: nomeDesignado, materiaId, quantidade, origem.');
+    }
+    const resultado = await this.materiaisService.gerarFlashcards({
+      userId,
+      nomeDesignado,
+      materiaId,
+      topicos,
+      caminhoArquivo,
+      tipoMaterial,
+      quantidade,
+      origem,
+      textoConteudo,
+    });
+    return {
+      message: 'Flashcards gerados com sucesso.',
+      material: resultado.material,
+      flashcards: resultado.flashcards,
+      estatisticas: {
+        quantidadeFlashcards: resultado.flashcards.length,
+        dataCriacao: new Date().toISOString(),
+      },
+    };
+  }
 }
