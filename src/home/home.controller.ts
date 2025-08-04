@@ -86,6 +86,7 @@ export class HomeController {
 
     const ano = now.getFullYear();
     const mes = now.getMonth();
+    const diaAtual = now.getDate();
     const primeiroDia = new Date(ano, mes, 1);
     const ultimoDia = new Date(ano, mes + 1, 0);
     const dias = [];
@@ -103,6 +104,7 @@ export class HomeController {
       mesAtual: meses[mes],
       anoAtual: ano,
       dias,
+      diaAtual,
     };
   }
 
