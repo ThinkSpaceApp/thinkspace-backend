@@ -165,7 +165,9 @@ model MaterialEstudo {
   autor          Usuario        @relation(fields: [autorId], references: [id])
   resumoIA       String? @db.Text
   flashcards     Flashcard[]
+  flashcardsJson String? @db.Text
   quizzes        Quiz[]
+  quizzesJson    String? @db.Text
   revisoes       Revisao[]
   criadoEm       DateTime       @default(now())
 

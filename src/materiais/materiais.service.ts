@@ -39,7 +39,7 @@ export class MateriaisService {
     if (origem === 'PDF' && caminhoArquivo) {
       textoBase = await this.pdfProcessor.extrairTextoDoPdf(caminhoArquivo);
     } else if (origem === 'TOPICOS' && topicos) {
-      textoBase = this.montarTextoParaResumo(nomeDesignado, topicos);
+      textoBase = topicos.join(', ');
     } else if (origem === 'ASSUNTO' && assunto) {
       textoBase = assunto;
     }
@@ -74,6 +74,7 @@ export class MateriaisService {
         quantidadeQuestoes: quizzes.length,
         autorId: userId,
         tipoMaterial: (tipoMaterial as TipoMaterialEstudo) || (origem as any),
+        // quizzesJson: JSON.stringify(quizzes),
       },
     });
     return { material, quizzes };
@@ -103,19 +104,26 @@ export class MateriaisService {
     if (origem === 'PDF' && caminhoArquivo) {
       textoBase = await this.pdfProcessor.extrairTextoDoPdf(caminhoArquivo);
     } else if (origem === 'TOPICOS' && topicos) {
-      textoBase = this.montarTextoParaResumo(nomeDesignado, topicos);
+      textoBase = topicos.join(', ');
     }
     if (!textoBase || textoBase.trim().length === 0) {
       throw new Error('Não foi possível obter o conteúdo base para gerar flashcards.');
     }
-    const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o conteúdo abaixo. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
-    const flashcardsJson = await this.glm45Service.gerarTextoEducativo({
+    const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o tema "${nomeDesignado}" e os tópicos: ${textoBase}. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
-      userPrompt: textoBase,
-      maxTokens: 1200,
+      userPrompt: '',
+      maxTokens: 10000,
       temperature: 0.5,
       thinking: false,
     });
+    if (flashcardsJson) {
+      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+        const jsonMatch = match.match(/\[.*\]/s);
+        return jsonMatch ? jsonMatch[0] : '';
+      });
+      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, '').trim();
+    }
     let flashcards: any[] = [];
     try {
       flashcards = JSON.parse(flashcardsJson);
@@ -134,9 +142,10 @@ export class MateriaisService {
         quantidadeFlashcards: flashcards.length,
         autorId: userId,
         tipoMaterial: (tipoMaterial as TipoMaterialEstudo) || (origem as any),
+        // flashcardsJson: JSON.stringify(flashcards),
       },
     });
-    return { material, flashcards };
+    return { material, flashcards, respostaIaCrua: flashcardsJson };
   }
 
   async gerarResumoIaPorTopicos({ userId, nomeDesignado, materiaId, topicos }: {

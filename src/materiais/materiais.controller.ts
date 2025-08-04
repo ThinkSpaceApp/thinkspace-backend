@@ -638,7 +638,7 @@ export class MateriaisController {
       material: resultado.material,
       flashcards: resultado.flashcards,
       estatisticas: {
-        quantidadeFlashcards: resultado.flashcards.length,
+        quantidadeFlashcards: resultado.flashcards?.length || 0,
         dataCriacao: new Date().toISOString(),
       },
     };
