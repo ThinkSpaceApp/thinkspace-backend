@@ -74,7 +74,7 @@ export class MateriaisService {
         quantidadeQuestoes: quizzes.length,
         autorId: userId,
         tipoMaterial: (tipoMaterial as TipoMaterialEstudo) || (origem as any),
-        // quizzesJson: JSON.stringify(quizzes),
+        quizzesJson: JSON.stringify(quizzes),
       },
     });
     return { material, quizzes };
@@ -142,7 +142,7 @@ export class MateriaisService {
         quantidadeFlashcards: flashcards.length,
         autorId: userId,
         tipoMaterial: (tipoMaterial as TipoMaterialEstudo) || (origem as any),
-        // flashcardsJson: JSON.stringify(flashcards),
+        flashcardsJson: JSON.stringify(flashcards),
       },
     });
     return { material, flashcards, respostaIaCrua: flashcardsJson };
