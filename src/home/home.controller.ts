@@ -39,7 +39,7 @@ export class HomeController {
       saudacao = "Boa noite";
     }
     return {
-      mensagem: `${saudacao}, ${user.primeiroNome}`,
+      mensagem: `${saudacao}, ${user.primeiroNome}!`,
       relatorio: "Veja o relatório das suas metas de estudo semanais",
       relatorioUrl: `/users/${user.id}/metrica`,
     };
