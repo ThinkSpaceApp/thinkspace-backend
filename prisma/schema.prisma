@@ -1,3 +1,9 @@
+enum TipoMaterialEstudo {
+  QUIZZ
+  FLASHCARD
+  RESUMO_IA
+  COMPLETO
+}
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -146,21 +152,25 @@ model MaterialEstudo {
   id             String         @id @default(uuid())
   titulo         String
   origem         OrigemMaterial
+  tipoMaterial   TipoMaterialEstudo
   nomeDesignado  String?
   materiaId      String
   materia        Materia        @relation(fields: [materiaId], references: [id])
   topicos        String[]
   caminhoArquivo String?
-  conteudo       String?
+  conteudo       String? @db.Text
   assuntoId      String?
   assunto        Assunto?       @relation(fields: [assuntoId], references: [id])
   autorId        String
   autor          Usuario        @relation(fields: [autorId], references: [id])
-  resumoIA       String?
+  resumoIA       String? @db.Text
   flashcards     Flashcard[]
   quizzes        Quiz[]
   revisoes       Revisao[]
   criadoEm       DateTime       @default(now())
+
+  quantidadeQuestoes    Int?
+  quantidadeFlashcards  Int?
 
   salasEstudo    SalaEstudoMaterial[]
   materias       Materia[]      @relation("MateriaParaMaterial")

@@ -88,48 +88,6 @@ export class UsersController {
     return this.usersService.getMateriasByUserId((req.user as any).userId);
   }
 
-  @ApiOperation({ summary: "Criar nova matéria" })
-  @ApiResponse({ status: 201, description: "Matéria criada com sucesso." })
-  @Post("materias")
-  async createMateria(
-    @Req() req: Request,
-    @Body() body: { nome: string; cor: string; icone: string },
-  ) {
-    if (!body.nome || !body.cor || !body.icone) {
-      throw new BadRequestException("Todos os campos são obrigatórios.");
-    }
-    if (!req.user || !(req.user as any).userId) {
-      throw new BadRequestException("Usuário não autenticado.");
-    }
-    return this.usersService.createMateria((req.user as any).userId, body);
-  }
-
-  @ApiOperation({ summary: "Adicionar material a uma matéria" })
-  @ApiResponse({ status: 200, description: "Material adicionado à matéria com sucesso." })
-  @Post("materias/:materiaId/material/:materialId")
-  async addMaterialToMateria(
-    @Param("materiaId") materiaId: string,
-    @Param("materialId") materialId: string,
-  ) {
-    return this.usersService.addMaterialToMateria(materiaId, materialId);
-  }
-
-  @ApiOperation({ summary: "Atualizar tempo ativo e marcar revisão" })
-  @ApiResponse({
-    status: 200,
-    description: "Tempo ativo atualizado e revisão marcada com sucesso.",
-  })
-  @Post("materias/:materiaId/tempo-ativo")
-  async atualizarTempoAtivoEMarcarRevisao(
-    @Param("materiaId") materiaId: string,
-    @Body() body: { minutos: number },
-  ) {
-    if (!body.minutos) {
-      throw new BadRequestException("Minutos é obrigatório.");
-    }
-    return this.usersService.atualizarTempoAtivoEMarcarRevisao(materiaId, body.minutos);
-  }
-
   @ApiOperation({ summary: "Registrar atividade" })
   @ApiResponse({ status: 200, description: "Atividade registrada com sucesso." })
   @Post("metrica/registrar-atividade")

@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import pdfParse from 'pdf-parse';
 import * as fs from 'fs/promises';
 import axios from 'axios';
+import { Glm45Service } from './glm-4.5.service';
 
 @Injectable()
 export class PdfProcessorService {
   private readonly logger = new Logger(PdfProcessorService.name);
+  constructor(private readonly glm45Service: Glm45Service) {}
 
   async extrairTextoDoPdf(caminhoArquivo: string): Promise<string> {
     try {
@@ -31,42 +33,39 @@ export class PdfProcessorService {
 
 
   async gerarResumoComIA(texto: string): Promise<string> {
-    const apiKey = process.env.HUGGINGFACE_API_KEY;
-    
-    if (!apiKey) {
-      this.logger.warn('HUGGINGFACE_API_KEY não configurada. Pulando geração de resumo.');
-      return '';
-    }
-
     try {
-      this.logger.log('Iniciando geração de resumo com IA...');
-      
-      const modelo = 'csebuetnlp/mT5_multilingual_XLSum';
+      this.logger.log('Iniciando geração de resumo com IA usando GLM-4.5...');
       const partes = this.dividirTextoEmPartes(texto, 4000);
-      
       this.logger.log(`Dividindo texto em ${partes.length} partes para processamento`);
-      
       const resumosParciais: string[] = [];
-
       for (let i = 0; i < partes.length; i++) {
         this.logger.log(`Processando parte ${i + 1}/${partes.length}`);
-        const resumo = await this.chamarAPIHuggingFace(modelo, partes[i]);
+        const resumo = await this.glm45Service.gerarTextoEducativo({
+          systemPrompt: 'Você é um especialista em educação. Gere um resumo didático e detalhado do texto abaixo.',
+          userPrompt: partes[i],
+          maxTokens: 300,
+          temperature: 0.7,
+          thinking: true,
+        });
         if (resumo) {
           resumosParciais.push(resumo);
         }
       }
-
       let resumoFinal = '';
       if (resumosParciais.length === 1) {
         resumoFinal = resumosParciais[0];
       } else if (resumosParciais.length > 1) {
         this.logger.log('Gerando resumo final combinando resumos parciais...');
-        resumoFinal = await this.chamarAPIHuggingFace(modelo, resumosParciais.join(' '));
+        resumoFinal = await this.glm45Service.gerarTextoEducativo({
+          systemPrompt: 'Combine e resuma didaticamente os textos abaixo em um único resumo detalhado.',
+          userPrompt: resumosParciais.join(' '),
+          maxTokens: 300,
+          temperature: 0.7,
+          thinking: true,
+        });
       }
-
       this.logger.log('Resumo gerado com sucesso');
       return resumoFinal || 'Resumo não disponível';
-
     } catch (error) {
       this.logger.error(`Erro ao gerar resumo com IA: ${error instanceof Error ? error.message : String(error)}`);
       return 'Erro ao gerar resumo com IA.';
@@ -99,10 +98,17 @@ export class PdfProcessorService {
   async chamarAPIHuggingFace(modelo: string, texto: string): Promise<string> {
     try {
       const apiKey = process.env.HUGGINGFACE_API_KEY;
-      
+      const parametros = {
+        inputs: texto,
+        parameters: {
+          max_length: 2048,
+          min_length: 400,
+          do_sample: false
+        }
+      };
       const response = await axios.post(
         `https://api-inference.huggingface.co/models/${modelo}`,
-        { inputs: texto },
+        parametros,
         {
           headers: {
             Authorization: `Bearer ${apiKey}`,

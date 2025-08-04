@@ -1,4 +1,4 @@
-import {
+  import {
   Controller,
   Get,
   Post,
@@ -28,8 +28,6 @@ import { MateriaisService } from "./materiais.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { MulterOptions } from "@nestjs/platform-express/multer/interfaces/multer-options.interface";
 import { OrigemMaterial } from "@prisma/client";
-// import { UploadPdfDto } from "./dto/upload-pdf.dto";
-// import { ResumoAssuntoDto } from "./dto/resumo-assunto.dto";
 import { uploadPdfConfig } from "./config/upload.config";
 
 @ApiTags("Materiais")
@@ -38,6 +36,124 @@ import { uploadPdfConfig } from "./config/upload.config";
 @Controller("materiais")
 export class MateriaisController {
   constructor(private readonly materiaisService: MateriaisService) {}
+
+  @ApiOperation({ summary: "Etapa 1 - Selecionar origem do material" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"] },
+      },
+      required: ["origem"],
+    },
+  })
+  @ApiResponse({ status: 200, description: "Origem selecionada com sucesso." })
+
+  @Post("escolha-origem-material")
+  async etapaOrigem(@Req() req: Request, @Body() body: any) {
+    const origensValidas = ["TOPICOS", "DOCUMENTO", "ASSUNTO"];
+    if (!body || typeof body !== "object" || !body.origem) {
+      throw new BadRequestException("Campo origem obrigatório.");
+    }
+    if (!origensValidas.includes(body.origem)) {
+      throw new BadRequestException(`A origem deve ser uma das seguintes: ${origensValidas.join(", ")}`);
+    }
+    const userId = (req.user as any).userId;
+    await this.materiaisService.salvarProgressoMaterial(userId, { origem: body.origem });
+    return { message: "Origem do material escolhida com sucesso.", origem: body.origem };
+  }
+
+
+  @ApiOperation({ summary: "Etapa 2 - Selecionar tipo do material" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        tipoMaterial: { type: "string", enum: ["QUIZZ", "FLASHCARD", "RESUMO_IA", "COMPLETO"] },
+      },
+      required: ["tipoMaterial"],
+    },
+  })
+  @ApiResponse({ status: 200, description: "Tipo de material selecionado com sucesso." })
+
+  @Post("escolha-tipo-material")
+  async etapaTipo(@Req() req: Request, @Body() body: any) {
+    const tiposValidos = ["QUIZZ", "FLASHCARD", "RESUMO_IA", "COMPLETO"];
+    if (!body || typeof body !== "object" || !body.tipoMaterial) {
+      throw new BadRequestException("Campo tipoMaterial obrigatório.");
+    }
+    if (!tiposValidos.includes(body.tipoMaterial)) {
+      throw new BadRequestException(`O tipoMaterial deve ser um dos seguintes: ${tiposValidos.join(", ")}`);
+    }
+    const userId = (req.user as any).userId;
+    await this.materiaisService.salvarProgressoMaterial(userId, { tipoMaterial: body.tipoMaterial });
+    return { message: "Tipo de material escolhido com sucesso.", tipoMaterial: body.tipoMaterial };
+  }
+
+
+  @ApiOperation({ summary: "Etapa 3 - Dados básicos do material" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nomeDesignado: { type: "string" },
+        nomeMateria: { type: "string", description: "Nome da matéria. O backend irá alocar pelo nome." },
+        topicos: { type: "array", items: { type: "string" } },
+        assuntoId: { type: "string" },
+        descricao: { type: "string" },
+        quantidadeQuestoes: { type: "number", example: 10, description: "Número de questões para quizzes (máx 25)" },
+        quantidadeFlashcards: { type: "number", example: 10, description: "Número de flashcards (máx 25)" },
+      },
+      required: ["nomeDesignado", "nomeMateria", "topicos"],
+    },
+  })
+  
+  @Post("etapa-dados")
+  async etapaDados(@Req() req: Request, @Body() body: any) {
+    if (!body.nomeDesignado || !body.nomeMateria || !body.topicos?.length) {
+      throw new BadRequestException("Nome designado, nome da matéria e tópicos são obrigatórios.");
+    }
+    if (!body.tipoMaterial) {
+      throw new BadRequestException("O tipo do material deve ser informado nesta etapa.");
+    }
+
+    const materia = await this.materiaisService.buscarMateriaPorNome(body.nomeMateria);
+    if (!materia) {
+      throw new BadRequestException("Matéria não encontrada pelo nome informado.");
+    }
+    const materiaId = materia.id;
+
+    if (body.tipoMaterial === "QUIZZ") {
+      if (typeof body.quantidadeQuestoes !== "number" || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
+        throw new BadRequestException("Para quizzes, informe quantidadeQuestoes entre 1 e 25.");
+      }
+    }
+    if (body.tipoMaterial === "FLASHCARD") {
+      if (typeof body.quantidadeFlashcards !== "number" || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
+        throw new BadRequestException("Para flashcards, informe quantidadeFlashcards entre 1 e 25.");
+      }
+    }
+    if (body.tipoMaterial === "COMPLETO") {
+      if (typeof body.quantidadeQuestoes !== "number" || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
+        throw new BadRequestException("Para completo, informe quantidadeQuestoes entre 1 e 25.");
+      }
+      if (typeof body.quantidadeFlashcards !== "number" || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
+        throw new BadRequestException("Para completo, informe quantidadeFlashcards entre 1 e 25.");
+      }
+    }
+
+    const userId = (req.user as any).userId;
+    await this.materiaisService.salvarProgressoMaterial(userId, { ...body, materiaId });
+    if (body.origem === "DOCUMENTO") {
+      return { message: "Dados básicos recebidos. Aguarde o upload do PDF.", etapa: 3, dados: { ...body, materiaId } };
+    } else {
+      const progresso = await this.materiaisService.getProgressoMaterial(userId);
+      const materialCriado = await this.materiaisService.criarPorTopicos(userId, progresso);
+      await this.materiaisService.limparProgressoMaterial(userId);
+      return { message: "Material criado com sucesso.", etapa: 3, material: materialCriado };
+    }
+  }
+
 
   @ApiOperation({ summary: "Status do serviço de materiais" })
   @ApiResponse({ status: 200, description: "Servidor de materiais ativo!" })
@@ -77,74 +193,6 @@ export class MateriaisController {
       }
       throw error;
     }
-  }
-
-  @ApiOperation({ summary: "Criar material" })
-  @ApiResponse({ status: 201, description: "Material criado com sucesso." })
-  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
-  @Post()
-  async criarMaterial(
-    @Req() req: Request,
-    @Body()
-    body: {
-      origem: OrigemMaterial;
-      nomeDesignado: string;
-      materiaId: string;
-      topicos?: string[];
-      caminhoArquivo?: string;
-      assuntoId?: string;
-    },
-  ) {
-    const userId = (req.user as any).userId;
-    if (!body.origem) throw new BadRequestException("Origem do material é obrigatória.");
-    if (!body.nomeDesignado) throw new BadRequestException("Nome designado é obrigatório.");
-    if (!body.materiaId) throw new BadRequestException("Matéria é obrigatória.");
-
-    if (body.origem === "TOPICOS") {
-      if (!body.topicos || !body.topicos.length) {
-        throw new BadRequestException("Tópicos são obrigatórios para criação por tópicos.");
-      }
-      const material = await this.materiaisService.criarPorTopicos(userId, {
-        nomeDesignado: body.nomeDesignado,
-        materiaId: body.materiaId,
-        topicos: body.topicos,
-      });
-      return { message: "Material criado por tópicos com sucesso.", material };
-    }
-
-    if (body.origem === "DOCUMENTO") {
-      if (!body.topicos || !body.topicos.length) {
-        throw new BadRequestException("Tópicos são obrigatórios para criação por documento.");
-      }
-      if (!body.caminhoArquivo) {
-        throw new BadRequestException("Arquivo PDF é obrigatório para criação por documento.");
-      }
-      const material = await this.materiaisService.criarPorDocumento(userId, {
-        nomeDesignado: body.nomeDesignado,
-        materiaId: body.materiaId,
-        topicos: body.topicos,
-        caminhoArquivo: body.caminhoArquivo,
-      });
-      return { message: "Material criado por documento com sucesso.", material };
-    }
-
-    if (body.origem === "ASSUNTO") {
-      if (!body.topicos || !body.topicos.length) {
-        throw new BadRequestException("Tópicos são obrigatórios para criação por assunto.");
-      }
-      if (!body.assuntoId) {
-        throw new BadRequestException("Assunto principal é obrigatório para criação por assunto.");
-      }
-      const material = await this.materiaisService.criarPorAssunto(userId, {
-        nomeDesignado: body.nomeDesignado,
-        materiaId: body.materiaId,
-        topicos: body.topicos,
-        assuntoId: body.assuntoId,
-      });
-      return { message: "Material criado por assunto com sucesso.", material };
-    }
-
-    throw new BadRequestException("Origem do material inválida.");
   }
 
   @ApiOperation({ summary: "Editar material" })
@@ -229,25 +277,26 @@ export class MateriaisController {
         throw new BadRequestException("Arquivo PDF é obrigatório.");
       }
 
-      if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length) {
-        throw new BadRequestException("Nome designado, matéria ID e tópicos são obrigatórios.");
-      }
-
-      if (!Array.isArray(body.topicos) || body.topicos.length === 0) {
-        throw new BadRequestException("Pelo menos um tópico deve ser fornecido.");
-      }
-
       const userId = (req.user as any).userId;
-      
+      const progresso = await this.materiaisService.getProgressoMaterial(userId);
+      if (!progresso || progresso.origem !== "DOCUMENTO") {
+        throw new BadRequestException("Fluxo inválido: os dados do material por documento não foram informados.");
+      }
+      progresso.caminhoArquivo = file.path;
+      progresso.nomeArquivo = file.originalname;
+      progresso.descricao = body.descricao || progresso.descricao;
+
       const resultado = await this.materiaisService.processarPdfEgerarResumo({
         userId,
-        nomeDesignado: body.nomeDesignado,
-        materiaId: body.materiaId,
-        topicos: body.topicos,
-        caminhoArquivo: file.path,
-        descricao: body.descricao,
-        nomeArquivo: file.originalname,
+        nomeDesignado: progresso.nomeDesignado,
+        materiaId: progresso.materiaId,
+        topicos: progresso.topicos,
+        caminhoArquivo: progresso.caminhoArquivo,
+        descricao: progresso.descricao,
+        nomeArquivo: progresso.nomeArquivo,
       });
+
+      await this.materiaisService.limparProgressoMaterial(userId);
 
       return {
         message: "Material criado com sucesso a partir do PDF.",
@@ -272,12 +321,26 @@ export class MateriaisController {
     }
   }
 
-  @ApiOperation({ summary: "Status do endpoint de upload de PDF" })
-  @ApiResponse({ status: 200, description: "Endpoint de upload de PDF ativo!" })
-  @Get("upload-pdf")
-  getUploadPdfStatus() {
-    return { status: "Endpoint de upload de PDF ativo!" };
+      @ApiOperation({ summary: "Obter resumo automático por documento" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Resumo retornado com sucesso." })
+  @ApiResponse({ status: 404, description: "Resumo por documento não encontrado." })
+  @Get("resumo-documento/:id")
+  async getResumoPorDocumento(@Req() req: Request, @Param("id") id: string) {
+    const userId = (req.user as any).userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || material.origem !== "DOCUMENTO") {
+      throw new NotFoundException("Resumo por documento não encontrado.");
+    }
+    return {
+      resumoIA: material.resumoIA,
+      conteudo: material.conteudo,
+      titulo: material.titulo,
+      topicos: material.topicos,
+      caminhoArquivo: material.caminhoArquivo,
+    };
   }
+
 
   @ApiOperation({ 
     summary: "Criar resumo automático por assunto",
@@ -368,4 +431,230 @@ export class MateriaisController {
       assuntoId: material.assuntoId,
     };
   }
+
+   @ApiOperation({
+    summary: "Gerar resumo IA por tópicos",
+    description: "Gera um resumo automático usando IA a partir dos tópicos fornecidos. Cria e retorna o material."
+  })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nomeDesignado: { type: "string", example: "Resumo de Programação" },
+        nomeMateria: { type: "string", example: "Programação" },
+        topicos: { type: "array", items: { type: "string" }, example: ["Variáveis", "Loops"] },
+      },
+      required: ["nomeDesignado", "nomeMateria", "topicos"],
+    },
+  })
+  @ApiResponse({ status: 201, description: "Resumo IA gerado e material criado com sucesso." })
+  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
+  @ApiResponse({ status: 500, description: "Erro interno do servidor." })
+  @Post("resumo-ia-topicos")
+  async gerarResumoIaPorTopicos(@Req() req: Request, @Body() body: any) {
+    if (!body.nomeDesignado || !body.nomeMateria || !body.topicos?.length) {
+      throw new BadRequestException("Todos os campos são obrigatórios: nomeDesignado, nomeMateria, topicos.");
+    }
+    if (!Array.isArray(body.topicos) || body.topicos.length === 0) {
+      throw new BadRequestException("Pelo menos um tópico deve ser fornecido.");
+    }
+
+    const materia = await this.materiaisService.buscarMateriaPorNome(body.nomeMateria);
+    if (!materia) {
+      throw new BadRequestException("Matéria não encontrada pelo nome informado.");
+    }
+    const materiaId = materia.id;
+
+    const userId = (req.user as any).userId;
+    try {
+      const resultado = await this.materiaisService.gerarResumoIaPorTopicos({
+        userId,
+        nomeDesignado: body.nomeDesignado,
+        materiaId,
+        topicos: body.topicos,
+      });
+      return {
+        message: "Resumo IA gerado e material criado com sucesso.",
+        material: resultado,
+        estatisticas: {
+          quantidadeTopicos: body.topicos.length,
+          dataCriacao: new Date().toISOString(),
+        }
+      };
+    } catch (error) {
+      console.error("Erro ao gerar resumo IA por tópicos:", error);
+      throw new BadRequestException("Erro ao gerar resumo IA por tópicos. Verifique os dados e tente novamente.");
+    }
+  }
+
+  @ApiOperation({ summary: "Obter resumo automático por tópicos" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Resumo retornado com sucesso." })
+  @ApiResponse({ status: 404, description: "Resumo por tópicos não encontrado." })
+  @Get("resumo-topicos/:id")
+  async getResumoPorTopicos(@Req() req: Request, @Param("id") id: string) {
+    const userId = (req.user as any).userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || material.origem !== "TOPICOS") {
+      throw new NotFoundException("Resumo por tópicos não encontrado.");
+    }
+    return {
+      resumoIA: material.resumoIA,
+      conteudo: material.conteudo,
+      titulo: material.titulo,
+      topicos: material.topicos,
+    };
+  }
+
+  
+  // @ApiOperation({ summary: "Gerar quizzes automáticos via IA" })
+  // @ApiBody({
+  //   schema: {
+  //     type: "object",
+  //     properties: {
+  //       nomeDesignado: { type: "string", example: "Quiz de História" },
+  //       materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
+  //       topicos: { type: "array", items: { type: "string" }, example: ["Revolução Francesa", "Iluminismo"] },
+  //       caminhoArquivo: { type: "string", example: "uploads/pdfs/historia.pdf" },
+  //       tipoMaterial: { type: "string", example: "QUIZZ" },
+  //       quantidade: { type: "number", example: 10 },
+  //       origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"], example: "TOPICOS" },
+  //       textoConteudo: { type: "string", example: "Texto extraído do PDF ou digitado" },
+  //       assunto: { type: "string", example: "A Revolução Francesa foi um período de grandes mudanças..." },
+  //     },
+  //     required: ["nomeDesignado", "materiaId", "quantidade", "origem"],
+  //   },
+  // })
+  // @ApiResponse({ status: 201, description: "Quizzes gerados com sucesso.", schema: {
+  //   type: "object",
+  //   properties: {
+  //     message: { type: "string" },
+  //     material: { type: "object" },
+  //     quizzes: { type: "array", items: { type: "object" } },
+  //     estatisticas: {
+  //       type: "object",
+  //       properties: {
+  //         quantidadeQuestoes: { type: "number" },
+  //         dataCriacao: { type: "string", format: "date-time" },
+  //       },
+  //     },
+  //   },
+  // }})
+  // @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
+  // @Post('quizzes')
+  // async gerarQuizzes(@Req() req: Request, @Body() body: any) {
+  //   if (!body || typeof body !== 'object') {
+  //     throw new BadRequestException('Body da requisição ausente ou inválido.');
+  //   }
+  //   const userId = (req.user as any).userId;
+  //   const {
+  //     nomeDesignado,
+  //     materiaId,
+  //     topicos,
+  //     caminhoArquivo,
+  //     tipoMaterial,
+  //     quantidade,
+  //     origem,
+  //     textoConteudo,
+  //     assunto,
+  //   } = body;
+  //   if (!nomeDesignado || !materiaId || !quantidade || !origem) {
+  //     throw new BadRequestException('Campos obrigatórios ausentes: nomeDesignado, materiaId, quantidade, origem.');
+  //   }
+  //   const resultado = await this.materiaisService.gerarQuizzes({
+  //     userId,
+  //     nomeDesignado,
+  //     materiaId,
+  //     topicos,
+  //     caminhoArquivo,
+  //     tipoMaterial,
+  //     quantidade,
+  //     origem,
+  //     textoConteudo,
+  //     assunto,
+  //   });
+  //   return {
+  //     message: 'Quizzes gerados com sucesso.',
+  //     material: resultado.material,
+  //     quizzes: resultado.quizzes,
+  //     estatisticas: {
+  //       quantidadeQuestoes: resultado.quizzes.length,
+  //       dataCriacao: new Date().toISOString(),
+  //     },
+  //   };
+  // }
+
+  // @ApiOperation({ summary: "Gerar flashcards automáticos via IA" })
+  // @ApiBody({
+  //   schema: {
+  //     type: "object",
+  //     properties: {
+  //       nomeDesignado: { type: "string", example: "Flashcards de Biologia" },
+  //       materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
+  //       topicos: { type: "array", items: { type: "string" }, example: ["Células", "Genética"] },
+  //       caminhoArquivo: { type: "string", example: "uploads/pdfs/biologia.pdf" },
+  //       tipoMaterial: { type: "string", example: "FLASHCARD" },
+  //       quantidade: { type: "number", example: 10 },
+  //       origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"], example: "TOPICOS" },
+  //       textoConteudo: { type: "string", example: "Texto extraído do PDF ou digitado" },
+  //     },
+  //     required: ["nomeDesignado", "materiaId", "quantidade", "origem"],
+  //   },
+  // })
+  // @ApiResponse({ status: 201, description: "Flashcards gerados com sucesso.", schema: {
+  //   type: "object",
+  //   properties: {
+  //     message: { type: "string" },
+  //     material: { type: "object" },
+  //     flashcards: { type: "array", items: { type: "object" } },
+  //     estatisticas: {
+  //       type: "object",
+  //       properties: {
+  //         quantidadeFlashcards: { type: "number" },
+  //         dataCriacao: { type: "string", format: "date-time" },
+  //       },
+  //     },
+  //   },
+  // }})
+  // @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
+  // @Post('flashcards')
+  // async gerarFlashcards(@Req() req: Request, @Body() body: any) {
+  //   if (!body || typeof body !== 'object') {
+  //     throw new BadRequestException('Body da requisição ausente ou inválido.');
+  //   }
+  //   const userId = (req.user as any).userId;
+  //   const {
+  //     nomeDesignado,
+  //     materiaId,
+  //     topicos,
+  //     caminhoArquivo,
+  //     tipoMaterial,
+  //     quantidade,
+  //     origem,
+  //     textoConteudo,
+  //   } = body;
+  //   if (!nomeDesignado || !materiaId || !quantidade || !origem) {
+  //     throw new BadRequestException('Campos obrigatórios ausentes: nomeDesignado, materiaId, quantidade, origem.');
+  //   }
+  //   const resultado = await this.materiaisService.gerarFlashcards({
+  //     userId,
+  //     nomeDesignado,
+  //     materiaId,
+  //     topicos,
+  //     caminhoArquivo,
+  //     tipoMaterial,
+  //     quantidade,
+  //     origem,
+  //     textoConteudo,
+  //   });
+  //   return {
+  //     message: 'Flashcards gerados com sucesso.',
+  //     material: resultado.material,
+  //     flashcards: resultado.flashcards,
+  //     estatisticas: {
+  //       quantidadeFlashcards: resultado.flashcards.length,
+  //       dataCriacao: new Date().toISOString(),
+  //     },
+  //   };
+  // }
 }

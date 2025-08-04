@@ -7,12 +7,214 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { PdfProcessorService } from "./services/pdf-processor.service";
+import { Glm45Service } from "./services/glm-4.5.service";
+import { TipoMaterialEstudo } from "@prisma/client";
 
 @Injectable()
 export class MateriaisService {
+  async gerarQuizzes({
+    userId,
+    nomeDesignado,
+    materiaId,
+    topicos,
+    caminhoArquivo,
+    tipoMaterial,
+    quantidade,
+    origem,
+    textoConteudo,
+    assunto,
+  }: {
+    userId: string;
+    nomeDesignado: string;
+    materiaId: string;
+    topicos?: string[];
+    caminhoArquivo?: string;
+    tipoMaterial?: string;
+    quantidade: number;
+    origem: 'TOPICOS' | 'DOCUMENTO' | 'PDF' | 'ASSUNTO';
+    textoConteudo?: string;
+    assunto?: string;
+  }) {
+    let textoBase = textoConteudo || '';
+    if (origem === 'PDF' && caminhoArquivo) {
+      textoBase = await this.pdfProcessor.extrairTextoDoPdf(caminhoArquivo);
+    } else if (origem === 'TOPICOS' && topicos) {
+      textoBase = this.montarTextoParaResumo(nomeDesignado, topicos);
+    } else if (origem === 'ASSUNTO' && assunto) {
+      textoBase = assunto;
+    }
+    if (!textoBase || textoBase.trim().length === 0) {
+      throw new Error('Não foi possível obter o conteúdo base para gerar quizzes.');
+    }
+    const prompt = `Gere ${quantidade} questões de múltipla escolha sobre o conteúdo abaixo. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    const quizzesJson = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: prompt,
+      userPrompt: textoBase,
+      maxTokens: 50000,
+      temperature: 0.5,
+      thinking: false,
+    });
+    const match = quizzesJson.match(/\[.*\]/s);
+    const jsonToParse = match ? match[0] : quizzesJson;
+    let quizzes: any[] = [];
+    try {
+      quizzes = JSON.parse(jsonToParse);
+    } catch {
+      quizzes = [];
+    }
+    const material = await this.prisma.materialEstudo.create({
+      data: {
+        titulo: nomeDesignado,
+        nomeDesignado,
+        materiaId,
+        topicos,
+        origem: origem as any,
+        caminhoArquivo,
+        conteudo: textoBase,
+        quantidadeQuestoes: quizzes.length,
+        autorId: userId,
+        tipoMaterial: (tipoMaterial as TipoMaterialEstudo) || (origem as any),
+      },
+    });
+    return { material, quizzes };
+  }
+  async gerarFlashcards({
+    userId,
+    nomeDesignado,
+    materiaId,
+    topicos,
+    caminhoArquivo,
+    tipoMaterial,
+    quantidade,
+    origem,
+    textoConteudo,
+  }: {
+    userId: string;
+    nomeDesignado: string;
+    materiaId: string;
+    topicos?: string[];
+    caminhoArquivo?: string;
+    tipoMaterial?: string;
+    quantidade: number;
+    origem: 'TOPICOS' | 'DOCUMENTO' | 'PDF';
+    textoConteudo?: string;
+  }) {
+    let textoBase = textoConteudo || '';
+    if (origem === 'PDF' && caminhoArquivo) {
+      textoBase = await this.pdfProcessor.extrairTextoDoPdf(caminhoArquivo);
+    } else if (origem === 'TOPICOS' && topicos) {
+      textoBase = this.montarTextoParaResumo(nomeDesignado, topicos);
+    }
+    if (!textoBase || textoBase.trim().length === 0) {
+      throw new Error('Não foi possível obter o conteúdo base para gerar flashcards.');
+    }
+    const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o conteúdo abaixo. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    const flashcardsJson = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: prompt,
+      userPrompt: textoBase,
+      maxTokens: 1200,
+      temperature: 0.5,
+      thinking: false,
+    });
+    let flashcards: any[] = [];
+    try {
+      flashcards = JSON.parse(flashcardsJson);
+    } catch {
+      flashcards = [];
+    }
+    const material = await this.prisma.materialEstudo.create({
+      data: {
+        titulo: nomeDesignado,
+        nomeDesignado,
+        materiaId,
+        topicos,
+        origem: origem as any,
+        caminhoArquivo,
+        conteudo: textoBase,
+        quantidadeFlashcards: flashcards.length,
+        autorId: userId,
+        tipoMaterial: (tipoMaterial as TipoMaterialEstudo) || (origem as any),
+      },
+    });
+    return { material, flashcards };
+  }
+
+  async gerarResumoIaPorTopicos({ userId, nomeDesignado, materiaId, topicos }: {
+    userId: string;
+    nomeDesignado: string;
+    materiaId: string;
+    topicos: string[];
+  }) {
+    try {
+      console.log(`Iniciando geração de resumo IA por tópicos: ${nomeDesignado}`);
+      if (!nomeDesignado || !materiaId || !topicos?.length) {
+        throw new Error("Todos os campos são obrigatórios para gerar resumo IA por tópicos.");
+      }
+      console.log("Montando texto base para o resumo IA...");
+      const textoParaResumo = this.montarTextoParaResumo("", topicos);
+      if (!textoParaResumo || textoParaResumo.trim().length === 0) {
+        throw new Error("Não foi possível montar o texto base para o resumo IA.");
+      }
+      console.log(`Texto base criado com ${textoParaResumo.length} caracteres`);
+      console.log("Iniciando geração do resumo com IA usando GLM-4.5...");
+      let resumoIA = await this.glm45Service.gerarTextoEducativo({
+        systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
+        userPrompt: textoParaResumo,
+        maxTokens: 3000,
+        temperature: 0.7,
+        thinking: false,
+      });
+      if (resumoIA) {
+        resumoIA = resumoIA.replace(/<think>[\s\S]*?<\/think>/g, "");
+      }
+      if (!resumoIA || resumoIA.trim().length === 0) {
+        console.warn("Resumo vazio retornado pela IA");
+      }
+      console.log("Criando material no banco de dados...");
+      const material = await this.prisma.materialEstudo.create({
+        data: {
+          titulo: nomeDesignado,
+          nomeDesignado,
+          materiaId,
+          topicos,
+          origem: "TOPICOS",
+          conteudo: textoParaResumo,
+          resumoIA: resumoIA || "Resumo não disponível",
+          autorId: userId,
+          tipoMaterial: "RESUMO_IA" as TipoMaterialEstudo,
+        },
+      });
+      console.log(`Material criado com sucesso. ID: ${material.id}`);
+      return material;
+    } catch (error) {
+      console.error("Erro ao gerar resumo IA por tópicos:", error);
+      throw error;
+    }
+  }
+  private progressoMaterial: Map<string, any> = new Map();
+
+
+  async salvarProgressoMaterial(userId: string, dados: any) {
+    const atual = this.progressoMaterial.get(userId) || {};
+    this.progressoMaterial.set(userId, { ...atual, ...dados });
+  }
+
+  async getProgressoMaterial(userId: string) {
+    return this.progressoMaterial.get(userId) || {};
+  }
+
+  async limparProgressoMaterial(userId: string) {
+    this.progressoMaterial.delete(userId);
+  }
+  async buscarMateriaPorNome(nome: string) {
+    return this.prisma.materia.findFirst({
+      where: { nome },
+    });
+  }
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfProcessor: PdfProcessorService,
+    private readonly glm45Service: Glm45Service,
   ) {}
 
   async listarPorUsuario(userId: string) {
@@ -35,9 +237,11 @@ export class MateriaisService {
       nomeDesignado: string;
       materiaId: string;
       topicos: string[];
+      tipoMaterial: string;
+      descricao?: string;
     },
   ) {
-    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length) {
+    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.tipoMaterial) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por tópicos.");
     }
 
@@ -50,6 +254,8 @@ export class MateriaisService {
           topicos: data.topicos,
           origem: "TOPICOS",
           autorId: userId,
+          tipoMaterial: data.tipoMaterial as any,
+          conteudo: data.descricao,
         },
       });
     } catch (error) {
@@ -72,9 +278,11 @@ export class MateriaisService {
       materiaId: string;
       topicos: string[];
       caminhoArquivo: string;
+      tipoMaterial: string;
+      descricao?: string;
     },
   ) {
-    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.caminhoArquivo) {
+    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.caminhoArquivo || !data.tipoMaterial) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por documento.");
     }
     return this.prisma.materialEstudo.create({
@@ -86,6 +294,8 @@ export class MateriaisService {
         origem: "DOCUMENTO",
         caminhoArquivo: data.caminhoArquivo,
         autorId: userId,
+        tipoMaterial: data.tipoMaterial as any,
+        conteudo: data.descricao,
       },
     });
   }
@@ -97,9 +307,11 @@ export class MateriaisService {
       materiaId: string;
       topicos: string[];
       assuntoId: string;
+      tipoMaterial: string;
+      descricao?: string;
     },
   ) {
-    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.assuntoId) {
+    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.assuntoId || !data.tipoMaterial) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por assunto.");
     }
     return this.prisma.materialEstudo.create({
@@ -111,6 +323,8 @@ export class MateriaisService {
         origem: "ASSUNTO",
         assuntoId: data.assuntoId,
         autorId: userId,
+        tipoMaterial: data.tipoMaterial as any,
+        conteudo: data.descricao,
       },
     });
   }
@@ -165,16 +379,30 @@ export class MateriaisService {
     try {
       console.log(`Iniciando processamento do PDF: ${nomeArquivo}`);
       const textoExtraido = await this.pdfProcessor.extrairTextoDoPdf(caminhoArquivo);
-      
+
       if (!textoExtraido || textoExtraido.trim().length === 0) {
         throw new Error("Não foi possível extrair texto do PDF. Verifique se o arquivo é válido.");
       }
 
       console.log(`Texto extraído com sucesso. Tamanho: ${textoExtraido.length} caracteres`);
 
-      console.log("Iniciando geração do resumo com IA...");
-      const resumoIA = await this.pdfProcessor.gerarResumoComIA(textoExtraido);
-      
+      let prompt =
+        `Você é um especialista em educação. Analise o texto extraído de um documento PDF abaixo e gere um resumo didático e detalhado, na mesma linguagem dos outros resumos da plataforma. Se o conteúdo for muito curto ou superficial, adicione pontos relevantes e complementares para enriquecer o material. Se o conteúdo for muito extenso, resuma de forma clara e objetiva, mantendo os pontos principais. Reescreva o texto para torná-lo mais didático e organizado. Não inclua comentários ou texto extra, apenas o resumo final.`;
+
+      const maxTokens = 3000;
+
+      let resumoIA = await this.glm45Service.gerarTextoEducativo({
+        systemPrompt: prompt,
+        userPrompt: textoExtraido,
+        maxTokens,
+        temperature: 0.7,
+        thinking: true,
+      });
+
+      if (resumoIA) {
+        resumoIA = resumoIA.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+      }
+
       if (!resumoIA || resumoIA.trim().length === 0) {
         console.warn("Não foi possível gerar resumo com IA. Continuando sem resumo.");
       }
@@ -190,8 +418,8 @@ export class MateriaisService {
           caminhoArquivo,
           conteudo: textoExtraido,
           resumoIA: resumoIA || "Resumo não disponível",
-          // descricao: descricao,
           autorId: userId,
+          tipoMaterial: "DOCUMENTO" as TipoMaterialEstudo,
         },
       });
 
@@ -256,9 +484,17 @@ export class MateriaisService {
 
       console.log(`Texto base criado com ${textoParaResumo.length} caracteres`);
 
-      console.log("Iniciando geração do resumo com IA...");
-      const resumoIA = await this.gerarResumoPorAssunto(textoParaResumo);
-      
+      console.log("Iniciando geração do resumo com IA usando GLM-4.5...");
+      let resumoIA = await this.glm45Service.gerarTextoEducativo({
+        systemPrompt: 'Você é um especialista em educação. Gere um texto didático e detalhado sobre o tema e tópicos abaixo.',
+        userPrompt: textoParaResumo,
+        maxTokens: 3000,
+        temperature: 0.7,
+        thinking: false,
+      });
+      if (resumoIA) {
+        resumoIA = resumoIA.replace(/<think>[\s\S]*?<\/think>/g, "");
+      }
       if (!resumoIA || resumoIA.trim().length === 0) {
         console.warn("Não foi possível gerar resumo com IA. Continuando sem resumo.");
       }
@@ -274,6 +510,7 @@ export class MateriaisService {
           conteudo: textoParaResumo,
           resumoIA: resumoIA || "Resumo não disponível",
           autorId: userId,
+          tipoMaterial: TipoMaterialEstudo.RESUMO_IA,
         },
       });
 
@@ -288,45 +525,26 @@ export class MateriaisService {
 
   private montarTextoParaResumo(assunto: string, topicos: string[]): string {
     const topicosFormatados = topicos.map(t => `- ${t}`).join('\n');
-    
-    return `Assunto: ${assunto}
 
-Tópicos abordados:
+    return `
+
+Você é um educador didático e envolvente. Escreva um texto explicando o tema abaixo de forma clara, acessível e interessante para estudantes do ensino médio. 
+
+O texto deve:
+
+- Ter **um título principal** e **subtítulos explicativos** para cada parte.
+- Ser dividido em **5 seções**, conectadas de forma progressiva.
+- Usar **exemplos simples**, analogias quando necessário, e **emojis para ilustrar ideias** (sem exagero, cerca de 1 por parágrafo).
+- **Evitar linguagem rebuscada**, mas sem ser informal demais.
+- Não repetir os tópicos literalmente, mas abordar todos de forma integrada e fluida.
+
+---
+
+
+Tema: ${assunto}
+Tópicos:
 ${topicosFormatados}
-
-Contexto: Este material aborda o tema "${assunto}" com foco nos seguintes tópicos: ${topicos.join(', ')}.
-
-Desenvolvimento: O conteúdo será estruturado de forma didática, abordando cada tópico de maneira clara e objetiva, fornecendo informações relevantes e contextualizadas sobre ${assunto}.`;
+`;
   }
 
-  private async gerarResumoPorAssunto(texto: string): Promise<string> {
-    const apiKey = process.env.HUGGINGFACE_API_KEY;
-    
-    if (!apiKey) {
-      console.warn("HUGGINGFACE_API_KEY não configurada. Pulando geração de resumo.");
-      return "";
-    }
-
-    try {
-      console.log("Gerando resumo por assunto com IA...");
-      
-      const modelo = "csebuetnlp/mT5_multilingual_XLSum";
-      
-      const textoLimitado = texto.slice(0, 4000);
-      
-      const resumo = await this.pdfProcessor.chamarAPIHuggingFace(modelo, textoLimitado);
-      
-      if (resumo && resumo.trim().length > 0) {
-        console.log("Resumo gerado com sucesso");
-        return resumo;
-      } else {
-        console.warn("Resumo vazio retornado pela IA");
-        return "";
-      }
-
-    } catch (error) {
-      console.error(`Erro ao gerar resumo por assunto: ${error instanceof Error ? error.message : String(error)}`);
-      return "Erro ao gerar resumo com IA.";
-    }
-  }
 }
