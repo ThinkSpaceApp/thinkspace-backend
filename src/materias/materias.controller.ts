@@ -149,8 +149,15 @@ export class MateriasController {
     if (!materia || materia.usuarioId !== user.id) {
       throw new BadRequestException("Matéria não encontrada ou não pertence ao usuário.");
     }
-    await this.usersService.excluirMateria(id);
-    return { message: "Matéria excluída com sucesso." };
+    try {
+      await this.usersService.excluirMateria(id);
+      return { message: "Matéria excluída com sucesso." };
+    } catch (error: any) {
+      if (error.code === "P2003" && error.meta?.field_name?.includes("materiaId")) {
+        throw new BadRequestException("Não é possível excluir a matéria pois existem materiais de estudo vinculados a ela. Exclua os materiais primeiro.");
+      }
+      throw error;
+    }
   }
 
   @ApiOperation({ summary: "Cumprimento do usuário" })

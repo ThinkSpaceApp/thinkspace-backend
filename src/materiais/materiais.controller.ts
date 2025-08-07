@@ -643,4 +643,41 @@ export class MateriaisController {
       },
     };
   }
+
+  @ApiOperation({ summary: "Obter quizzes de um material" })
+  @ApiResponse({ status: 200, description: "Quizzes retornados com sucesso." })
+  @Get("quizzes/:id")
+  async getQuizzes(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    const quizzes = material.quizzesJson ? JSON.parse(material.quizzesJson) : [];
+    return {
+      message: 'Quizzes retornados com sucesso.',
+      material,
+      quizzes,
+      estatisticas: {
+        quantidadeQuestoes: quizzes.length,
+        dataCriacao: material.criadoEm || null,
+      },
+    };
+  }
+
+  @ApiOperation({ summary: "Obter flashcards de um material" })
+  @ApiResponse({ status: 200, description: "Flashcards retornados com sucesso." })
+  @Get("flashcards/:id")
+  async getFlashcards(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    const flashcards = material.flashcardsJson ? JSON.parse(material.flashcardsJson) : [];
+    return {
+      message: 'Flashcards retornados com sucesso.',
+      material,
+      flashcards,
+      estatisticas: {
+        quantidadeFlashcards: flashcards.length,
+        dataCriacao: material.criadoEm || null,
+      },
+    };
+  }
+
 }
