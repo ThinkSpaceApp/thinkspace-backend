@@ -169,6 +169,7 @@ model MaterialEstudo {
   quizzes        Quiz[]
   quizzesJson    String? @db.Text
   revisoes       Revisao[]
+  chatHistoryJson Json?
   criadoEm       DateTime       @default(now())
 
   quantidadeQuestoes    Int?

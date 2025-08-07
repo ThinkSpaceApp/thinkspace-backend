@@ -1,3 +1,4 @@
+  
   import {
   Controller,
   Get,
@@ -677,6 +678,67 @@ export class MateriaisController {
         quantidadeFlashcards: flashcards.length,
         dataCriacao: material.criadoEm || null,
       },
+    };
+  }
+
+  @ApiOperation({ summary: "Enviar mensagem ao tutor IA (chatbox)" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        mensagem: { type: "string", example: "Explique o conceito de fotossíntese." },
+      },
+      required: ["mensagem"],
+    },
+  })
+  @ApiResponse({ status: 200, description: "Resposta do tutor IA retornada com sucesso." })
+  @Post("chatbox/:id")
+  async enviarMensagemChatbox(@Param("id") id: string, @Req() req: Request, @Body() body: { mensagem: string }) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    if (!body.mensagem || typeof body.mensagem !== "string") {
+      throw new BadRequestException("Mensagem obrigatória.");
+    }
+    const material = await this.materiaisService.obterPorId(id, userId);
+    let chatHistory: any[] = [];
+    if ('chatHistoryJson' in material && material.chatHistoryJson) {
+      try { chatHistory = JSON.parse((material as any).chatHistoryJson); } catch { chatHistory = []; }
+    }
+    chatHistory.push({ autor: "Usuário", mensagem: body.mensagem, horario: new Date().toISOString() });
+  const promptTutor = `Você é um tutor educacional. Responda de forma clara, objetiva e direta, em no máximo dois parágrafos. Não use <think> ou estrutura de planejamento. Seja breve e didático, focando apenas na explicação solicitada. Pergunta: "${body.mensagem}"`;
+    const respostaIa = await this.materiaisService.gerarRespostaTutorIa({ prompt: promptTutor });
+    chatHistory.push({ autor: "Chat IA", mensagem: respostaIa, horario: new Date().toISOString() });
+    await this.materiaisService.atualizarChatHistory(id, chatHistory);
+    return {
+      message: "Resposta do tutor IA retornada com sucesso.",
+      respostaIa,
+      chatHistory,
+    };
+  }
+
+  @ApiOperation({ summary: "Obter todas as mensagens enviadas pelo usuário no chatbox" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Mensagens do usuário retornadas com sucesso." })
+  @Get("chatbox/mensagens-usuario/:id")
+  async getMensagensUsuarioChatbox(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    let mensagensChatbox: any[] = [];
+    if (Array.isArray(material.chatHistoryJson)) {
+      mensagensChatbox = material.chatHistoryJson;
+    } else if (typeof material.chatHistoryJson === 'string' && material.chatHistoryJson.length > 0) {
+      try {
+        mensagensChatbox = JSON.parse(material.chatHistoryJson);
+      } catch {
+        mensagensChatbox = [];
+      }
+    } else if (material.chatHistoryJson && typeof material.chatHistoryJson === 'object' && Array.isArray(material.chatHistoryJson)) {
+      mensagensChatbox = material.chatHistoryJson;
+    }
+    if (!Array.isArray(mensagensChatbox)) mensagensChatbox = [];
+    return {
+      message: "Mensagens do chatbox retornadas com sucesso.",
+      mensagensChatbox,
     };
   }
 

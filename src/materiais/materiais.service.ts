@@ -1,3 +1,4 @@
+
 import {
   Injectable,
   NotFoundException,
@@ -554,6 +555,30 @@ Tema: ${assunto}
 Tópicos:
 ${topicosFormatados}
 `;
+  }
+
+async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
+  let resposta = await this.glm45Service.gerarTextoEducativo({
+    systemPrompt: prompt,
+    userPrompt: "",
+    maxTokens: 5000,
+    temperature: 0.7,
+    thinking: false,
+  });
+  if (resposta) {
+    resposta = resposta.replace(/<think>/gi, "").replace(/<\/think>/gi, "").trim();
+  }
+  if (!resposta || resposta === "") {
+    resposta = "Desculpe, não consegui gerar uma resposta no momento. Tente novamente ou reformule sua pergunta.";
+  }
+  return resposta;
+}
+
+  async atualizarChatHistory(materialId: string, chatHistory: any[]) {
+    await this.prisma.materialEstudo.update({
+      where: { id: materialId },
+      data: { chatHistoryJson: chatHistory },
+    });
   }
 
 }
