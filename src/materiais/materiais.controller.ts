@@ -1,5 +1,4 @@
-  
-  import {
+import {
   Controller,
   Get,
   Post,
@@ -569,16 +568,9 @@ export class MateriaisController {
     schema: {
       type: "object",
       properties: {
-        nomeDesignado: { type: "string", example: "Flashcards de Biologia" },
-        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
-        topicos: { type: "array", items: { type: "string" }, example: ["Células", "Genética"] },
-        caminhoArquivo: { type: "string", example: "uploads/pdfs/biologia.pdf" },
-        tipoMaterial: { type: "string", example: "FLASHCARD" },
-        quantidade: { type: "number", example: 10 },
-        origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"], example: "TOPICOS" },
-        textoConteudo: { type: "string", example: "Texto extraído do PDF ou digitado" },
+        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
       },
-      required: ["nomeDesignado", "materiaId", "quantidade", "origem"],
+      required: ["id"],
     },
   })
   @ApiResponse({ status: 201, description: "Flashcards gerados com sucesso.", schema: {
@@ -596,43 +588,24 @@ export class MateriaisController {
       },
     },
   }})
-  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
+  @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
   @Post('flashcards')
-  async gerarFlashcards(@Req() req: Request, @Body() body: any) {
-    if (!body || typeof body !== 'object') {
-      throw new BadRequestException('Body da requisição ausente ou inválido.');
+  async gerarFlashcards(@Body() body: any) {
+    const { id } = body;
+    if (!id) {
+      throw new BadRequestException('O id do material é obrigatório');
     }
-    const userId = (req.user as any).userId;
-    const {
-      nomeDesignado,
-      materiaId,
-      topicos,
-      caminhoArquivo,
-      tipoMaterial,
-      quantidade,
-      origem,
-      textoConteudo,
-    } = body;
-    if (!nomeDesignado || !materiaId || !quantidade || !origem) {
-      throw new BadRequestException('Campos obrigatórios ausentes: nomeDesignado, materiaId, quantidade, origem.');
+    const material = await this.materiaisService.buscarMaterialPorId(id);
+    if (!material) {
+      throw new NotFoundException('Material não encontrado');
     }
-    const resultado = await this.materiaisService.gerarFlashcards({
-      userId,
-      nomeDesignado,
-      materiaId,
-      topicos,
-      caminhoArquivo,
-      tipoMaterial,
-      quantidade,
-      origem,
-      textoConteudo,
-    });
+    const result = await this.materiaisService.gerarFlashcardsIaPorMaterial(material);
     return {
       message: 'Flashcards gerados com sucesso.',
-      material: resultado.material,
-      flashcards: resultado.flashcards,
+      material: result.material,
+      flashcards: result.flashcards,
       estatisticas: {
-        quantidadeFlashcards: resultado.flashcards?.length || 0,
+        quantidadeFlashcards: result.flashcards?.length || 0,
         dataCriacao: new Date().toISOString(),
       },
     };

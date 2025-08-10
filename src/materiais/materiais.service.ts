@@ -200,6 +200,9 @@ export class MateriaisService {
       throw error;
     }
   }
+    async buscarMaterialPorId(id: string) {
+      return this.prisma.materialEstudo.findUnique({ where: { id } });
+    }
   private progressoMaterial: Map<string, any> = new Map();
 
 
@@ -563,6 +566,51 @@ export class MateriaisService {
       },
     });
     return { material: updatedMaterial, resumoIA };
+  }
+
+  async gerarFlashcardsIaPorMaterial(material: any) {
+    const topicos = material.topicos || [];
+    let textoBase = "";
+    if (material.origem === "ASSUNTO") {
+      textoBase = material.conteudo || "";
+      if (topicos.length > 0) {
+        textoBase += "\nTópicos:\n" + topicos.map((t: any) => t.nome || t).join(", ");
+      }
+    } else {
+      textoBase = topicos.length > 0 ? topicos.map((t: any) => t.nome || t).join(", ") : material.conteudo || "";
+    }
+    if (!textoBase || textoBase.trim().length === 0) {
+      throw new Error("Não foi possível obter o conteúdo base para gerar flashcards.");
+    }
+    const prompt = `Gere 10 flashcards didáticos e objetivos sobre o tema e tópicos abaixo. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: prompt,
+      userPrompt: textoBase,
+      maxTokens: 10000,
+      temperature: 0.5,
+      thinking: false,
+    });
+    if (flashcardsJson) {
+      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+        const jsonMatch = match.match(/\[.*\]/s);
+        return jsonMatch ? jsonMatch[0] : '';
+      });
+      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, '').trim();
+    }
+    let flashcards: any[] = [];
+    try {
+      flashcards = JSON.parse(flashcardsJson);
+    } catch {
+      flashcards = [];
+    }
+    const updatedMaterial = await this.prisma.materialEstudo.update({
+      where: { id: material.id },
+      data: {
+        flashcardsJson: JSON.stringify(flashcards),
+        quantidadeFlashcards: flashcards.length,
+      },
+    });
+    return { material: updatedMaterial, flashcards };
   }
 
   private montarTextoParaResumo(assunto: string, topicos: string[]): string {
