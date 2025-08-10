@@ -658,6 +658,46 @@ export class MateriaisService {
     return { material: updatedMaterial, quizzes };
   }
 
+  async gerarQuizzesIaPorPdfMaterial(material: any, caminhoArquivo?: string) {
+    const pdfPath = caminhoArquivo || material.caminhoArquivo;
+    if (!pdfPath) {
+      throw new Error('O material não possui PDF armazenado.');
+    }
+    const textoBase = await this.pdfProcessor.extrairTextoDoPdf(pdfPath);
+    if (!textoBase || textoBase.trim().length === 0) {
+      throw new Error('Não foi possível extrair texto do PDF para gerar quizzes.');
+    }
+    const prompt = `Gere 10 questões de múltipla escolha sobre o conteúdo abaixo extraído de um PDF. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    let quizzesJson = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: prompt,
+      userPrompt: textoBase,
+      maxTokens: 10000,
+      temperature: 0.5,
+      thinking: false,
+    });
+    if (quizzesJson) {
+      quizzesJson = quizzesJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+        const jsonMatch = match.match(/\[.*\]/s);
+        return jsonMatch ? jsonMatch[0] : '';
+      });
+      quizzesJson = quizzesJson.replace(/<think>|<\/think>/gi, '').trim();
+    }
+    let quizzes: any[] = [];
+    try {
+      quizzes = JSON.parse(quizzesJson);
+    } catch {
+      quizzes = [];
+    }
+    const updatedMaterial = await this.prisma.materialEstudo.update({
+      where: { id: material.id },
+      data: {
+        quizzesJson: JSON.stringify(quizzes),
+        quantidadeQuestoes: quizzes.length,
+      },
+    });
+    return { material: updatedMaterial, quizzes };
+  }
+
   private montarTextoParaResumo(assunto: string, topicos: string[]): string {
     const topicosFormatados = topicos.map(t => `- ${t}`).join('\n');
 
@@ -706,4 +746,75 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
     });
   }
 
+  async gerarResumoIaPorPdfMaterial(material: any, caminhoArquivo?: string) {
+    const pdfPath = caminhoArquivo || material.caminhoArquivo;
+    if (!pdfPath) {
+      throw new Error('O material não possui PDF armazenado.');
+    }
+    const textoBase = await this.pdfProcessor.extrairTextoDoPdf(pdfPath);
+    if (!textoBase || textoBase.trim().length === 0) {
+      throw new Error('Não foi possível extrair texto do PDF para gerar resumo.');
+    }
+    const prompt = `Gere um resumo didático e detalhado sobre o conteúdo abaixo extraído de um PDF. O texto deve ser claro, objetivo, acessível para iniciantes e não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar.`;
+    let resumoIA = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: prompt,
+      userPrompt: textoBase,
+      maxTokens: 3000,
+      temperature: 0.7,
+      thinking: false,
+    });
+    if (resumoIA) {
+      resumoIA = resumoIA.replace(/<think>[\s\S]*?<\/think>/g, "");
+    }
+    if (!resumoIA || resumoIA.trim().length === 0) {
+      resumoIA = "Resumo não disponível";
+    }
+    const updatedMaterial = await this.prisma.materialEstudo.update({
+      where: { id: material.id },
+      data: {
+        resumoIA,
+      },
+    });
+    return { material: updatedMaterial, resumoIA };
+  }
+
+  async gerarFlashcardsIaPorPdfMaterial(material: any, caminhoArquivo?: string) {
+    const pdfPath = caminhoArquivo || material.caminhoArquivo;
+    if (!pdfPath) {
+      throw new Error('O material não possui PDF armazenado.');
+    }
+    const textoBase = await this.pdfProcessor.extrairTextoDoPdf(pdfPath);
+    if (!textoBase || textoBase.trim().length === 0) {
+      throw new Error('Não foi possível extrair texto do PDF para gerar flashcards.');
+    }
+    const prompt = `Gere 10 flashcards didáticos e objetivos sobre o conteúdo abaixo extraído de um PDF. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: prompt,
+      userPrompt: textoBase,
+      maxTokens: 10000,
+      temperature: 0.5,
+      thinking: false,
+    });
+    if (flashcardsJson) {
+      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+        const jsonMatch = match.match(/\[.*\]/s);
+        return jsonMatch ? jsonMatch[0] : '';
+      });
+      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, '').trim();
+    }
+    let flashcards: any[] = [];
+    try {
+      flashcards = JSON.parse(flashcardsJson);
+    } catch {
+      flashcards = [];
+    }
+    const updatedMaterial = await this.prisma.materialEstudo.update({
+      where: { id: material.id },
+      data: {
+        flashcardsJson: JSON.stringify(flashcards),
+        quantidadeFlashcards: flashcards.length,
+      },
+    });
+    return { material: updatedMaterial, flashcards };
+  }
 }

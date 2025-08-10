@@ -104,7 +104,7 @@ export class MateriaisController {
   }
 
 
-  @ApiOperation({ summary: "Etapa 3 - Dados básicos do material" })
+  @ApiOperation({ summary: "Etapa 3 - Dados básicos do material (agora aceita PDF opcional)" })
   @ApiBody({
     schema: {
       type: "object",
@@ -116,26 +116,25 @@ export class MateriaisController {
         descricao: { type: "string" },
         quantidadeQuestoes: { type: "number", example: 10, description: "Número de questões para quizzes (máx 25)" },
         quantidadeFlashcards: { type: "number", example: 10, description: "Número de flashcards (máx 25)" },
+        file: { type: "string", format: "binary", description: "Arquivo PDF opcional para materiais do tipo DOCUMENTO" },
       },
       required: ["nomeDesignado", "nomeMateria", "topicos"],
     },
   })
-  
   @Post("etapa-dados")
-  async etapaDados(@Req() req: Request, @Body() body: any) {
+  @UseInterceptors(FileInterceptor("file", uploadPdfConfig as MulterOptions))
+  async etapaDados(@Req() req: Request, @Body() body: any, @UploadedFile() file?: Express.Multer.File) {
     if (!body.nomeDesignado || !body.nomeMateria || !body.topicos?.length) {
       throw new BadRequestException("Nome designado, nome da matéria e tópicos são obrigatórios.");
     }
     if (!body.tipoMaterial) {
       throw new BadRequestException("O tipo do material deve ser informado nesta etapa.");
     }
-
     const materia = await this.materiaisService.buscarMateriaPorNome(body.nomeMateria);
     if (!materia) {
       throw new BadRequestException("Matéria não encontrada pelo nome informado.");
     }
     const materiaId = materia.id;
-
     if (body.tipoMaterial === "QUIZZ") {
       if (typeof body.quantidadeQuestoes !== "number" || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
         throw new BadRequestException("Para quizzes, informe quantidadeQuestoes entre 1 e 25.");
@@ -154,11 +153,15 @@ export class MateriaisController {
         throw new BadRequestException("Para completo, informe quantidadeFlashcards entre 1 e 25.");
       }
     }
-
     const userId = (req.user as any).userId;
-    await this.materiaisService.salvarProgressoMaterial(userId, { ...body, materiaId });
+    let dadosMaterial = { ...body, materiaId };
+    if (body.origem === "DOCUMENTO" && file) {
+      dadosMaterial.caminhoArquivo = file.path;
+      dadosMaterial.nomeArquivo = file.originalname;
+    }
+    await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
     if (body.origem === "DOCUMENTO") {
-      return { message: "Dados básicos recebidos. Aguarde o upload do PDF.", etapa: 3, dados: { ...body, materiaId } };
+      return { message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.", etapa: 3, dados: dadosMaterial };
     } else {
       const progresso = await this.materiaisService.getProgressoMaterial(userId);
       const materialCriado = await this.materiaisService.criarPorTopicos(userId, progresso);
@@ -238,79 +241,59 @@ export class MateriaisController {
   }
 
   @ApiOperation({ 
-    summary: "Upload de PDF para material",
+    summary: "Upload de PDF para gerar resumo IA (agora só precisa do id)",
     description: "Faz upload de um arquivo PDF, extrai o texto, gera um resumo usando IA e cria um material de estudo"
   })
   @ApiBody({
     schema: {
       type: "object",
       properties: {
-        nomeDesignado: { type: "string", example: "Introdução à Programação" },
-        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
-        topicos: { type: "array", items: { type: "string" }, example: ["Variáveis", "Loops", "Funções"] },
-        descricao: { type: "string", example: "Material sobre conceitos básicos de programação" },
+        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
       },
-      required: ["nomeDesignado", "materiaId", "topicos"],
+      required: ["id"],
     },
   })
-  @ApiResponse({ status: 201, description: "Material criado com sucesso a partir do PDF." })
-  @ApiResponse({ status: 400, description: "Arquivo PDF ou campos obrigatórios ausentes." })
+  @ApiResponse({ status: 201, description: "Resumo IA gerado e atualizado com sucesso a partir do PDF.", schema: {
+    type: "object",
+    properties: {
+      message: { type: "string" },
+      material: { type: "object" },
+      resumoIA: { type: "string" },
+      estatisticas: {
+        type: "object",
+        properties: {
+          caminhoArquivo: { type: "string" },
+          dataUpload: { type: "string", format: "date-time" },
+        },
+      },
+    },
+  }})
+  @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
   @ApiResponse({ status: 413, description: "Arquivo muito grande (máximo 10MB)." })
   @ApiResponse({ status: 500, description: "Erro interno do servidor." })
   @Post("upload-pdf")
-  @UseInterceptors(FileInterceptor("file", uploadPdfConfig as MulterOptions))
-  async uploadPdfMaterial(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: any,
-    @Req() req: Request,
-  ) {
-    try {
-      if (!file) {
-        throw new BadRequestException("Arquivo PDF é obrigatório.");
-      }
-
-      const userId = (req.user as any).userId;
-      const progresso = await this.materiaisService.getProgressoMaterial(userId);
-      if (!progresso || progresso.origem !== "DOCUMENTO") {
-        throw new BadRequestException("Fluxo inválido: os dados do material por documento não foram informados.");
-      }
-      progresso.caminhoArquivo = file.path;
-      progresso.nomeArquivo = file.originalname;
-      progresso.descricao = body.descricao || progresso.descricao;
-
-      const resultado = await this.materiaisService.processarPdfEgerarResumo({
-        userId,
-        nomeDesignado: progresso.nomeDesignado,
-        materiaId: progresso.materiaId,
-        topicos: progresso.topicos,
-        caminhoArquivo: progresso.caminhoArquivo,
-        descricao: progresso.descricao,
-        nomeArquivo: progresso.nomeArquivo,
-      });
-
-      await this.materiaisService.limparProgressoMaterial(userId);
-
-      return {
-        message: "Material criado com sucesso a partir do PDF.",
-        material: resultado,
-        estatisticas: {
-          tamanhoArquivo: file.size,
-          nomeArquivo: file.originalname,
-          dataUpload: new Date().toISOString(),
-        }
-      };
-
-    } catch (error) {
-      console.error("Erro no upload de PDF:", error);
-      
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      
-      throw new BadRequestException(
-        "Erro ao processar o arquivo PDF. Verifique se o arquivo é válido e tente novamente."
-      );
+  async uploadPdfMaterial(@Body() body: any) {
+    const { id } = body;
+    if (!id) {
+      throw new BadRequestException("O id do material é obrigatório.");
     }
+    const material = await this.materiaisService.buscarMaterialPorId(id);
+    if (!material) {
+      throw new NotFoundException("Material não encontrado");
+    }
+    if (!material.caminhoArquivo) {
+      throw new BadRequestException("O material não possui PDF armazenado.");
+    }
+    const resultado = await this.materiaisService.gerarResumoIaPorPdfMaterial(material, material.caminhoArquivo);
+    return {
+      message: "Resumo IA gerado e atualizado com sucesso a partir do PDF.",
+      material: resultado.material,
+      resumoIA: resultado.resumoIA,
+      estatisticas: {
+        caminhoArquivo: material.caminhoArquivo || null,
+        dataUpload: new Date().toISOString(),
+      },
+    };
   }
 
       @ApiOperation({ summary: "Obter resumo automático por documento" })
@@ -332,7 +315,6 @@ export class MateriaisController {
       caminhoArquivo: material.caminhoArquivo,
     };
   }
-
 
   @ApiOperation({ 
     summary: "Criar resumo automático por assunto",
@@ -579,6 +561,57 @@ export class MateriaisController {
       estatisticas: {
         quantidadeFlashcards: result.flashcards?.length || 0,
         dataCriacao: new Date().toISOString(),
+      },
+    };
+  }
+
+  @ApiOperation({ summary: "Gerar flashcards automáticos via IA a partir de PDF salvo" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
+      },
+      required: ["id"],
+    },
+  })
+  @ApiResponse({ status: 201, description: "Flashcards gerados com sucesso a partir do PDF.", schema: {
+    type: "object",
+    properties: {
+      message: { type: "string" },
+      material: { type: "object" },
+      flashcards: { type: "array", items: { type: "object" } },
+      estatisticas: {
+        type: "object",
+        properties: {
+          caminhoArquivo: { type: "string" },
+          dataUpload: { type: "string", format: "date-time" },
+        },
+      },
+    },
+  }})
+  @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
+  @Post('flashcards-pdf')
+  async gerarFlashcardsPorPdf(@Body() body: any) {
+    const { id } = body;
+    if (!id) {
+      throw new BadRequestException('O id do material é obrigatório');
+    }
+    const material = await this.materiaisService.buscarMaterialPorId(id);
+    if (!material) {
+      throw new NotFoundException('Material não encontrado');
+    }
+    if (!material.caminhoArquivo) {
+      throw new BadRequestException('O material não possui PDF armazenado.');
+    }
+    const result = await this.materiaisService.gerarFlashcardsIaPorPdfMaterial(material);
+    return {
+      message: 'Flashcards gerados com sucesso a partir do PDF.',
+      material: result.material,
+      flashcards: result.flashcards,
+      estatisticas: {
+        caminhoArquivo: material.caminhoArquivo,
+        dataUpload: new Date().toISOString(),
       },
     };
   }
