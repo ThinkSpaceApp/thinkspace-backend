@@ -1,4 +1,3 @@
-
 import {
   Injectable,
   NotFoundException,
@@ -531,6 +530,31 @@ export class MateriaisService {
       console.error("Erro ao criar material com resumo por assunto:", error);
       throw error;
     }
+  }
+
+  async gerarResumoIaPorMaterial(material: any) {
+    const topicos = material.topicos || [];
+    const textoParaResumo = this.montarTextoParaResumo("", topicos);
+    if (!textoParaResumo || textoParaResumo.trim().length === 0) {
+      throw new Error("Não foi possível montar o texto base para o resumo IA.");
+    }
+    let resumoIA = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
+      userPrompt: textoParaResumo,
+      maxTokens: 3000,
+      temperature: 0.7,
+      thinking: false,
+    });
+    if (!resumoIA || resumoIA.trim().length === 0) {
+      resumoIA = "Resumo não disponível";
+    }
+    const updatedMaterial = await this.prisma.materialEstudo.update({
+      where: { id: material.id },
+      data: {
+        resumoIA,
+      },
+    });
+    return { material: updatedMaterial, resumoIA };
   }
 
   private montarTextoParaResumo(assunto: string, topicos: string[]): string {

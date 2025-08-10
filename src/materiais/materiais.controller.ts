@@ -433,11 +433,9 @@ export class MateriaisController {
     schema: {
       type: "object",
       properties: {
-        nomeDesignado: { type: "string", example: "Resumo de Programação" },
-        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
-        topicos: { type: "array", items: { type: "string" }, example: ["Variáveis", "Loops"] },
+        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
       },
-      required: ["nomeDesignado", "materiaId", "topicos"],
+      required: ["id"],
     },
   })
   @ApiResponse({ status: 201, description: "Resumo IA gerado e material criado com sucesso." })
@@ -445,34 +443,20 @@ export class MateriaisController {
   @ApiResponse({ status: 500, description: "Erro interno do servidor." })
   @Post("resumo-ia-topicos")
   async gerarResumoIaPorTopicos(@Req() req: Request, @Body() body: any) {
-    if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length) {
-      throw new BadRequestException("Todos os campos são obrigatórios: nomeDesignado, materiaId, topicos.");
+    if (!body.id) {
+      throw new BadRequestException("Id do material é obrigatório.");
     }
-    if (!Array.isArray(body.topicos) || body.topicos.length === 0) {
-      throw new BadRequestException("Pelo menos um tópico deve ser fornecido.");
-    }
-
-    const materiaId = body.materiaId;
     const userId = (req.user as any).userId;
-    try {
-      const resultado = await this.materiaisService.gerarResumoIaPorTopicos({
-        userId,
-        nomeDesignado: body.nomeDesignado,
-        materiaId,
-        topicos: body.topicos,
-      });
-      return {
-        message: "Resumo IA gerado e material criado com sucesso.",
-        material: resultado,
-        estatisticas: {
-          quantidadeTopicos: body.topicos.length,
-          dataCriacao: new Date().toISOString(),
-        }
-      };
-    } catch (error) {
-      console.error("Erro ao gerar resumo IA por tópicos:", error);
-      throw new BadRequestException("Erro ao gerar resumo IA por tópicos. Verifique os dados e tente novamente.");
-    }
+    const material = await this.materiaisService.obterPorId(body.id, userId);
+    const resultado = await this.materiaisService.gerarResumoIaPorMaterial(material);
+    return {
+      message: "Resumo IA gerado e salvo no material com sucesso.",
+      material: resultado.material,
+      resumoIA: resultado.resumoIA,
+      estatisticas: {
+        dataCriacao: new Date().toISOString(),
+      },
+    };
   }
 
   @ApiOperation({ summary: "Obter resumo automático por tópicos" })
