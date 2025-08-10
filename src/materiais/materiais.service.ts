@@ -534,7 +534,15 @@ export class MateriaisService {
 
   async gerarResumoIaPorMaterial(material: any) {
     const topicos = material.topicos || [];
-    const textoParaResumo = this.montarTextoParaResumo("", topicos);
+    let textoParaResumo = "";
+    if (material.origem === "ASSUNTO") {
+      textoParaResumo = material.conteudo || "";
+      if (topicos.length > 0) {
+        textoParaResumo += "\nTópicos:\n" + topicos.map((t: any) => t.nome || t).join(", ");
+      }
+    } else {
+      textoParaResumo = this.montarTextoParaResumo("", topicos);
+    }
     if (!textoParaResumo || textoParaResumo.trim().length === 0) {
       throw new Error("Não foi possível montar o texto base para o resumo IA.");
     }

@@ -406,22 +406,31 @@ export class MateriaisController {
   }
 
   @ApiOperation({ summary: "Obter resumo automático por assunto" })
-  @ApiParam({ name: "id", required: true, description: "ID do material" })
-  @ApiResponse({ status: 200, description: "Resumo retornado com sucesso." })
-  @ApiResponse({ status: 404, description: "Resumo por assunto não encontrado." })
-  @Get("resumo-assunto/:id")
-  async getResumoPorAssunto(@Req() req: Request, @Param("id") id: string) {
-    const userId = (req.user as any).userId;
-    const material = await this.materiaisService.obterPorId(id, userId);
-    if (!material || material.origem !== "ASSUNTO") {
-      throw new NotFoundException("Resumo por assunto não encontrado.");
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
+      },
+      required: ["id"],
+    },
+  })
+  @ApiResponse({ status: 201, description: "Resumo por assunto gerado e salvo com sucesso." })
+  @Post("resumo-assunto")
+  async gerarResumoIaPorAssunto(@Req() req: Request, @Body() body: any) {
+    if (!body.id) {
+      throw new BadRequestException("Id do material é obrigatório.");
     }
+    const userId = (req.user as any).userId;
+    const material = await this.materiaisService.obterPorId(body.id, userId);
+    const resultado = await this.materiaisService.gerarResumoIaPorMaterial(material);
     return {
-      resumoIA: material.resumoIA,
-      conteudo: material.conteudo,
-      titulo: material.titulo,
-      topicos: material.topicos,
-      assuntoId: material.assuntoId,
+      message: "Resumo IA por assunto gerado e salvo no material com sucesso.",
+      material: resultado.material,
+      resumoIA: resultado.resumoIA,
+      estatisticas: {
+        dataCriacao: new Date().toISOString(),
+      },
     };
   }
 
