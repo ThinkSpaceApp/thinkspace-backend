@@ -271,7 +271,7 @@ export class MateriaisController {
   @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
   @ApiResponse({ status: 413, description: "Arquivo muito grande (máximo 10MB)." })
   @ApiResponse({ status: 500, description: "Erro interno do servidor." })
-  @Post("upload-pdf")
+  @Post("resumo-documento")
   async uploadPdfMaterial(@Body() body: any) {
     const { id } = body;
     if (!id) {
@@ -316,76 +316,6 @@ export class MateriaisController {
     };
   }
 
-  @ApiOperation({ 
-    summary: "Criar resumo automático por assunto",
-    description: "Cria um material de estudo com resumo gerado por IA baseado em um assunto específico"
-  })
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: {
-        nomeDesignado: { type: "string", example: "Resumo de História" },
-        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
-        topicos: { type: "array", items: { type: "string" }, example: ["Revolução Francesa", "Iluminismo"] },
-        assunto: { type: "string", example: "A Revolução Francesa foi um período de grandes mudanças..." },
-      },
-      required: ["nomeDesignado", "materiaId", "topicos", "assunto"],
-    },
-  })
-  @ApiResponse({ status: 201, description: "Resumo criado com sucesso." })
-  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
-  @ApiResponse({ status: 500, description: "Erro interno do servidor." })
-  @Post("resumo-assunto")
-  async criarResumoPorAssunto(
-    @Req() req: Request,
-    @Body() body: any,
-  ) {
-    try {
-      if (!body.nomeDesignado || !body.materiaId || !body.topicos?.length || !body.assunto) {
-        throw new BadRequestException("Todos os campos são obrigatórios: nomeDesignado, materiaId, topicos e assunto.");
-      }
-
-      if (!Array.isArray(body.topicos) || body.topicos.length === 0) {
-        throw new BadRequestException("Pelo menos um tópico deve ser fornecido.");
-      }
-
-      if (body.assunto.trim().length < 10) {
-        throw new BadRequestException("O assunto deve ter pelo menos 10 caracteres para gerar um resumo adequado.");
-      }
-
-      const userId = (req.user as any).userId;
-      
-      const resultado = await this.materiaisService.criarMaterialComResumoAssunto({
-        userId,
-        nomeDesignado: body.nomeDesignado,
-        materiaId: body.materiaId,
-        topicos: body.topicos,
-        assunto: body.assunto,
-      });
-
-      return {
-        message: "Resumo por assunto criado com sucesso.",
-        material: resultado,
-        estatisticas: {
-          assunto: body.assunto,
-          quantidadeTopicos: body.topicos.length,
-          dataCriacao: new Date().toISOString(),
-        }
-      };
-
-    } catch (error) {
-      console.error("Erro ao criar resumo por assunto:", error);
-      
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      
-      throw new BadRequestException(
-        "Erro ao criar resumo por assunto. Verifique os dados fornecidos e tente novamente."
-      );
-    }
-  }
-
   @ApiOperation({ summary: "Obter resumo automático por assunto" })
   @ApiBody({
     schema: {
@@ -415,6 +345,25 @@ export class MateriaisController {
     };
   }
 
+  @ApiOperation({summary: "Get resumo IA por assunto"})
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Resumo retornado com sucesso." })
+  @ApiResponse({ status: 404, description: "Resumo por assunto não encontrado." })
+  @Get("resumo-assunto/:id")
+  async getResumoPorAssunto(@Req() req: Request, @Param("id") id: string) {
+    const userId = (req.user as any).userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || material.origem !== "ASSUNTO") {
+      throw new NotFoundException("Resumo por assunto não encontrado.");
+    }
+    return {
+      resumoIA: material.resumoIA,
+      conteudo: material.conteudo,
+      titulo: material.titulo,
+      topicos: material.topicos,
+    };
+  }
+
    @ApiOperation({
     summary: "Gerar resumo IA por tópicos",
     description: "Gera um resumo automático usando IA a partir dos tópicos fornecidos. Cria e retorna o material."
@@ -431,7 +380,7 @@ export class MateriaisController {
   @ApiResponse({ status: 201, description: "Resumo IA gerado e material criado com sucesso." })
   @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
   @ApiResponse({ status: 500, description: "Erro interno do servidor." })
-  @Post("resumo-ia-topicos")
+  @Post("resumo-topicos")
   async gerarResumoIaPorTopicos(@Req() req: Request, @Body() body: any) {
     if (!body.id) {
       throw new BadRequestException("Id do material é obrigatório.");
@@ -517,6 +466,24 @@ export class MateriaisController {
     };
   }
 
+  @ApiOperation({ summary: "Obter quizzes de um material" })
+  @ApiResponse({ status: 200, description: "Quizzes retornados com sucesso." })
+  @Get("quizzes/:id")
+  async getQuizzes(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    const quizzes = material.quizzesJson ? JSON.parse(material.quizzesJson) : [];
+    return {
+      message: 'Quizzes retornados com sucesso.',
+      material,
+      quizzes,
+      estatisticas: {
+        quantidadeQuestoes: quizzes.length,
+        dataCriacao: material.criadoEm || null,
+      },
+    };
+  }
+
   @ApiOperation({ summary: "Gerar flashcards automáticos via IA" })
   @ApiBody({
     schema: {
@@ -590,6 +557,25 @@ export class MateriaisController {
       },
     },
   }})
+
+  @ApiOperation({ summary: "Obter flashcards de um material" })
+  @ApiResponse({ status: 200, description: "Flashcards retornados com sucesso." })
+  @Get("flashcards/:id")
+  async getFlashcards(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    const flashcards = material.flashcardsJson ? JSON.parse(material.flashcardsJson) : [];
+    return {
+      message: 'Flashcards retornados com sucesso.',
+      material,
+      flashcards,
+      estatisticas: {
+        quantidadeFlashcards: flashcards.length,
+        dataCriacao: material.criadoEm || null,
+      },
+    };
+  }
+
   @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
   @Post('flashcards-pdf')
   async gerarFlashcardsPorPdf(@Body() body: any) {
@@ -616,41 +602,103 @@ export class MateriaisController {
     };
   }
 
-  @ApiOperation({ summary: "Obter quizzes de um material" })
-  @ApiResponse({ status: 200, description: "Quizzes retornados com sucesso." })
-  @Get("quizzes/:id")
-  async getQuizzes(@Param("id") id: string, @Req() req: Request) {
-    const userId = (req.user as any)?.id || (req.user as any)?.userId;
-    const material = await this.materiaisService.obterPorId(id, userId);
-    const quizzes = material.quizzesJson ? JSON.parse(material.quizzesJson) : [];
-    return {
-      message: 'Quizzes retornados com sucesso.',
-      material,
-      quizzes,
-      estatisticas: {
-        quantidadeQuestoes: quizzes.length,
-        dataCriacao: material.criadoEm || null,
-      },
-    };
-  }
+    @ApiOperation({ summary: "Obter flashcards gerados via IA a partir de PDF salvo" })
+    @ApiParam({ name: "id", required: true, description: "ID do material" })
+    @ApiResponse({ status: 200, description: "Flashcards retornados com sucesso." })
+    @ApiResponse({ status: 404, description: "Flashcards por PDF não encontrados." })
+    @Get('flashcards-pdf/:id')
+    async getFlashcardsPorPdf(@Param('id') id: string, @Req() req: Request) {
+      const userId = (req.user as any)?.id || (req.user as any)?.userId;
+      const material = await this.materiaisService.obterPorId(id, userId);
+      if (!material || !material.caminhoArquivo) {
+        throw new NotFoundException('Flashcards por PDF não encontrados.');
+      }
+      const flashcards = material.flashcardsJson ? JSON.parse(material.flashcardsJson) : [];
+      return {
+        message: 'Flashcards retornados com sucesso.',
+        material,
+        flashcards,
+        estatisticas: {
+          caminhoArquivo: material.caminhoArquivo,
+          dataUpload: material.criadoEm || null,
+        },
+      };
+    }
 
-  @ApiOperation({ summary: "Obter flashcards de um material" })
-  @ApiResponse({ status: 200, description: "Flashcards retornados com sucesso." })
-  @Get("flashcards/:id")
-  async getFlashcards(@Param("id") id: string, @Req() req: Request) {
-    const userId = (req.user as any)?.id || (req.user as any)?.userId;
-    const material = await this.materiaisService.obterPorId(id, userId);
-    const flashcards = material.flashcardsJson ? JSON.parse(material.flashcardsJson) : [];
-    return {
-      message: 'Flashcards retornados com sucesso.',
-      material,
-      flashcards,
-      estatisticas: {
-        quantidadeFlashcards: flashcards.length,
-        dataCriacao: material.criadoEm || null,
+    @ApiOperation({ summary: "Gerar quizzes automáticos via IA a partir de PDF salvo" })
+    @ApiBody({
+      schema: {
+        type: "object",
+        properties: {
+          id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
+        },
+        required: ["id"],
       },
-    };
-  }
+    })
+    @ApiResponse({ status: 201, description: "Quizzes gerados com sucesso a partir do PDF.", schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        material: { type: "object" },
+        quizzes: { type: "array", items: { type: "object" } },
+        estatisticas: {
+          type: "object",
+          properties: {
+            caminhoArquivo: { type: "string" },
+            dataUpload: { type: "string", format: "date-time" },
+          },
+        },
+      },
+    }})
+    @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
+    @Post('quizzes-pdf')
+    async gerarQuizzesPorPdf(@Body() body: any) {
+      const { id } = body;
+      if (!id) {
+        throw new BadRequestException('O id do material é obrigatório');
+      }
+      const material = await this.materiaisService.buscarMaterialPorId(id);
+      if (!material) {
+        throw new NotFoundException('Material não encontrado');
+      }
+      if (!material.caminhoArquivo) {
+        throw new BadRequestException('O material não possui PDF armazenado.');
+      }
+      const result = await this.materiaisService.gerarQuizzesIaPorPdfMaterial(material);
+      return {
+        message: 'Quizzes gerados com sucesso a partir do PDF.',
+        material: result.material,
+        quizzes: result.quizzes,
+        estatisticas: {
+          caminhoArquivo: material.caminhoArquivo,
+          dataUpload: new Date().toISOString(),
+        },
+      };
+    }
+
+      @ApiOperation({ summary: "Obter quizzes gerados via IA a partir de PDF salvo" })
+      @ApiParam({ name: "id", required: true, description: "ID do material" })
+      @ApiResponse({ status: 200, description: "Quizzes retornados com sucesso." })
+      @ApiResponse({ status: 404, description: "Quizzes por PDF não encontrados." })
+      @Get('quizzes-pdf/:id')
+      async getQuizzesPorPdf(@Param('id') id: string, @Req() req: Request) {
+        const userId = (req.user as any)?.id || (req.user as any)?.userId;
+        const material = await this.materiaisService.obterPorId(id, userId);
+        if (!material || !material.caminhoArquivo) {
+          throw new NotFoundException('Quizzes por PDF não encontrados.');
+        }
+        const quizzes = material.quizzesJson ? JSON.parse(material.quizzesJson) : [];
+        return {
+          message: 'Quizzes retornados com sucesso.',
+          material,
+          quizzes,
+          estatisticas: {
+            caminhoArquivo: material.caminhoArquivo,
+            dataUpload: material.criadoEm || null,
+          },
+        };
+      }
+
 
   @ApiOperation({ summary: "Enviar mensagem ao tutor IA (chatbox)" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
