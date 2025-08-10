@@ -613,6 +613,51 @@ export class MateriaisService {
     return { material: updatedMaterial, flashcards };
   }
 
+  async gerarQuizzesIaPorMaterial(material: any) {
+    const topicos = material.topicos || [];
+    let textoBase = "";
+    if (material.origem === "ASSUNTO") {
+      textoBase = material.conteudo || "";
+      if (topicos.length > 0) {
+        textoBase += "\nTópicos:\n" + topicos.map((t: any) => t.nome || t).join(", ");
+      }
+    } else {
+      textoBase = topicos.length > 0 ? topicos.map((t: any) => t.nome || t).join(", ") : material.conteudo || "";
+    }
+    if (!textoBase || textoBase.trim().length === 0) {
+      throw new Error("Não foi possível obter o conteúdo base para gerar quizzes.");
+    }
+    const prompt = `Gere 10 questões de múltipla escolha sobre o tema e tópicos abaixo. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    let quizzesJson = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: prompt,
+      userPrompt: textoBase,
+      maxTokens: 10000,
+      temperature: 0.5,
+      thinking: false,
+    });
+    if (quizzesJson) {
+      quizzesJson = quizzesJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+        const jsonMatch = match.match(/\[.*\]/s);
+        return jsonMatch ? jsonMatch[0] : '';
+      });
+      quizzesJson = quizzesJson.replace(/<think>|<\/think>/gi, '').trim();
+    }
+    let quizzes: any[] = [];
+    try {
+      quizzes = JSON.parse(quizzesJson);
+    } catch {
+      quizzes = [];
+    }
+    const updatedMaterial = await this.prisma.materialEstudo.update({
+      where: { id: material.id },
+      data: {
+        quizzesJson: JSON.stringify(quizzes),
+        quantidadeQuestoes: quizzes.length,
+      },
+    });
+    return { material: updatedMaterial, quizzes };
+  }
+
   private montarTextoParaResumo(assunto: string, topicos: string[]): string {
     const topicosFormatados = topicos.map(t => `- ${t}`).join('\n');
 

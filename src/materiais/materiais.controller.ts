@@ -491,17 +491,9 @@ export class MateriaisController {
     schema: {
       type: "object",
       properties: {
-        nomeDesignado: { type: "string", example: "Quiz de História" },
-        materiaId: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000" },
-        topicos: { type: "array", items: { type: "string" }, example: ["Revolução Francesa", "Iluminismo"] },
-        caminhoArquivo: { type: "string", example: "uploads/pdfs/historia.pdf" },
-        tipoMaterial: { type: "string", example: "QUIZZ" },
-        quantidade: { type: "number", example: 10 },
-        origem: { type: "string", enum: ["TOPICOS", "DOCUMENTO", "ASSUNTO"], example: "TOPICOS" },
-        textoConteudo: { type: "string", example: "Texto extraído do PDF ou digitado" },
-        assunto: { type: "string", example: "A Revolução Francesa foi um período de grandes mudanças..." },
+        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
       },
-      required: ["nomeDesignado", "materiaId", "quantidade", "origem"],
+      required: ["id"],
     },
   })
   @ApiResponse({ status: 201, description: "Quizzes gerados com sucesso.", schema: {
@@ -519,45 +511,25 @@ export class MateriaisController {
       },
     },
   }})
-  @ApiResponse({ status: 400, description: "Campos obrigatórios ausentes ou inválidos." })
+  @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
+  
   @Post('quizzes')
-  async gerarQuizzes(@Req() req: Request, @Body() body: any) {
-    if (!body || typeof body !== 'object') {
-      throw new BadRequestException('Body da requisição ausente ou inválido.');
+  async gerarQuizzes(@Body() body: any) {
+    const { id } = body;
+    if (!id) {
+      throw new BadRequestException('O id do material é obrigatório');
     }
-    const userId = (req.user as any).userId;
-    const {
-      nomeDesignado,
-      materiaId,
-      topicos,
-      caminhoArquivo,
-      tipoMaterial,
-      quantidade,
-      origem,
-      textoConteudo,
-      assunto,
-    } = body;
-    if (!nomeDesignado || !materiaId || !quantidade || !origem) {
-      throw new BadRequestException('Campos obrigatórios ausentes: nomeDesignado, materiaId, quantidade, origem.');
+    const material = await this.materiaisService.buscarMaterialPorId(id);
+    if (!material) {
+      throw new NotFoundException('Material não encontrado');
     }
-    const resultado = await this.materiaisService.gerarQuizzes({
-      userId,
-      nomeDesignado,
-      materiaId,
-      topicos,
-      caminhoArquivo,
-      tipoMaterial,
-      quantidade,
-      origem,
-      textoConteudo,
-      assunto,
-    });
+    const result = await this.materiaisService.gerarQuizzesIaPorMaterial(material);
     return {
       message: 'Quizzes gerados com sucesso.',
-      material: resultado.material,
-      quizzes: resultado.quizzes,
+      material: result.material,
+      quizzes: result.quizzes,
       estatisticas: {
-        quantidadeQuestoes: resultado.quizzes.length,
+        quantidadeQuestoes: result.quizzes?.length || 0,
         dataCriacao: new Date().toISOString(),
       },
     };
