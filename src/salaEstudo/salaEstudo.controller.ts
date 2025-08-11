@@ -1,4 +1,4 @@
-import { Controller, Get, Res, HttpStatus, Post } from '@nestjs/common';
+import { Controller, Get, Res, HttpStatus, Post, Put, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { salaEstudoService } from './salaEstudo.service';
@@ -11,6 +11,35 @@ export class salaEstudoController {
     private readonly salaEstudoService: salaEstudoService,
     private readonly prisma: PrismaService
   ) {}
+
+  @ApiOperation({ summary: 'Atualizar todas as informações de uma sala de estudo pelo id' })
+  @ApiResponse({ status: 200, description: 'Sala de estudo atualizada com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Sala de estudo não encontrada.' })
+  @ApiResponse({ status: 500, description: 'Erro ao atualizar sala de estudo.' })
+  @Put(':id')
+  async updateSalaEstudoById(
+    @Param('id') id: string,
+    @Body() body: any,
+    @Res() res: Response
+  ) {
+    try {
+      const sala = await this.salaEstudoService.updateSalaEstudoById(id, body);
+      return res.status(HttpStatus.OK).json({
+        message: 'Sala de estudo atualizada com sucesso.',
+        sala
+      });
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'P2025') {
+        return res.status(HttpStatus.NOT_FOUND).json({
+          error: 'Sala de estudo não encontrada.'
+        });
+      }
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        error: 'Erro ao atualizar sala de estudo.',
+        details: error
+      });
+    }
+  }
 
   @ApiOperation({ summary: 'Criar sala padrão "thinkspace"' })
   @ApiResponse({ status: 201, description: 'Sala padrão criada com sucesso.' })

@@ -5,6 +5,13 @@ import { PrismaService } from '../prisma/prisma.service';
 export class salaEstudoService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async updateSalaEstudoById(id: string, data: any) {
+    return await this.prisma.salaEstudo.update({
+      where: { id },
+      data,
+    });
+  }
+
   async ensureDefaultRoom() {
     let defaultRoom = await this.prisma.salaEstudo.findFirst({ 
       where: { nome: 'thinkspace' } 
