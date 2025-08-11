@@ -842,7 +842,7 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
         autorId,
       },
       orderBy: {
-        horarioMensagem: 'desc',
+        horarioMensagem: 'asc',
       },
     });
   }
