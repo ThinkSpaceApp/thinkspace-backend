@@ -94,11 +94,9 @@ export class UsersController {
   async registrarAtividade(@Req() req: Request, @Body() body: { data?: string }) {
     const userId = (req.user as any)?.userId;
     if (!userId) throw new BadRequestException("Usuário não autenticado.");
-    // Data no formato YYYY-MM-DD, default hoje
     const data = body.data ? new Date(body.data) : new Date();
     const dia = new Date(data.getFullYear(), data.getMonth(), data.getDate());
 
-    // Cria ou incrementa atividade do dia
     await this.usersService.registrarAtividadeDiaria(userId, dia);
     return { message: "Atividade registrada com sucesso." };
   }
@@ -268,39 +266,6 @@ export class UsersController {
       return res.status(200).json({ message: "Conta excluída com sucesso." });
     } catch (error) {
       return res.status(500).json({ message: "Erro ao excluir conta.", error });
-    }
-  }
-
-  @ApiOperation({ summary: "Teste de consulta do banco de dados" })
-  @ApiResponse({ status: 200, description: "Teste de consulta." })
-  @Get("test-db")
-  async testDb(@Req() req: Request) {
-    try {
-      const email = req.query.email as string;
-      const result = await this.usersService.testDatabase(email);
-
-      return {
-        message: "Teste de banco de dados",
-        ...result,
-      };
-    } catch (error) {
-      console.error("Erro no teste de banco de dados:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-      throw new BadRequestException(`Erro no teste de banco de dados: ${errorMessage}`);
-    }
-  }
-
-  @ApiOperation({ summary: "Teste da sala padrão" })
-  @ApiResponse({ status: 200, description: "Teste da sala padrão." })
-  @Get("test-default-room")
-  async testDefaultRoom() {
-    try {
-      const result = await this.usersService.testDefaultRoom();
-      return result;
-    } catch (error) {
-      console.error("Erro no teste da sala padrão:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-      throw new BadRequestException(`Erro no teste da sala padrão: ${errorMessage}`);
     }
   }
 }

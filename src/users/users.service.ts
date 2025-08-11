@@ -106,7 +106,6 @@ export class UsersService {
   }
 
   async update(userId: string, data: Partial<Usuario>) {
-    // Se for atualizar instituicaoId, verifique se existe
     if (data.instituicaoId) {
       const instituicao = await this.prisma.instituicao.findUnique({
         where: { id: data.instituicaoId },
@@ -489,5 +488,23 @@ export class UsersService {
       console.error('Erro no teste da sala padrão:', error);
       throw error;
     }
+  }
+
+  async excluirHistoricoChatPorMateria(materiaId: string) {
+    const materiais = await this.prisma.materialEstudo.findMany({
+      where: { materiaId },
+      select: { id: true },
+    });
+    const materialIds = materiais.map(m => m.id);
+    if (materialIds.length === 0) return;
+    await this.prisma.chatMensagem.deleteMany({
+      where: { materialId: { in: materialIds } },
+    });
+  }
+
+  async excluirMateriaisPorMateria(materiaId: string) {
+    await this.prisma.materialEstudo.deleteMany({
+      where: { materiaId },
+    });
   }
 }
