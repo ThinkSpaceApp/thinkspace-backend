@@ -736,7 +736,7 @@ export class MateriaisController {
     if (!body.mensagem || typeof body.mensagem !== "string") {
       throw new BadRequestException("Mensagem obrigatória.");
     }
-    const promptTutor = `Você é um tutor educacional. Responda de forma clara, objetiva e direta, em no máximo dois parágrafos. Não use <think> ou estrutura de planejamento. Seja breve e didático, focando apenas na explicação solicitada. Pergunta: "${body.mensagem}"`;
+  const promptTutor = `Você é um tutor educacional. Responda de forma clara, objetiva e direta, em no máximo dois parágrafos. Não use <think> ou estrutura de planejamento. Seja breve e didático, focando apenas na explicação solicitada. Responda sempre em português do Brasil. Pergunta: "${body.mensagem}"`;
     const respostaIa = await this.materiaisService.gerarRespostaTutorIa({ prompt: promptTutor });
     const chatMensagem = await this.materiaisService.salvarChatMensagem({
       materialId: id,

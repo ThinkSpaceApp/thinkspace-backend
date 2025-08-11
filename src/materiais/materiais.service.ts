@@ -726,7 +726,7 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
   let resposta = await this.glm45Service.gerarTextoEducativo({
     systemPrompt: prompt,
     userPrompt: "",
-    maxTokens: 5000,
+    maxTokens: 10000,
     temperature: 0.7,
     thinking: false,
   });
