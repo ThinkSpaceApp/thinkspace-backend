@@ -711,7 +711,25 @@ export class MateriaisController {
       required: ["mensagem"],
     },
   })
-  @ApiResponse({ status: 200, description: "Resposta do tutor IA retornada com sucesso." })
+  @ApiResponse({ status: 200, description: "Resposta do tutor IA retornada com sucesso.", schema: {
+    type: "object",
+    properties: {
+      message: { type: "string" },
+      respostaIa: { type: "string" },
+      chatMensagem: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          materialId: { type: "string" },
+          autorId: { type: "string" },
+          mensagemUsuario: { type: "string" },
+          mensagemIa: { type: "string" },
+          horarioMensagem: { type: "string", format: "date-time" },
+          criadoEm: { type: "string", format: "date-time" },
+        },
+      },
+    },
+  }})
   @Post("chatbox/:id")
   async enviarMensagemChatbox(@Param("id") id: string, @Req() req: Request, @Body() body: { mensagem: string }) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
@@ -735,7 +753,27 @@ export class MateriaisController {
 
   @ApiOperation({ summary: "Obter todas as mensagens enviadas pelo usuário no chatbox" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
-  @ApiResponse({ status: 200, description: "Mensagens do usuário retornadas com sucesso." })
+  @ApiResponse({ status: 200, description: "Mensagens do usuário retornadas com sucesso.", schema: {
+    type: "object",
+    properties: {
+      message: { type: "string" },
+      mensagensChatbox: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            materialId: { type: "string" },
+            autorId: { type: "string" },
+            mensagemUsuario: { type: "string" },
+            mensagemIa: { type: "string" },
+            horarioMensagem: { type: "string", format: "date-time" },
+            criadoEm: { type: "string", format: "date-time" },
+          },
+        },
+      },
+    },
+  }})
   @Get("chatbox/mensagens-usuario/:id")
   async getMensagensUsuarioChatbox(@Param("id") id: string, @Req() req: Request) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
