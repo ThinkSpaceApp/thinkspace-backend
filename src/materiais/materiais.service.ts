@@ -582,7 +582,8 @@ export class MateriaisService {
     if (!textoBase || textoBase.trim().length === 0) {
       throw new Error("Não foi possível obter o conteúdo base para gerar flashcards.");
     }
-    const prompt = `Gere 10 flashcards didáticos e objetivos sobre o tema e tópicos abaixo. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+  const quantidade = material.quantidadeFlashcards || 10;
+  const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o tema e tópicos abaixo. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
@@ -627,11 +628,12 @@ export class MateriaisService {
     if (!textoBase || textoBase.trim().length === 0) {
       throw new Error("Não foi possível obter o conteúdo base para gerar quizzes.");
     }
-    const prompt = `Gere 10 questões de múltipla escolha sobre o tema e tópicos abaixo. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+  const quantidade = material.quantidadeQuestoes || 10;
+  const prompt = `Gere ${quantidade} questões de múltipla escolha sobre o tema e tópicos abaixo. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let quizzesJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
-      maxTokens: 10000,
+      maxTokens: 20000,
       temperature: 0.5,
       thinking: false,
     });
@@ -667,11 +669,12 @@ export class MateriaisService {
     if (!textoBase || textoBase.trim().length === 0) {
       throw new Error('Não foi possível extrair texto do PDF para gerar quizzes.');
     }
-    const prompt = `Gere 10 questões de múltipla escolha sobre o conteúdo abaixo extraído de um PDF. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+  const quantidade = material.quantidadeQuestoes || 10;
+  const prompt = `Gere ${quantidade} questões de múltipla escolha sobre o conteúdo abaixo extraído de um PDF. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let quizzesJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
-      maxTokens: 10000,
+      maxTokens: 20000,
       temperature: 0.5,
       thinking: false,
     });
@@ -788,7 +791,8 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
     if (!textoBase || textoBase.trim().length === 0) {
       throw new Error('Não foi possível extrair texto do PDF para gerar flashcards.');
     }
-    const prompt = `Gere 10 flashcards didáticos e objetivos sobre o conteúdo abaixo extraído de um PDF. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+  const quantidade = material.quantidadeFlashcards || 10;
+  const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o conteúdo abaixo extraído de um PDF. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
