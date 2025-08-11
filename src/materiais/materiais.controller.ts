@@ -35,49 +35,6 @@ import { uploadPdfConfig } from "./config/upload.config";
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
 export class MateriaisController {
-  @ApiOperation({ summary: "Obter todas as mensagens da IA no chatbox" })
-  @ApiParam({ name: "id", required: true, description: "ID do material" })
-  @ApiResponse({ status: 200, description: "Mensagens da IA retornadas com sucesso.", schema: {
-    type: "object",
-    properties: {
-      message: { type: "string" },
-      mensagensIa: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            materialId: { type: "string" },
-            autorId: { type: "string" },
-            mensagemIa: { type: "string" },
-            horarioMensagem: { type: "string", format: "date-time" },
-            criadoEm: { type: "string", format: "date-time" },
-          }
-        }
-      }
-    }
-  }})
-  @Get("chatbox/mensagens-IA/:id")
-  async getMensagensIaChatbox(@Param("id") id: string, @Req() req: Request) {
-    const userId = (req.user as any)?.id || (req.user as any)?.userId;
-    const mensagensChatbox = await this.materiaisService.buscarMensagensChatboxUsuario({
-      materialId: id,
-      autorId: userId,
-    });
-    // Retornar apenas a mensagem da IA e metadados
-    const mensagensIa = mensagensChatbox.map(msg => ({
-      id: msg.id,
-      materialId: msg.materialId,
-      autorId: msg.autorId,
-      mensagemIa: msg.mensagemIa,
-      horarioMensagem: msg.horarioMensagem,
-      criadoEm: msg.criadoEm
-    }));
-    return {
-      message: "Mensagens da IA retornadas com sucesso.",
-      mensagensIa,
-    };
-  }
   constructor(private readonly materiaisService: MateriaisService) {}
 
   @ApiOperation({ summary: "Listar materiais do usuário" })
@@ -824,7 +781,6 @@ export class MateriaisController {
       materialId: id,
       autorId: userId,
     });
-    // Retornar apenas a mensagem do usuário
     const mensagensUsuario = mensagensChatbox.map(msg => ({
       id: msg.id,
       materialId: msg.materialId,
@@ -837,10 +793,48 @@ export class MateriaisController {
       message: "Mensagens do usuário retornadas com sucesso.",
       mensagensUsuario,
     };
-  // ...existing code...
-  @ApiOperation({ summary: "Obter todas as mensagens da IA no chatbox" })
-  @ApiParam({ name: "id", required: true, description: "ID do material" })
-// ...existing code...
   }
 
+  @ApiOperation({ summary: "Obter todas as mensagens da IA no chatbox" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Mensagens da IA retornadas com sucesso.", schema: {
+    type: "object",
+    properties: {
+      message: { type: "string" },
+      mensagensIa: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            materialId: { type: "string" },
+            autorId: { type: "string" },
+            mensagemIa: { type: "string" },
+            horarioMensagem: { type: "string", format: "date-time" },
+            criadoEm: { type: "string", format: "date-time" },
+          }
+        }
+      }
+    }
+  }})
+  @Get("chatbox/mensagens-IA/:id")
+  async getMensagensIaChatbox(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const mensagensChatbox = await this.materiaisService.buscarMensagensChatboxUsuario({
+      materialId: id,
+      autorId: userId,
+    });
+    const mensagensIa = mensagensChatbox.map(msg => ({
+      id: msg.id,
+      materialId: msg.materialId,
+      autorId: msg.autorId,
+      mensagemIa: msg.mensagemIa,
+      horarioMensagem: msg.horarioMensagem,
+      criadoEm: msg.criadoEm
+    }));
+    return {
+      message: "Mensagens da IA retornadas com sucesso.",
+      mensagensIa,
+    };
+  }
 }
