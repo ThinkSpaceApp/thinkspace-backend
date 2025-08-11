@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { NivelUsuario } from "@prisma/client";
 
 @Injectable()
 export class ExperienciaService {
@@ -15,12 +16,14 @@ export class ExperienciaService {
     if (xp < 0) xp = 0;
     const xpAnterior = experiencia.xp;
     const xpFinal = xpAnterior + xp;
-    const progresso = totalQuestoes > 0 ? (certas / totalQuestoes) * 100 : 0;
+    const { getProgressoNivel, getNivelInfo } = await import("./niveis-xp");
+    const { nivel, progresso } = getProgressoNivel(xpFinal);
     const atualizado = await this.prisma.experienciaUsuario.update({
       where: { usuarioId },
       data: {
         xp: xpFinal,
         progresso,
+        nivel: nivel.nome as NivelUsuario,
       },
     });
     return {
@@ -28,8 +31,8 @@ export class ExperienciaService {
       xpAnterior,
       xpFinal,
       progresso,
-      nivel: atualizado.nivel,
-      mensagem: `XP calculada: +${xp} (certas: +${certas * 5}, erradas: -${erradas * 2}, participação: +10). XP final: ${xpFinal}. Progresso: ${progresso.toFixed(2)}%.`,
+      nivel: nivel.nome,
+      mensagem: `XP calculada: +${xp} (certas: +${certas * 5}, erradas: -${erradas * 2}, participação: +10). XP final: ${xpFinal}. Progresso para o próximo nível: ${progresso.toFixed(2)}%. Nível atual: ${nivel.nome}.`,
     };
   }
 }

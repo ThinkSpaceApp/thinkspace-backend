@@ -955,19 +955,18 @@ export class MateriaisController {
       required: ["totalQuestoes", "certas"],
     },
   })
-  @ApiResponse({ status: 200, description: "XP calculada e atualizada com sucesso." })
   @ApiResponse({
     status: 200,
     description: "XP calculada e atualizada com sucesso.",
     schema: {
       type: "object",
       properties: {
-        xp: { type: "number" },
-        xpAnterior: { type: "number" },
-        xpFinal: { type: "number" },
-        progresso: { type: "number" },
-        nivel: { type: "string" },
-        mensagem: { type: "string" }
+        xp: { type: "number", description: "XP obtida nesta atividade" },
+        xpAnterior: { type: "number", description: "XP do usuário antes da atividade" },
+        xpFinal: { type: "number", description: "XP total do usuário após a atividade" },
+        progresso: { type: "number", description: "Progresso percentual para o próximo nível (0-100)" },
+        nivel: { type: "string", description: "Nome do nível atual do usuário" },
+        mensagem: { type: "string", description: "Mensagem informativa sobre o resultado" }
       }
     }
   })
