@@ -7,18 +7,27 @@ export class ExperienciaService {
   constructor(private readonly prisma: PrismaService) {}
 
   async calcularXpQuiz(usuarioId: string, totalQuestoes: number, certas: number): Promise<{ xp: number; xpAnterior: number; xpFinal: number; progresso: number; nivel: string; mensagem: string }> {
-    const experiencia = await this.prisma.experienciaUsuario.findUnique({ where: { usuarioId } });
+    let experiencia = await this.prisma.experienciaUsuario.findUnique({ where: { usuarioId } });
     if (!experiencia) {
-      throw new NotFoundException("Experiência do usuário não encontrada.");
+      const { getProgressoNivel } = await import("./niveis-xp");
+      const { nivel, progresso } = getProgressoNivel(0);
+      experiencia = await this.prisma.experienciaUsuario.create({
+        data: {
+          usuarioId,
+          xp: 0,
+          progresso,
+          nivel: nivel.nome as NivelUsuario,
+        },
+      });
     }
     const erradas = totalQuestoes - certas;
     let xp = 10 + (certas * 5) - (erradas * 2);
     if (xp < 0) xp = 0;
     const xpAnterior = experiencia.xp;
     const xpFinal = xpAnterior + xp;
-    const { getProgressoNivel, getNivelInfo } = await import("./niveis-xp");
+    const { getProgressoNivel } = await import("./niveis-xp");
     const { nivel, progresso } = getProgressoNivel(xpFinal);
-    const atualizado = await this.prisma.experienciaUsuario.update({
+    await this.prisma.experienciaUsuario.update({
       where: { usuarioId },
       data: {
         xp: xpFinal,

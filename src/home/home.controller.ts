@@ -60,7 +60,9 @@ export class HomeController {
   @Get("materias")
   async getMaterias(@Req() req: Request) {
     const userJwt = req.user as { userId: string };
-    return this.usersService.getMateriasByUserId(userJwt.userId);
+    const materias = await this.usersService.getMateriasByUserId(userJwt.userId);
+    materias.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+    return materias;
   }
 
   @ApiOperation({ summary: "Obter calendário do mês atual" })
