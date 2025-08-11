@@ -122,12 +122,23 @@ export class HomeController {
     const hoje = new Date();
     const dataHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
 
+    const tipoAtividade = (body.tipo || "").toLowerCase();
+    const isQuiz = tipoAtividade.includes("quiz") || tipoAtividade.includes("quizz") || tipoAtividade.includes("questao") || tipoAtividade.includes("questão");
+    if (!isQuiz) {
+      return {
+        userId,
+        data: dataHoje.toISOString().split("T")[0],
+        tipo: body.tipo,
+        checked: false,
+        message: "A ofensiva só é marcada ao realizar uma atividade de quiz!",
+      };
+    }
     return {
       userId,
       data: dataHoje.toISOString().split("T")[0],
       tipo: body.tipo,
       checked: true,
-      message: "Atividade do dia registrada com sucesso!",
+      message: "Atividade de quiz registrada e ofensiva marcada com sucesso!",
     };
   }
 
