@@ -167,9 +167,9 @@ export class MateriaisService {
       console.log(`Texto base criado com ${textoParaResumo.length} caracteres`);
       console.log("Iniciando geração do resumo com IA usando GLM-4.5...");
       let resumoIA = await this.glm45Service.gerarTextoEducativo({
-        systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
+  systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Todo o texto deve estar em português-br. Não inclua pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
         userPrompt: textoParaResumo,
-        maxTokens: 3000,
+        maxTokens: 5000,
         temperature: 0.7,
         thinking: false,
       });
@@ -399,12 +399,12 @@ export class MateriaisService {
       console.log(`Texto extraído com sucesso. Tamanho: ${textoExtraido.length} caracteres`);
 
       let prompt =
-        `Você é um especialista em educação. Analise o texto extraído de um documento PDF abaixo e gere um resumo didático e detalhado, na mesma linguagem dos outros resumos da plataforma. Se o conteúdo for muito curto ou superficial, adicione pontos relevantes e complementares para enriquecer o material. Se o conteúdo for muito extenso, resuma de forma clara e objetiva, mantendo os pontos principais. Reescreva o texto para torná-lo mais didático e organizado. Não inclua comentários ou texto extra, apenas o resumo final.`;
+        `Você é um especialista em educação. Analise o texto extraído de um documento PDF abaixo e gere um resumo didático e detalhado, na mesma linguagem dos outros resumos da plataforma. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Se o conteúdo for muito curto ou superficial, adicione pontos relevantes e complementares para enriquecer o material. Se o conteúdo for muito extenso, resuma de forma clara e objetiva, mantendo os pontos principais. Reescreva o texto para torná-lo mais didático e organizado. Não inclua comentários ou texto extra, apenas o resumo final.`;
 
-      const maxTokens = 3000;
+      const maxTokens = 5000;
 
       let resumoIA = await this.glm45Service.gerarTextoEducativo({
-        systemPrompt: prompt,
+  systemPrompt: prompt,
         userPrompt: textoExtraido,
         maxTokens,
         temperature: 0.7,
@@ -498,9 +498,9 @@ export class MateriaisService {
 
       console.log("Iniciando geração do resumo com IA usando GLM-4.5...");
       let resumoIA = await this.glm45Service.gerarTextoEducativo({
-        systemPrompt: 'Você é um especialista em educação. Gere um texto didático e detalhado sobre o tema e tópicos abaixo.',
+        systemPrompt: 'Você é um especialista em educação. Gere um texto didático e detalhado sobre o tema e tópicos abaixo. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos.',
         userPrompt: textoParaResumo,
-        maxTokens: 3000,
+        maxTokens: 5000,
         temperature: 0.7,
         thinking: false,
       });
@@ -550,9 +550,9 @@ export class MateriaisService {
       throw new Error("Não foi possível montar o texto base para o resumo IA.");
     }
     let resumoIA = await this.glm45Service.gerarTextoEducativo({
-      systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
+  systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Todo o texto deve estar em português-br. Não inclua pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
       userPrompt: textoParaResumo,
-      maxTokens: 3000,
+      maxTokens: 5000,
       temperature: 0.7,
       thinking: false,
     });
@@ -755,11 +755,12 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
     if (!textoBase || textoBase.trim().length === 0) {
       throw new Error('Não foi possível extrair texto do PDF para gerar resumo.');
     }
-    const prompt = `Gere um resumo didático e detalhado sobre o conteúdo abaixo extraído de um PDF. O texto deve ser claro, objetivo, acessível para iniciantes e não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar.`;
+  const markdownPrompt = `Gere um resumo didático e detalhado sobre o conteúdo abaixo extraído de um PDF. O texto deve ser claro, objetivo, acessível para iniciantes, estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar.`;
+  const prompt = `Gere um resumo didático e detalhado sobre o conteúdo abaixo extraído de um PDF. O texto deve ser claro, objetivo, acessível para iniciantes, estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar.`;
     let resumoIA = await this.glm45Service.gerarTextoEducativo({
-      systemPrompt: prompt,
+  systemPrompt: markdownPrompt,
       userPrompt: textoBase,
-      maxTokens: 3000,
+      maxTokens: 5000,
       temperature: 0.7,
       thinking: false,
     });
