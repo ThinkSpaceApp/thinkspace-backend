@@ -169,6 +169,7 @@ model MaterialEstudo {
   flashcardsJson String? @db.Text
   quizzes        Quiz[]
   quizzesJson    String? @db.Text
+  respostasQuizJson String? @db.Text
   revisoes       Revisao[]
   chatHistoryJson Json?
   criadoEm       DateTime       @default(now())
