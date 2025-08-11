@@ -12,6 +12,14 @@ import { TipoMaterialEstudo } from "@prisma/client";
 
 @Injectable()
 export class MateriaisService {
+  async atualizarRespostasQuiz(materialId: string, userId: string, respostasQuiz: Record<string | number, string>) {
+    return await this.prisma.materialEstudo.update({
+      where: { id: materialId },
+      data: {
+        respostasQuizJson: JSON.stringify(respostasQuiz),
+      },
+    });
+  }
   async gerarQuizzes({
     userId,
     nomeDesignado,

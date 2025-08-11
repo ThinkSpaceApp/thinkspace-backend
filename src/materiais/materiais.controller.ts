@@ -837,4 +837,105 @@ export class MateriaisController {
       mensagensIa,
     };
   }
+
+  @ApiOperation({ summary: "Armazenar resposta de questão individual do material" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        questaoIndex: { type: "number", example: 0, description: "Índice da questão respondida (começa em 0)" },
+        resposta: { type: "string", example: "A", description: "Resposta do usuário" },
+      },
+      required: ["questaoIndex", "resposta"],
+    },
+  })
+
+  @ApiResponse({ status: 201, description: "Resposta armazenada com sucesso." })
+  @Post("responder-questao/:id")
+  async responderQuestaoMaterial(@Param("id") id: string, @Req() req: Request, @Body() body: { questaoIndex: number, resposta: string }) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    if (typeof body.questaoIndex !== "number" || !body.resposta) {
+      throw new BadRequestException("questaoIndex e resposta são obrigatórios.");
+    }
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || !material.quizzesJson) {
+      throw new NotFoundException("Material ou quizzes não encontrados.");
+    }
+    const quizzes = JSON.parse(material.quizzesJson);
+    const totalQuestoes = quizzes.length;
+  let respostasQuiz: Record<string, string> = {};
+    if (material.respostasQuizJson) {
+      try {
+        respostasQuiz = JSON.parse(material.respostasQuizJson);
+      } catch {
+        respostasQuiz = {};
+      }
+    }
+  respostasQuiz[String(body.questaoIndex)] = body.resposta;
+    await this.materiaisService.atualizarRespostasQuiz(id, userId, respostasQuiz);
+    return {
+      message: `Questão ${body.questaoIndex + 1} de ${totalQuestoes} respondida!`,
+      questaoRespondida: body.questaoIndex + 1,
+      totalQuestoes,
+      resposta: body.resposta
+    };
+  }
+
+  @ApiOperation({ summary: "Obter respostas do quiz do usuário e status de finalização" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Respostas do quiz retornadas com sucesso." })
+  @Get("respostas-quiz/:id")
+  async getRespostasQuiz(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || !material.quizzesJson) {
+      throw new NotFoundException("Material ou quizzes não encontrados.");
+    }
+    const quizzes = JSON.parse(material.quizzesJson);
+    const totalQuestoes = quizzes.length;
+    let respostasQuiz: Record<string, string> = {};
+    if (material.respostasQuizJson) {
+      try {
+        respostasQuiz = JSON.parse(material.respostasQuizJson);
+      } catch {
+        respostasQuiz = {};
+      }
+    }
+    const respondidas = Object.keys(respostasQuiz).length;
+    const finalizado = respondidas === totalQuestoes && totalQuestoes > 0;
+    let mensagem = finalizado
+      ? "Quiz finalizado! Calcule a XP do usuário."
+      : `Faltam ${totalQuestoes - respondidas} questões para finalizar o quiz.`;
+    return {
+      respostasQuiz,
+      respondidas,
+      totalQuestoes,
+      finalizado,
+      mensagem
+    };
+  }
+
+  @ApiOperation({ summary: "Calcular XP do usuário após quiz" })
+  @ApiParam({ name: "id", required: true, description: "ID do usuário" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        totalQuestoes: { type: "number", example: 10, description: "Total de questões do quiz" },
+        certas: { type: "number", example: 7, description: "Quantidade de questões corretas" },
+      },
+      required: ["totalQuestoes", "certas"],
+    },
+  })
+  @ApiResponse({ status: 200, description: "XP calculada e atualizada com sucesso." })
+  @Post("calcular-xp/:id")
+  async calcularXpQuiz(@Param("id") usuarioId: string, @Body() body: { totalQuestoes: number, certas: number }) {
+    const { ExperienciaService } = await import("../experiencia/experiencia.service");
+    const prisma = this.materiaisService["prisma"];
+    const experienciaService = new ExperienciaService(prisma);
+    const result = await experienciaService.calcularXpQuiz(usuarioId, body.totalQuestoes, body.certas);
+    return result;
+  }
+
 }
