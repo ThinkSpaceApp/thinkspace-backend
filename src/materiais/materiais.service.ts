@@ -817,4 +817,33 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
     });
     return { material: updatedMaterial, flashcards };
   }
+
+    async salvarChatMensagem({ materialId, autorId, mensagemUsuario, mensagemIa }: {
+    materialId: string;
+    autorId: string;
+    mensagemUsuario: string;
+    mensagemIa: string;
+  }) {
+    return await this.prisma.chatMensagem.create({
+      data: {
+        materialId,
+        autorId,
+        mensagemUsuario,
+        mensagemIa,
+        horarioMensagem: new Date(),
+      },
+    });
+  }
+
+  async buscarMensagensChatboxUsuario({ materialId, autorId }: { materialId: string; autorId: string }) {
+    return await this.prisma.chatMensagem.findMany({
+      where: {
+        materialId,
+        autorId,
+      },
+      orderBy: {
+        horarioMensagem: 'desc',
+      },
+    });
+  }
 }

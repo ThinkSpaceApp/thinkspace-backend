@@ -122,6 +122,7 @@ model Usuario {
   @@map("Usuario")
   PerfilUsuario PerfilUsuario[]
   AtividadeUsuario AtividadeUsuario[]
+  ChatMensagem ChatMensagem[]
 }
 
 model VerificacaoEmail {
@@ -177,8 +178,22 @@ model MaterialEstudo {
 
   salasEstudo    SalaEstudoMaterial[]
   materias       Materia[]      @relation("MateriaParaMaterial")
-
   @@map("MaterialEstudo")
+  ChatMensagem ChatMensagem[]
+}
+
+model ChatMensagem {
+  id               String         @id @default(uuid())
+  materialId       String
+  material         MaterialEstudo @relation(fields: [materialId], references: [id])
+  autorId          String
+  autor            Usuario        @relation(fields: [autorId], references: [id])
+  mensagemUsuario  String         @db.Text
+  mensagemIa       String         @db.Text
+  horarioMensagem  DateTime       @default(now())
+  criadoEm         DateTime       @default(now())
+
+  @@map("ChatMensagem")
 }
 
 model Flashcard {

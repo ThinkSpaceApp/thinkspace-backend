@@ -718,20 +718,18 @@ export class MateriaisController {
     if (!body.mensagem || typeof body.mensagem !== "string") {
       throw new BadRequestException("Mensagem obrigatória.");
     }
-    const material = await this.materiaisService.obterPorId(id, userId);
-    let chatHistory: any[] = [];
-    if ('chatHistoryJson' in material && material.chatHistoryJson) {
-      try { chatHistory = JSON.parse((material as any).chatHistoryJson); } catch { chatHistory = []; }
-    }
-    chatHistory.push({ autor: "Usuário", mensagem: body.mensagem, horario: new Date().toISOString() });
-  const promptTutor = `Você é um tutor educacional. Responda de forma clara, objetiva e direta, em no máximo dois parágrafos. Não use <think> ou estrutura de planejamento. Seja breve e didático, focando apenas na explicação solicitada. Pergunta: "${body.mensagem}"`;
+    const promptTutor = `Você é um tutor educacional. Responda de forma clara, objetiva e direta, em no máximo dois parágrafos. Não use <think> ou estrutura de planejamento. Seja breve e didático, focando apenas na explicação solicitada. Pergunta: "${body.mensagem}"`;
     const respostaIa = await this.materiaisService.gerarRespostaTutorIa({ prompt: promptTutor });
-    chatHistory.push({ autor: "Chat IA", mensagem: respostaIa, horario: new Date().toISOString() });
-    await this.materiaisService.atualizarChatHistory(id, chatHistory);
+    const chatMensagem = await this.materiaisService.salvarChatMensagem({
+      materialId: id,
+      autorId: userId,
+      mensagemUsuario: body.mensagem,
+      mensagemIa: respostaIa,
+    });
     return {
       message: "Resposta do tutor IA retornada com sucesso.",
       respostaIa,
-      chatHistory,
+      chatMensagem,
     };
   }
 
@@ -741,24 +739,13 @@ export class MateriaisController {
   @Get("chatbox/mensagens-usuario/:id")
   async getMensagensUsuarioChatbox(@Param("id") id: string, @Req() req: Request) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
-    const material = await this.materiaisService.obterPorId(id, userId);
-    let mensagensChatbox: any[] = [];
-    if (Array.isArray(material.chatHistoryJson)) {
-      mensagensChatbox = material.chatHistoryJson;
-    } else if (typeof material.chatHistoryJson === 'string' && material.chatHistoryJson.length > 0) {
-      try {
-        mensagensChatbox = JSON.parse(material.chatHistoryJson);
-      } catch {
-        mensagensChatbox = [];
-      }
-    } else if (material.chatHistoryJson && typeof material.chatHistoryJson === 'object' && Array.isArray(material.chatHistoryJson)) {
-      mensagensChatbox = material.chatHistoryJson;
-    }
-    if (!Array.isArray(mensagensChatbox)) mensagensChatbox = [];
+    const mensagensChatbox = await this.materiaisService.buscarMensagensChatboxUsuario({
+      materialId: id,
+      autorId: userId,
+    });
     return {
       message: "Mensagens do chatbox retornadas com sucesso.",
       mensagensChatbox,
     };
   }
-
 }
