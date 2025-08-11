@@ -852,6 +852,19 @@ export class MateriaisController {
   })
 
   @ApiResponse({ status: 201, description: "Resposta armazenada com sucesso." })
+  @ApiResponse({
+    status: 201,
+    description: "Resposta armazenada com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        questaoRespondida: { type: "number" },
+        totalQuestoes: { type: "number" },
+        resposta: { type: "string" }
+      }
+    }
+  })
   @Post("responder-questao/:id")
   async responderQuestaoMaterial(@Param("id") id: string, @Req() req: Request, @Body() body: { questaoIndex: number, resposta: string }) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
@@ -885,6 +898,20 @@ export class MateriaisController {
   @ApiOperation({ summary: "Obter respostas do quiz do usuário e status de finalização" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
   @ApiResponse({ status: 200, description: "Respostas do quiz retornadas com sucesso." })
+  @ApiResponse({
+    status: 200,
+    description: "Respostas do quiz retornadas com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        respostasQuiz: { type: "object", additionalProperties: { type: "string" } },
+        respondidas: { type: "number" },
+        totalQuestoes: { type: "number" },
+        finalizado: { type: "boolean" },
+        mensagem: { type: "string" }
+      }
+    }
+  })
   @Get("respostas-quiz/:id")
   async getRespostasQuiz(@Param("id") id: string, @Req() req: Request) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
@@ -929,6 +956,21 @@ export class MateriaisController {
     },
   })
   @ApiResponse({ status: 200, description: "XP calculada e atualizada com sucesso." })
+  @ApiResponse({
+    status: 200,
+    description: "XP calculada e atualizada com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        xp: { type: "number" },
+        xpAnterior: { type: "number" },
+        xpFinal: { type: "number" },
+        progresso: { type: "number" },
+        nivel: { type: "string" },
+        mensagem: { type: "string" }
+      }
+    }
+  })
   @Post("calcular-xp/:id")
   async calcularXpQuiz(@Param("id") usuarioId: string, @Body() body: { totalQuestoes: number, certas: number }) {
     const { ExperienciaService } = await import("../experiencia/experiencia.service");
