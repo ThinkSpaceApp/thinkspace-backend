@@ -170,11 +170,11 @@ export class UsersService {
       }
 
       const salasMembro = user.membroSalas.map((m) => m.sala);
-      const salasModerador = user.salasModeradas;
+      // const salasModerador = user.salasModeradas;
       
       return {
         salasMembro,
-        salasModerador,
+        // salasModerador,
       };
     } catch (error) {
       console.error('Erro em getSalasEstudoByEmail:', error);
