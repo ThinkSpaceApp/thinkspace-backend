@@ -150,13 +150,12 @@ export class MateriasController {
       throw new BadRequestException("Matéria não encontrada ou não pertence ao usuário.");
     }
     try {
+      await this.usersService.excluirHistoricoChatPorMateria(id);
+      await this.usersService.excluirMateriaisPorMateria(id);
       await this.usersService.excluirMateria(id);
       return { message: "Matéria excluída com sucesso." };
     } catch (error: any) {
-      if (error.code === "P2003" && error.meta?.field_name?.includes("materiaId")) {
-        throw new BadRequestException("Não é possível excluir a matéria pois existem materiais de estudo vinculados a ela. Exclua os materiais primeiro.");
-      }
-      throw error;
+      throw new BadRequestException("Erro ao excluir matéria e seus dados vinculados: " + (error?.message || "Erro desconhecido"));
     }
   }
 

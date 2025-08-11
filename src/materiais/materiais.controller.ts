@@ -970,7 +970,7 @@ export class MateriaisController {
       }
     }
   })
-  @Post("calcular-xp/:id")
+  @Post("calcular-xp-quiz/:id")
   async calcularXpQuiz(@Param("id") usuarioId: string, @Body() body: { totalQuestoes: number, certas: number }) {
     const { ExperienciaService } = await import("../experiencia/experiencia.service");
     const prisma = this.materiaisService["prisma"];
