@@ -971,9 +971,14 @@ export class MateriaisController {
     }
   })
   @Post("calcular-xp-quiz/:id")
-  async calcularXpQuiz(@Param("id") usuarioId: string, @Body() body: { totalQuestoes: number, certas: number }) {
+  async calcularXpQuiz(@Param("id") materiaId: string, @Body() body: { totalQuestoes: number, certas: number }) {
     const { ExperienciaService } = await import("../experiencia/experiencia.service");
     const prisma = this.materiaisService["prisma"];
+    const material = await prisma.materialEstudo.findUnique({ where: { id: materiaId } });
+    if (!material) {
+      throw new BadRequestException("Matéria não encontrada.");
+    }
+    const usuarioId = material.autorId;
     const experienciaService = new ExperienciaService(prisma);
     const result = await experienciaService.calcularXpQuiz(usuarioId, body.totalQuestoes, body.certas);
     return result;
