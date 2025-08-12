@@ -32,7 +32,10 @@ export class ExperienciaService {
       });
     }
     const erradas = totalQuestoes - certas;
-    let xp = 10 + (certas * 5) - (erradas * 2);
+    let xp = (certas * 5) - (erradas * 2);
+    if (certas > 0 || erradas > 0) {
+      xp += 10;
+    }
     if (xp < 0) xp = 0;
     const xpAnterior = experiencia.xp;
     const xpFinal = xpAnterior + xp;
