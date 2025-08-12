@@ -140,14 +140,6 @@ model TokenAdmin {
   criadoEm DateTime @default(now())
 }
 
-model Assunto {
-  id       String   @id @default(uuid())
-  nome     String   @unique
-  criadoEm DateTime @default(now())
-
-  materiais   MaterialEstudo[]
-  salasEstudo SalaEstudo[]
-}
 
 model MaterialEstudo {
   id             String         @id @default(uuid())
@@ -160,8 +152,7 @@ model MaterialEstudo {
   topicos        String[]
   caminhoArquivo String?
   conteudo       String? @db.Text
-  assuntoId      String?
-  assunto        Assunto?       @relation(fields: [assuntoId], references: [id])
+  assunto        String?
   autorId        String
   autor          Usuario        @relation(fields: [autorId], references: [id])
   resumoIA       String? @db.Text
@@ -222,8 +213,7 @@ model SalaEstudo {
   banner      String?
   moderadorId String
   moderador   Usuario  @relation(fields: [moderadorId], references: [id], name: "SalaEstudoModerador")
-  assuntoId   String?    // Torna o campo opcional
-  assunto     Assunto? @relation(fields: [assuntoId], references: [id])
+  assunto     String?
   criadoEm    DateTime @default(now())
 
   membros    MembroSala[]

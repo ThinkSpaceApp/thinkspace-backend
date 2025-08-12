@@ -112,8 +112,8 @@ export class MateriaisController {
         nomeDesignado: { type: "string" },
         nomeMateria: { type: "string", description: "Nome da matéria. O backend irá alocar pelo nome." },
         topicos: { type: "array", items: { type: "string" } },
-        assuntoId: { type: "string" },
         descricao: { type: "string" },
+        assunto: { type: "string" },
         quantidadeQuestoes: { type: "number", example: 10, description: "Número de questões para quizzes (máx 25)" },
         quantidadeFlashcards: { type: "number", example: 10, description: "Número de flashcards (máx 25)" },
         file: { type: "string", format: "binary", description: "Arquivo PDF opcional para materiais do tipo DOCUMENTO" },
@@ -162,6 +162,11 @@ export class MateriaisController {
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
     if (body.origem === "DOCUMENTO") {
       return { message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.", etapa: 3, dados: dadosMaterial };
+    } else if (body.origem === "ASSUNTO") {
+      const progresso = await this.materiaisService.getProgressoMaterial(userId);
+      const materialCriado = await this.materiaisService.criarPorAssunto(userId, progresso);
+      await this.materiaisService.limparProgressoMaterial(userId);
+      return { message: "Material criado com sucesso.", etapa: 3, material: materialCriado };
     } else {
       const progresso = await this.materiaisService.getProgressoMaterial(userId);
       const materialCriado = await this.materiaisService.criarPorTopicos(userId, progresso);
@@ -203,7 +208,7 @@ export class MateriaisController {
       nomeDesignado?: string;
       topicos?: string[];
       caminhoArquivo?: string;
-      assuntoId?: string;
+      assunto?: string;
     },
   ) {
     try {
