@@ -326,12 +326,12 @@ export class MateriaisService {
       nomeDesignado: string;
       materiaId: string;
       topicos: string[];
-      assuntoId: string;
+      assunto: string;
       tipoMaterial: string;
       descricao?: string;
     },
   ) {
-    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.assuntoId || !data.tipoMaterial) {
+    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.assunto || !data.tipoMaterial) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por assunto.");
     }
     return this.prisma.materialEstudo.create({
@@ -341,10 +341,10 @@ export class MateriaisService {
         materiaId: data.materiaId,
         topicos: data.topicos,
         origem: "ASSUNTO",
-        assuntoId: data.assuntoId,
+        assunto: data.assunto,
         autorId: userId,
         tipoMaterial: data.tipoMaterial as any,
-        conteudo: data.descricao,
+        conteudo: data.assunto, 
       },
     });
   }
@@ -490,23 +490,18 @@ export class MateriaisService {
   }) {
     try {
       console.log(`Iniciando criação de resumo por assunto: ${nomeDesignado}`);
-      
-      if (!nomeDesignado || !materiaId || !topicos?.length || !assunto) {
+      if (!nomeDesignado || !materiaId || !assunto) {
         throw new Error("Todos os campos são obrigatórios para criar resumo por assunto.");
       }
-
-      console.log("Montando texto base para o resumo...");
-      const textoParaResumo = this.montarTextoParaResumo(assunto, topicos);
-      
+      // O texto base agora é o próprio assunto
+      const textoParaResumo = assunto;
       if (!textoParaResumo || textoParaResumo.trim().length === 0) {
         throw new Error("Não foi possível montar o texto base para o resumo.");
       }
-
       console.log(`Texto base criado com ${textoParaResumo.length} caracteres`);
-
-      console.log("Iniciando geração do resumo com IA usando GLM-4.5...");
+      // Prompt ajustado para tratar assunto como descrição principal
       let resumoIA = await this.glm45Service.gerarTextoEducativo({
-        systemPrompt: 'Você é um especialista em educação. Gere um texto didático e detalhado sobre o tema e tópicos abaixo. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos.',
+        systemPrompt: 'Você é um especialista em educação. Gere um texto didático e detalhado sobre o tema abaixo. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Use o texto fornecido como base para o resumo.',
         userPrompt: textoParaResumo,
         maxTokens: 5000,
         temperature: 0.7,
@@ -518,7 +513,6 @@ export class MateriaisService {
       if (!resumoIA || resumoIA.trim().length === 0) {
         console.warn("Não foi possível gerar resumo com IA. Continuando sem resumo.");
       }
-
       console.log("Criando material no banco de dados...");
       const material = await this.prisma.materialEstudo.create({
         data: {
@@ -533,10 +527,8 @@ export class MateriaisService {
           tipoMaterial: TipoMaterialEstudo.RESUMO_IA,
         },
       });
-
       console.log(`Material criado com sucesso. ID: ${material.id}`);
       return material;
-
     } catch (error) {
       console.error("Erro ao criar material com resumo por assunto:", error);
       throw error;
