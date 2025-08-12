@@ -944,7 +944,7 @@ export class MateriaisController {
   }
 
   @ApiOperation({ summary: "Calcular XP do usuário após quiz" })
-  @ApiParam({ name: "id", required: true, description: "ID do usuário" })
+  @ApiParam({ name: "id", required: true, description: "ID do material de estudo" })
   @ApiBody({
     schema: {
       type: "object",
@@ -971,12 +971,12 @@ export class MateriaisController {
     }
   })
   @Post("calcular-xp-quiz/:id")
-  async calcularXpQuiz(@Param("id") materiaId: string, @Body() body: { totalQuestoes: number, certas: number }) {
+  async calcularXpQuiz(@Param("id") materialId: string, @Body() body: { totalQuestoes: number, certas: number }) {
     const { ExperienciaService } = await import("../experiencia/experiencia.service");
     const prisma = this.materiaisService["prisma"];
-    const material = await prisma.materialEstudo.findUnique({ where: { id: materiaId } });
+    const material = await prisma.materialEstudo.findUnique({ where: { id: materialId } });
     if (!material) {
-      throw new BadRequestException("Matéria não encontrada.");
+      throw new BadRequestException("Material de estudo não encontrado.");
     }
     const usuarioId = material.autorId;
     const experienciaService = new ExperienciaService(prisma);
