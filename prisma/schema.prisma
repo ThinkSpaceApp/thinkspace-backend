@@ -410,8 +410,12 @@ model PerfilUsuario {
 
 enum NivelUsuario {
   INICIANTE
+  APRENDIZ
+  JUNIOR
   AVANCADO
-  MASTER
+  ESPECIALISTA
+  MENTOR
+  ELITE
 }
 
 model ExperienciaUsuario {
