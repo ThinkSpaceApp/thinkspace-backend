@@ -11,12 +11,17 @@ export class ExperienciaService {
     if (!experiencia) {
       const { getProgressoNivel } = await import("./niveis-xp");
       const { nivel, progresso } = getProgressoNivel(0);
+      // Mapeia nome do nível para enum
+      let nivelEnum: NivelUsuario = "INICIANTE";
+      if (nivel.nome.toUpperCase().includes("AVANCADO")) nivelEnum = "AVANCADO";
+      else if (nivel.nome.toUpperCase().includes("MASTER")) nivelEnum = "MASTER";
+      // Default para INICIANTE
       experiencia = await this.prisma.experienciaUsuario.create({
         data: {
           usuarioId,
           xp: 0,
           progresso,
-          nivel: nivel.nome as NivelUsuario,
+          nivel: nivelEnum,
         },
       });
     }
