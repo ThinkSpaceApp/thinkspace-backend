@@ -114,12 +114,14 @@ export class MateriaisController {
         topicos: { type: "array", items: { type: "string" } },
         descricao: { type: "string" },
         assunto: { type: "string" },
+        tipoMaterial: { type: "string", enum: ["QUIZZ", "FLASHCARD", "RESUMO_IA", "COMPLETO"], description: "Tipo do material. Obrigatório." },
         quantidadeQuestoes: { type: "number", example: 10, description: "Número de questões para quizzes (máx 25)" },
         quantidadeFlashcards: { type: "number", example: 10, description: "Número de flashcards (máx 25)" },
         file: { type: "string", format: "binary", description: "Arquivo PDF opcional para materiais do tipo DOCUMENTO" },
       },
-      required: ["nomeDesignado", "nomeMateria", "topicos"],
+      required: ["nomeDesignado", "nomeMateria", "topicos", "tipoMaterial"],
     },
+    description: "A origem do material é carregada automaticamente do passo 1 (escolha-origem-material) e não precisa ser enviada novamente nesta etapa. Apenas envie os campos listados acima."
   })
   @Post("etapa-dados")
   @UseInterceptors(FileInterceptor("file", uploadPdfConfig as MulterOptions))
@@ -127,25 +129,26 @@ export class MateriaisController {
     if (!body.nomeDesignado || !body.nomeMateria || !body.topicos?.length) {
       throw new BadRequestException("Nome designado, nome da matéria e tópicos são obrigatórios.");
     }
-    if (!body.tipoMaterial) {
-      throw new BadRequestException("O tipo do material deve ser informado nesta etapa.");
-    }
+    const userId = (req.user as any).userId;
+    const progresso = await this.materiaisService.getProgressoMaterial(userId);
+    const origem = progresso.origem;
+    const tipoMaterial = progresso.tipoMaterial;
     const materia = await this.materiaisService.buscarMateriaPorNome(body.nomeMateria);
     if (!materia) {
       throw new BadRequestException("Matéria não encontrada pelo nome informado.");
     }
     const materiaId = materia.id;
-    if (body.tipoMaterial === "QUIZZ") {
+    if (tipoMaterial === "QUIZZ") {
       if (typeof body.quantidadeQuestoes !== "number" || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
         throw new BadRequestException("Para quizzes, informe quantidadeQuestoes entre 1 e 25.");
       }
     }
-    if (body.tipoMaterial === "FLASHCARD") {
+    if (tipoMaterial === "FLASHCARD") {
       if (typeof body.quantidadeFlashcards !== "number" || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
         throw new BadRequestException("Para flashcards, informe quantidadeFlashcards entre 1 e 25.");
       }
     }
-    if (body.tipoMaterial === "COMPLETO") {
+    if (tipoMaterial === "COMPLETO") {
       if (typeof body.quantidadeQuestoes !== "number" || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
         throw new BadRequestException("Para completo, informe quantidadeQuestoes entre 1 e 25.");
       }
@@ -153,23 +156,22 @@ export class MateriaisController {
         throw new BadRequestException("Para completo, informe quantidadeFlashcards entre 1 e 25.");
       }
     }
-    const userId = (req.user as any).userId;
-    let dadosMaterial = { ...body, materiaId };
-    if (body.origem === "DOCUMENTO" && file) {
+    let dadosMaterial = { ...body, materiaId, origem, tipoMaterial };
+    if (origem === "DOCUMENTO" && file) {
       dadosMaterial.caminhoArquivo = file.path;
       dadosMaterial.nomeArquivo = file.originalname;
     }
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
-    if (body.origem === "DOCUMENTO") {
+    if (origem === "DOCUMENTO") {
       return { message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.", etapa: 3, dados: dadosMaterial };
-    } else if (body.origem === "ASSUNTO") {
-      const progresso = await this.materiaisService.getProgressoMaterial(userId);
-      const materialCriado = await this.materiaisService.criarPorAssunto(userId, progresso);
+    } else if (origem === "ASSUNTO") {
+      const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
+      const materialCriado = await this.materiaisService.criarPorAssunto(userId, progressoFinal);
       await this.materiaisService.limparProgressoMaterial(userId);
       return { message: "Material criado com sucesso.", etapa: 3, material: materialCriado };
     } else {
-      const progresso = await this.materiaisService.getProgressoMaterial(userId);
-      const materialCriado = await this.materiaisService.criarPorTopicos(userId, progresso);
+      const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
+      const materialCriado = await this.materiaisService.criarPorTopicos(userId, progressoFinal);
       await this.materiaisService.limparProgressoMaterial(userId);
       return { message: "Material criado com sucesso.", etapa: 3, material: materialCriado };
     }
