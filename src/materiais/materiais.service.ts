@@ -493,13 +493,11 @@ export class MateriaisService {
       if (!nomeDesignado || !materiaId || !assunto) {
         throw new Error("Todos os campos são obrigatórios para criar resumo por assunto.");
       }
-      // O texto base agora é o próprio assunto
       const textoParaResumo = assunto;
       if (!textoParaResumo || textoParaResumo.trim().length === 0) {
         throw new Error("Não foi possível montar o texto base para o resumo.");
       }
       console.log(`Texto base criado com ${textoParaResumo.length} caracteres`);
-      // Prompt ajustado para tratar assunto como descrição principal
       let resumoIA = await this.glm45Service.gerarTextoEducativo({
         systemPrompt: 'Você é um especialista em educação. Gere um texto didático e detalhado sobre o tema abaixo. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Use o texto fornecido como base para o resumo.',
         userPrompt: textoParaResumo,
@@ -541,7 +539,7 @@ export class MateriaisService {
     if (material.origem === "ASSUNTO") {
       textoParaResumo = material.conteudo || "";
       if (topicos.length > 0) {
-        textoParaResumo += "\nTópicos:\n" + topicos.map((t: any) => t.nome || t).join(", ");
+        textoParaResumo += `\n\nTópicos complementares: ${topicos.map((t: any) => t.nome || t).join(", ")}`;
       }
     } else {
       textoParaResumo = this.montarTextoParaResumo("", topicos);
@@ -574,7 +572,7 @@ export class MateriaisService {
     if (material.origem === "ASSUNTO") {
       textoBase = material.conteudo || "";
       if (topicos.length > 0) {
-        textoBase += "\nTópicos:\n" + topicos.map((t: any) => t.nome || t).join(", ");
+        textoBase += `\n\nTópicos complementares: ${topicos.map((t: any) => t.nome || t).join(", ")}`;
       }
     } else {
       textoBase = topicos.length > 0 ? topicos.map((t: any) => t.nome || t).join(", ") : material.conteudo || "";
@@ -620,7 +618,7 @@ export class MateriaisService {
     if (material.origem === "ASSUNTO") {
       textoBase = material.conteudo || "";
       if (topicos.length > 0) {
-        textoBase += "\nTópicos:\n" + topicos.map((t: any) => t.nome || t).join(", ");
+        textoBase += `\n\nTópicos complementares: ${topicos.map((t: any) => t.nome || t).join(", ")}`;
       }
     } else {
       textoBase = topicos.length > 0 ? topicos.map((t: any) => t.nome || t).join(", ") : material.conteudo || "";
