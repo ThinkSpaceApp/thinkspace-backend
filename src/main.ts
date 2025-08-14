@@ -10,6 +10,13 @@ const SWAGGER_PASS = process.env.SWAGGER_PASS;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.header("Access-Control-Allow-Origin", "https://thinkspace.app.br");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With");
+    res.header("Access-Control-Allow-Methods", "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS");
+    next();
+  });
   const bodyParser = require('body-parser');
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
