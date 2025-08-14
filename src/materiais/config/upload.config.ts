@@ -35,7 +35,7 @@ export const uploadPdfConfig = {
     cb(null, true);
   },
   limits: {
-    fileSize: 10 * 1024 * 1024, 
+  fileSize: 50 * 1024 * 1024, 
     files: 1,
   },
 }; 
