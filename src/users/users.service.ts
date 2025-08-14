@@ -7,6 +7,16 @@ import { salaEstudoService } from "../salaEstudo/salaEstudo.service";
 
 @Injectable()
 export class UsersService {
+  async verificarAtividadeDoDia(userId: string, data: string): Promise<boolean> {
+    const dataDia = new Date(data);
+    const atividade = await this.prisma.atividadeUsuario.findFirst({
+      where: {
+        usuarioId: userId,
+        data: dataDia,
+      },
+    });
+    return !!atividade && atividade.quantidade > 0;
+  }
   constructor(
     private readonly prisma: PrismaService,
     private readonly salaEstudoService: salaEstudoService

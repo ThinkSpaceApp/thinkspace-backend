@@ -12,6 +12,25 @@ import { salaEstudoService } from "../salaEstudo/salaEstudo.service";
 @Controller("home")
 
 export class HomeController {
+  @ApiOperation({ summary: "Verificar se o usuário realizou alguma atividade do dia (ofensiva feita)" })
+  @ApiResponse({ status: 200, description: "Status retornado com sucesso." })
+  @Get("ofensiva")
+  async getOfensivaFeita(@Req() req: Request & { user: { id?: string; userId?: string } }) {
+    const userId = req.user?.id || req.user?.userId;
+    if (!userId) {
+      throw new BadRequestException("Usuário não autenticado.");
+    }
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split("T")[0];
+    const fezAtividade = await this.usersService.verificarAtividadeDoDia(userId, dataHoje);
+    return {
+      data: dataHoje,
+      feita: fezAtividade,
+      message: fezAtividade
+        ? "Você já realizou uma atividade hoje!"
+        : "Ainda não realizou nenhuma atividade hoje.",
+    };
+  }
   constructor(
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
@@ -107,55 +126,6 @@ export class HomeController {
       anoAtual: ano,
       dias,
       diaAtual,
-    };
-  }
-
-  @ApiOperation({ summary: "Registrar ofensiva (atividade do dia)" })
-  @ApiResponse({ status: 200, description: "Atividade registrada com sucesso." })
-  @Post("ofensiva")
-  async marcarOfensiva(
-    @Req() req: Request & { user: { id: string } },
-    @Body() body: { tipo: string; materialId?: string },
-  ) {
-    if (!req.user || !req.user.id) {
-      throw new BadRequestException("Usuário não autenticado.");
-    }
-    const userId = req.user.id;
-    const hoje = new Date();
-    const dataHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-
-    const tipoAtividade = (body.tipo || "").toLowerCase();
-    const isQuiz = tipoAtividade.includes("quiz") || tipoAtividade.includes("quizz") || tipoAtividade.includes("questao") || tipoAtividade.includes("questão");
-    if (!isQuiz) {
-      return {
-        userId,
-        data: dataHoje.toISOString().split("T")[0],
-        tipo: body.tipo,
-        checked: false,
-        message: "A ofensiva só é marcada ao realizar uma atividade de quiz!",
-      };
-    }
-    return {
-      userId,
-      data: dataHoje.toISOString().split("T")[0],
-      tipo: body.tipo,
-      checked: true,
-      message: "Atividade de quiz registrada e ofensiva marcada com sucesso!",
-    };
-  }
-
-  @ApiOperation({ summary: "Obter status da ofensiva do dia" })
-  @ApiResponse({ status: 200, description: "Status retornado com sucesso." })
-  @Get("ofensiva")
-  async getOfensivaStatus(@Req() req: Request & { user: { id: string } }) {
-    if (!req.user || !req.user.id) {
-      throw new BadRequestException("Usuário não autenticado.");
-    }
-
-    return {
-      userId: req.user.id,
-      data: new Date().toISOString().split("T")[0],
-      checked: false,
     };
   }
 
