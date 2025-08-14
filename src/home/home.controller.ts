@@ -12,23 +12,27 @@ import { salaEstudoService } from "../salaEstudo/salaEstudo.service";
 @Controller("home")
 
 export class HomeController {
-  @ApiOperation({ summary: "Verificar se o usuário realizou alguma atividade do dia (ofensiva feita)" })
-  @ApiResponse({ status: 200, description: "Status retornado com sucesso." })
+  @ApiOperation({ summary: "Verificar status da ofensiva semanal do usuário" })
+  @ApiResponse({ status: 200, description: "Status semanal retornado com sucesso." })
   @Get("ofensiva")
-  async getOfensivaFeita(@Req() req: Request & { user: { id?: string; userId?: string } }) {
+  async getOfensivaSemanal(@Req() req: Request & { user: { id?: string; userId?: string } }) {
     const userId = req.user?.id || req.user?.userId;
     if (!userId) {
       throw new BadRequestException("Usuário não autenticado.");
     }
     const hoje = new Date();
-    const dataHoje = hoje.toISOString().split("T")[0];
-    const fezAtividade = await this.usersService.verificarAtividadeDoDia(userId, dataHoje);
+    const diaHoje = hoje.getDay(); 
+    const metrica = await this.usersService.getMetricaSemanal(userId);
+    // status: 0 = dia atual/futuros, 1 = anteriores não feitos, 2 = anteriores feitos
+    const statusDias = metrica.diasSemana.map((dia, idx) => {
+      if (idx > diaHoje) return 0;
+      if (idx === diaHoje) return dia.feito ? 2 : 0; // dia atual: 2 se feito, 0 se não feito
+      return dia.feito ? 2 : 1; 
+    });
     return {
-      data: dataHoje,
-      feita: fezAtividade,
-      message: fezAtividade
-        ? "Você já realizou uma atividade hoje!"
-        : "Ainda não realizou nenhuma atividade hoje.",
+      dias: metrica.diasSemana.map(d => d.data),
+      status: statusDias,
+      message: "Status semanal da ofensiva calculado com sucesso.",
     };
   }
   constructor(
