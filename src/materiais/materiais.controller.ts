@@ -119,7 +119,7 @@ export class MateriaisController {
         quantidadeFlashcards: { type: "number", example: 10, description: "Número de flashcards (máx 25)" },
         file: { type: "string", format: "binary", description: "Arquivo PDF opcional para materiais do tipo DOCUMENTO" },
       },
-      required: ["nomeDesignado", "nomeMateria", "tipoMaterial"],
+  required: ["nomeDesignado", "nomeMateria", "tipoMaterial"],
     },
     description: "A origem do material é carregada automaticamente do passo 1 (escolha-origem-material) e não precisa ser enviada novamente nesta etapa. Apenas envie os campos listados acima."
   })
@@ -127,7 +127,7 @@ export class MateriaisController {
   @UseInterceptors(FileInterceptor("file", uploadPdfConfig as MulterOptions))
   async etapaDados(@Req() req: Request, @Body() body: any, @UploadedFile() file?: Express.Multer.File) {
     if (!body.nomeDesignado || !body.nomeMateria) {
-      throw new BadRequestException("Nome designado, nome da matéria e tópicos são obrigatórios.");
+      throw new BadRequestException("Nome designado e nome da matéria são obrigatórios.");
     }
     const userId = (req.user as any).userId;
     const progresso = await this.materiaisService.getProgressoMaterial(userId);
