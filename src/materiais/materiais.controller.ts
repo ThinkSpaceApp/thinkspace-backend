@@ -119,7 +119,7 @@ export class MateriaisController {
         quantidadeFlashcards: { type: "number", example: 10, description: "Número de flashcards (máx 25)" },
         file: { type: "string", format: "binary", description: "Arquivo PDF opcional para materiais do tipo DOCUMENTO" },
       },
-      required: ["nomeDesignado", "nomeMateria", "topicos", "tipoMaterial"],
+      required: ["nomeDesignado", "nomeMateria", "tipoMaterial"],
     },
     description: "A origem do material é carregada automaticamente do passo 1 (escolha-origem-material) e não precisa ser enviada novamente nesta etapa. Apenas envie os campos listados acima."
   })
