@@ -126,7 +126,7 @@ export class MateriaisController {
   @Post("etapa-dados")
   @UseInterceptors(FileInterceptor("file", uploadPdfConfig as MulterOptions))
   async etapaDados(@Req() req: Request, @Body() body: any, @UploadedFile() file?: Express.Multer.File) {
-    if (!body.nomeDesignado || !body.nomeMateria || !body.topicos?.length) {
+    if (!body.nomeDesignado || !body.nomeMateria) {
       throw new BadRequestException("Nome designado, nome da matéria e tópicos são obrigatórios.");
     }
     const userId = (req.user as any).userId;
