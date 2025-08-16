@@ -171,7 +171,7 @@ export class MateriaisController {
       return {
         message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.",
         etapa: 3,
-        material: { id: materialCriado},
+        material: { id: materialCriado.id},
         dados: dadosMaterial
       };
 
