@@ -163,7 +163,18 @@ export class MateriaisController {
     }
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
     if (origem === "DOCUMENTO") {
-      return { message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.", etapa: 3, dados: dadosMaterial };
+      const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
+      let materialCriado = await this.materiaisService.buscarMaterialPorId(progressoFinal.id);
+      if (!materialCriado) {
+        materialCriado = await this.materiaisService.criarPorDocumento(userId, progressoFinal);
+      }
+      return {
+        message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.",
+        etapa: 3,
+        material: { id: materialCriado.id },
+        dados: dadosMaterial
+      };
+
     } else if (origem === "ASSUNTO") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
       const materialCriado = await this.materiaisService.criarPorAssunto(userId, progressoFinal);
