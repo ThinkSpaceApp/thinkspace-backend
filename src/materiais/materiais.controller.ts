@@ -164,10 +164,7 @@ export class MateriaisController {
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
     if (origem === "DOCUMENTO") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
-      let materialCriado = await this.materiaisService.buscarMaterialPorId(progressoFinal.id);
-      if (!materialCriado) {
-        materialCriado = await this.materiaisService.criarPorDocumento(userId, progressoFinal);
-      }
+      const materialCriado = await this.materiaisService.criarPorDocumento(userId, progressoFinal);
       return {
         message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.",
         etapa: 3,
