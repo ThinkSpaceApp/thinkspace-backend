@@ -302,7 +302,7 @@ export class MateriaisService {
       descricao?: string;
     },
   ) {
-    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.caminhoArquivo || !data.tipoMaterial) {
+    if (!data.nomeDesignado || !data.materiaId || !data.caminhoArquivo || !data.tipoMaterial) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por documento.");
     }
     return this.prisma.materialEstudo.create({
