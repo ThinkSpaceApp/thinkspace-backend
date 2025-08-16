@@ -115,8 +115,8 @@ export class MateriaisController {
         descricao: { type: "string" },
         assunto: { type: "string" },
         tipoMaterial: { type: "string", enum: ["QUIZZ", "FLASHCARD", "RESUMO_IA", "COMPLETO"], description: "Tipo do material. Obrigatório." },
-        quantidadeQuestoes: { type: "number", example: 10, description: "Número de questões para quizzes (máx 25)" },
-        quantidadeFlashcards: { type: "number", example: 10, description: "Número de flashcards (máx 25)" },
+  quantidadeQuestoes: { type: "string", example: "10", description: "Número de questões para quizzes (máx 25) (enviar como string)" },
+  quantidadeFlashcards: { type: "string", example: "10", description: "Número de flashcards (máx 25) (enviar como string)" },
         file: { type: "string", format: "binary", description: "Arquivo PDF opcional para materiais do tipo DOCUMENTO" },
       },
   required: ["nomeDesignado", "nomeMateria", "tipoMaterial"],
@@ -138,21 +138,27 @@ export class MateriaisController {
       throw new BadRequestException("Matéria não encontrada pelo nome informado.");
     }
     const materiaId = materia.id;
+    if (body.quantidadeQuestoes !== undefined) {
+      body.quantidadeQuestoes = Number(body.quantidadeQuestoes);
+    }
+    if (body.quantidadeFlashcards !== undefined) {
+      body.quantidadeFlashcards = Number(body.quantidadeFlashcards);
+    }
     if (tipoMaterial === "QUIZZ") {
-      if (typeof body.quantidadeQuestoes !== "number" || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
+      if (typeof body.quantidadeQuestoes !== "number" || isNaN(body.quantidadeQuestoes) || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
         throw new BadRequestException("Para quizzes, informe quantidadeQuestoes entre 1 e 25.");
       }
     }
     if (tipoMaterial === "FLASHCARD") {
-      if (typeof body.quantidadeFlashcards !== "number" || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
+      if (typeof body.quantidadeFlashcards !== "number" || isNaN(body.quantidadeFlashcards) || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
         throw new BadRequestException("Para flashcards, informe quantidadeFlashcards entre 1 e 25.");
       }
     }
     if (tipoMaterial === "COMPLETO") {
-      if (typeof body.quantidadeQuestoes !== "number" || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
+      if (typeof body.quantidadeQuestoes !== "number" || isNaN(body.quantidadeQuestoes) || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
         throw new BadRequestException("Para completo, informe quantidadeQuestoes entre 1 e 25.");
       }
-      if (typeof body.quantidadeFlashcards !== "number" || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
+      if (typeof body.quantidadeFlashcards !== "number" || isNaN(body.quantidadeFlashcards) || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
         throw new BadRequestException("Para completo, informe quantidadeFlashcards entre 1 e 25.");
       }
     }
