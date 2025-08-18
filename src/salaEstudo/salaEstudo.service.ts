@@ -20,10 +20,10 @@ export class salaEstudoService {
     if (!defaultRoom) {
       defaultRoom = await this.prisma.salaEstudo.create({
         data: {
-          nome: 'thinkspace',
-          descricao: 'Sala padrão para todos os usuários',
-          topicos: ['geral', 'estudo'],
-          banner: 'https://ui-avatars.com/api/?name=Thinkspace&background=8e44ad&color=fff',
+          nome: 'ThinkSpace',
+          descricao: 'Um espaço criado para impulsionar sua produtividade e estimular a troca de ideias. Aqui você pode estudar com foco, compartilhar experiências e aprender em comunidade.',
+          topicos: ['Produtividade', 'Comunidade'],
+          banner: 'https://i.imgur.com/p5ACfTO.png',
           moderador: {
             connect: { id: '7c40658f-f4e5-44de-a5ec-b50d0805c313' }
           }
