@@ -120,24 +120,26 @@ export class salaEstudoController {
           message: 'Sala padrão não encontrada'
         });
       }
-      return res.status(HttpStatus.OK).json({
-        sala: {
-          id: defaultRoom.id,
-          nome: defaultRoom.nome,
-          descricao: defaultRoom.descricao,
-          topicos: defaultRoom.topicos,
-          banner: defaultRoom.banner,
-          moderadorId: defaultRoom.moderadorId,
-          totalMembros: defaultRoom.membros.length,
-          topicosComunidade: defaultRoom.TopicoComunidade.length
-        },
-        membros: defaultRoom.membros.map(membro => ({
-          usuarioId: membro.usuarioId,
-          funcao: membro.funcao,
-          ingressouEm: membro.ingressouEm,
-          usuario: membro.usuario
-        }))
-      });
+        return res.status(HttpStatus.OK).json({
+          sala: {
+            id: defaultRoom.id,
+            nome: defaultRoom.nome,
+            descricao: defaultRoom.descricao,
+            topicos: defaultRoom.topicos,
+            banner: defaultRoom.banner,
+            moderadorId: defaultRoom.moderadorId,
+            totalMembros: Array.isArray(defaultRoom.membros) ? defaultRoom.membros.length : 0,
+            topicosComunidade: Array.isArray(defaultRoom.TopicoComunidade) ? defaultRoom.TopicoComunidade.length : 0
+          },
+          membros: Array.isArray(defaultRoom.membros)
+            ? defaultRoom.membros.map(membro => ({
+                usuarioId: membro.usuarioId,
+                funcao: membro.funcao,
+                ingressouEm: membro.ingressouEm,
+                usuario: membro.usuario
+              }))
+            : []
+        });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         error: 'Erro ao obter status da sala padrão',
