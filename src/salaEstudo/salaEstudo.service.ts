@@ -80,40 +80,44 @@ export class salaEstudoService {
   }
 
   async ensureAllUsersInDefaultRoom() {
-    const defaultRoom = await this.prisma.salaEstudo.findFirst({ 
-      where: { nome: 'thinkspace' } 
-    });
-    
-    if (!defaultRoom) {
-      throw new Error('Sala padrão não encontrada. Execute o salaEstudo primeiro.');
-    }
-
-    const users = await this.prisma.usuario.findMany();
-    const addedUsers = [];
-
-    for (const user of users) {
-      const existingMember = await this.prisma.membroSala.findFirst({
-        where: {
-          usuarioId: user.id,
-          salaId: defaultRoom.id
-        }
+    try {
+      const defaultRoom = await this.prisma.salaEstudo.findFirst({ 
+        where: { nome: 'thinkspace' } 
       });
-
-      if (!existingMember) {
-        await this.prisma.membroSala.create({
-          data: {
-            usuarioId: user.id,
-            salaId: defaultRoom.id,
-            funcao: user.id === '7c40658f-f4e5-44de-a5ec-b50d0805c313' ? 'MODERADOR' : 'MEMBRO'
-          }
-        });
-        addedUsers.push(user.id);
+      if (!defaultRoom) {
+        throw new Error('Sala padrão não encontrada. Execute o salaEstudo primeiro.');
       }
+      const users = await this.prisma.usuario.findMany();
+      const addedUsers = [];
+      for (const user of users) {
+        try {
+          const existingMember = await this.prisma.membroSala.findFirst({
+            where: {
+              usuarioId: user.id,
+              salaId: defaultRoom.id
+            }
+          });
+          if (!existingMember) {
+            await this.prisma.membroSala.create({
+              data: {
+                usuarioId: user.id,
+                salaId: defaultRoom.id,
+                funcao: user.id === '7c40658f-f4e5-44de-a5ec-b50d0805c313' ? 'MODERADOR' : 'MEMBRO'
+              }
+            });
+            addedUsers.push(user.id);
+          }
+        } catch (userErr) {
+          console.error(`Erro ao adicionar usuário ${user.id}:`, userErr);
+        }
+      }
+      return { 
+        message: `Usuários adicionados à sala padrão: ${addedUsers.length}`,
+        addedUsers 
+      };
+    } catch (err) {
+      console.error('Erro geral em ensureAllUsersInDefaultRoom:', err);
+      throw err;
     }
-
-    return { 
-      message: `Usuários adicionados à sala padrão: ${addedUsers.length}`,
-      addedUsers 
-    };
   }
 } 
