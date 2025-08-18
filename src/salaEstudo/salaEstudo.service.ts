@@ -82,7 +82,7 @@ export class salaEstudoService {
   async ensureAllUsersInDefaultRoom() {
     try {
       const defaultRoom = await this.prisma.salaEstudo.findFirst({ 
-        where: { nome: 'thinkspace' } 
+        where: { nome: 'ThinkSpace' } 
       });
       if (!defaultRoom) {
         throw new Error('Sala padrão não encontrada. Execute o salaEstudo primeiro.');
