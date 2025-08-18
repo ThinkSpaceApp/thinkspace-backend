@@ -328,37 +328,34 @@ export class UsersService {
 
   async getMetricaSemanal(userId: string) {
     const hoje = new Date();
-    const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 }); // Domingo
+    const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 }); 
     const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
 
-    const atividades = await this.prisma.atividadeUsuario.findMany({
-      where: {
-        usuarioId: userId,
-        data: {
-          gte: inicioSemana,
-          lte: fimSemana,
-        },
-      },
-      orderBy: { data: "asc" },
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: { ultimoLogin: true }
     });
-
     const diasSemana = [];
     let totalSemana = 0;
     for (let i = 0; i < 7; i++) {
       const dia = addDays(inicioSemana, i);
-      const atividadeDia = atividades.find((a) => isSameDay(a.data, dia));
+      let status = 0;
+      if (user?.ultimoLogin) {
+        const loginDate = new Date(user.ultimoLogin);
+        if (isSameDay(loginDate, dia)) {
+          status = 2; 
+        } else {
+          status = 1;
+        }
+      }
       diasSemana.push({
         data: dia.toISOString().split("T")[0],
-        feito: !!atividadeDia,
-        quantidade: atividadeDia?.quantidade || 0,
+        status,
       });
-      totalSemana += atividadeDia?.quantidade || 0;
     }
-
     const diaHoje = hoje.getDay();
     const diasCompletos = diasSemana.slice(0, diaHoje + 1);
-    const rendimentoSemanal = diasCompletos.filter((d) => d.feito).length / diasCompletos.length;
-
+    const rendimentoSemanal = diasCompletos.filter((d) => d.status === 2).length / diasCompletos.length;
     return {
       diasSemana,
       totalSemana,

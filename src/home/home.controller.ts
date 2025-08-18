@@ -20,18 +20,10 @@ export class HomeController {
     if (!userId) {
       throw new BadRequestException("Usuário não autenticado.");
     }
-    const hoje = new Date();
-    const diaHoje = hoje.getDay(); 
     const metrica = await this.usersService.getMetricaSemanal(userId);
-    // status: 0 = dia atual/futuros, 1 = anteriores não feitos, 2 = anteriores feitos
-    const statusDias = metrica.diasSemana.map((dia, idx) => {
-      if (idx > diaHoje) return 0;
-      if (idx === diaHoje) return dia.feito ? 2 : 0; // dia atual: 2 se feito, 0 se não feito
-      return dia.feito ? 2 : 1; 
-    });
     return {
       dias: metrica.diasSemana.map(d => d.data),
-      status: statusDias,
+      status: metrica.diasSemana.map(d => d.status),
       message: "Status semanal da ofensiva calculado com sucesso.",
     };
   }
