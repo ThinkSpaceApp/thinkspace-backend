@@ -30,15 +30,21 @@ export class salaEstudoService {
         }
       });
 
-      const defaultCommunity = await this.prisma.topicoComunidade.create({
-        data: {
-          id: 'thinkspace-comunidade-id',
-          nome: 'thinkspace-comunidade',
-          salaId: defaultRoom.id
-        }
+      let defaultCommunity = await this.prisma.topicoComunidade.findUnique({
+        where: { id: 'thinkspace-comunidade-id' }
       });
-
-      return { sala: defaultRoom, topico: defaultCommunity };
+      if (!defaultCommunity) {
+        defaultCommunity = await this.prisma.topicoComunidade.create({
+          data: {
+            id: 'thinkspace-comunidade-id',
+            nome: 'thinkspace-comunidade',
+            salaId: defaultRoom.id
+          }
+        });
+        return { sala: defaultRoom, topico: defaultCommunity };
+      } else {
+        return { sala: defaultRoom, topico: null };
+      }
     }
 
     return { sala: defaultRoom, topico: null };
