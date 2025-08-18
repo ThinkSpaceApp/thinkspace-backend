@@ -67,7 +67,28 @@ export class HomeController {
     await this.salaEstudoService.ensureDefaultRoom();
     await this.salaEstudoService.ensureAllUsersInDefaultRoom();
     const userJwt = req.user as { email: string };
-    return this.usersService.getSalasEstudoByEmail(userJwt.email);
+    const salas = await this.usersService.getSalasEstudoByEmail(userJwt.email);
+
+    const ultimosUsuarios = await this.prisma.usuario.findMany({
+      where: { funcao: 'ESTUDANTE' },
+      orderBy: { ultimoLogin: 'desc' },
+      take: 4,
+      select: {
+        primeiroNome: true,
+        sobrenome: true,
+        foto: true,
+        id: true
+      }
+    });
+    const avatares = ultimosUsuarios.map(u => u.foto || `https://ui-avatars.com/api/?name=${(u.primeiroNome?.charAt(0) ?? '')}${(u.sobrenome?.charAt(0) ?? '')}&background=8e44ad&color=fff`);
+
+    const totalEstudantes = await this.prisma.usuario.count({ where: { funcao: 'ESTUDANTE' } });
+
+    return {
+      ...salas,
+      avataresUltimosUsuarios: avatares,
+      totalEstudantes,
+    };
   }
 
   @ApiOperation({ summary: "Obter matérias do usuário" })
