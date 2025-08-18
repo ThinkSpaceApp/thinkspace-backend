@@ -178,9 +178,10 @@ export class UsersService {
         throw new BadRequestException("Usuário não encontrado.");
       }
 
-      const salasMembro = user.membroSalas.map((m) => m.sala);
+      const salasMembro = Array.isArray(user.membroSalas)
+        ? user.membroSalas.map((m) => m.sala)
+        : [];
       // const salasModerador = user.salasModeradas;
-      
       return {
         salasMembro,
         // salasModerador,
