@@ -235,30 +235,31 @@ export class MateriasController {
     return materiaAtualizada;
   }
 
-  // @ApiOperation({ summary: "Obter informações detalhadas da matéria" })
-  // @ApiParam({ name: "id", required: true, description: "ID da matéria" })
-  // @ApiResponse({ status: 200, description: "Informações da matéria retornadas com sucesso.", schema: {
-  //   type: "object",
-  //   properties: {
-  //     quantidadeMateriais: { type: "number" },
-  //     tempoAtivo: { type: "number", description: "Tempo ativo em minutos" },
-  //     ultimaRevisao: { type: "string", format: "date-time" },
-  //   },
-  // }})
-  // @ApiResponse({ status: 400, description: "Matéria não encontrada ou não pertence ao usuário." })
-  // @Get("informacoes/:id")
-  // async getInformacoesMateria(@Req() req: Request, @Param("id") id: string) {
-  //   const materia = await this.usersService.getMateriaById(id);
-  //   if (!materia || materia.usuarioId !== (req.user as any).userId) {
-  //     throw new BadRequestException("Matéria não encontrada ou não pertence ao usuário.");
-  //   }
-  //   const quantidadeMateriais = Array.isArray(materia.materiais) ? materia.materiais.length : 0;
-  //   const tempoAtivo = materia.tempoAtivo || 0;
-  //   const ultimaRevisao = materia.ultimaRevisao || null;
-  //   return {
-  //     quantidadeMateriais,
-  //     tempoAtivo,
-  //     ultimaRevisao,
-  //   };
-  // }
+  @ApiOperation({ summary: "Obter informações detalhadas da matéria" })
+  @ApiParam({ name: "id", required: true, description: "ID da matéria" })
+  @ApiResponse({ status: 200, description: "Informações da matéria retornadas com sucesso.", schema: {
+    type: "object",
+    properties: {
+      quantidadeMateriais: { type: "number" },
+      tempoAtivo: { type: "number", description: "Tempo ativo em minutos" },
+      ultimaRevisao: { type: "string", format: "date-time" },
+    },
+  }})
+  @ApiResponse({ status: 400, description: "Matéria não encontrada ou não pertence ao usuário." })
+  @Get("informacoes/:id")
+  async getInformacoesMateria(@Req() req: Request, @Param("id") id: string) {
+    const materia = await this.usersService.getMateriaById(id);
+    if (!materia || materia.usuarioId !== (req.user as any).userId) {
+      throw new BadRequestException("Matéria não encontrada ou não pertence ao usuário.");
+    }
+    const materiais = await this.usersService.getMateriasByUserId(id);
+    const quantidadeMateriais = Array.isArray(materiais) ? materiais.length : 0;
+    const tempoAtivo = materia.tempoAtivo || 0;
+    const ultimaRevisao = materia.ultimaRevisao || null;
+    return {
+      quantidadeMateriais,
+      tempoAtivo,
+      ultimaRevisao,
+    };
+  }
 }
