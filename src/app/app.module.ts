@@ -7,6 +7,7 @@ import { MateriasModule } from "../materias/materias.module";
 import { HomeModule } from "../home/home.module";
 import { AppController } from "./app.controller";
 import { salaEstudoModule } from "../salaEstudo/salaEstudo.module";
+import { MetricasModule } from "../metricas/metricas.module";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { salaEstudoModule } from "../salaEstudo/salaEstudo.module";
     MateriaisModule,
     HomeModule,
     salaEstudoModule,
+    MetricasModule,
   ],
   controllers: [AppController],
 })
