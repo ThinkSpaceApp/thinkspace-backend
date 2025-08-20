@@ -206,6 +206,10 @@ export class MateriaisController {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
       let materialCriado;
       if (body.quantidadeQuestoes) {
+        let textoConteudo = progressoFinal.textoConteudo;
+        if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
+          textoConteudo = await this.materiaisService.extrairTextoPdf(progressoFinal.caminhoArquivo);
+        }
         materialCriado = await this.materiaisService.gerarQuizzes({
           userId,
           nomeDesignado: progressoFinal.nomeDesignado,
@@ -215,9 +219,13 @@ export class MateriaisController {
           quantidade: body.quantidadeQuestoes,
           origem,
           caminhoArquivo: progressoFinal.caminhoArquivo,
-          textoConteudo: progressoFinal.textoConteudo,
+          textoConteudo,
         });
       } else if (body.quantidadeFlashcards) {
+        let textoConteudo = progressoFinal.textoConteudo;
+        if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
+          textoConteudo = await this.materiaisService.extrairTextoPdf(progressoFinal.caminhoArquivo);
+        }
         materialCriado = await this.materiaisService.gerarFlashcards({
           userId,
           nomeDesignado: progressoFinal.nomeDesignado,
@@ -227,7 +235,7 @@ export class MateriaisController {
           quantidade: body.quantidadeFlashcards,
           origem,
           caminhoArquivo: progressoFinal.caminhoArquivo,
-          textoConteudo: progressoFinal.textoConteudo,
+          textoConteudo,
         });
       } else {
         materialCriado = await this.materiaisService.criarPorDocumento(userId, progressoFinal);
