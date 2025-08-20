@@ -85,6 +85,12 @@ export class MateriaisService {
         quizzesJson: JSON.stringify(quizzes),
       },
     });
+    const hoje = new Date();
+    await this.prisma.atividadeUsuario.upsert({
+      where: { usuarioId_data: { usuarioId: userId, data: hoje } },
+      update: { quantidade: { increment: 1 } },
+      create: { usuarioId: userId, data: hoje, quantidade: 1 },
+    });
     return { material, quizzes };
   }
   async gerarFlashcards({
@@ -153,6 +159,12 @@ export class MateriaisService {
         flashcardsJson: JSON.stringify(flashcards),
       },
     });
+    const hoje = new Date();
+    await this.prisma.atividadeUsuario.upsert({
+      where: { usuarioId_data: { usuarioId: userId, data: hoje } },
+      update: { quantidade: { increment: 1 } },
+      create: { usuarioId: userId, data: hoje, quantidade: 1 },
+    });
     return { material, flashcards, respostaIaCrua: flashcardsJson };
   }
 
@@ -200,6 +212,12 @@ export class MateriaisService {
           autorId: userId,
           tipoMaterial: "RESUMO_IA" as TipoMaterialEstudo,
         },
+      });
+      const hoje = new Date();
+      await this.prisma.atividadeUsuario.upsert({
+        where: { usuarioId_data: { usuarioId: userId, data: hoje } },
+        update: { quantidade: { increment: 1 } },
+        create: { usuarioId: userId, data: hoje, quantidade: 1 },
       });
       console.log(`Material criado com sucesso. ID: ${material.id}`);
       return material;

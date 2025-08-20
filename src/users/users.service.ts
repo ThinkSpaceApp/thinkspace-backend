@@ -331,18 +331,25 @@ export class UsersService {
     const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 }); 
     const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
 
-    const user = await this.prisma.usuario.findUnique({
-      where: { id: userId },
-      select: { ultimoLogin: true }
+    const atividades = await this.prisma.atividadeUsuario.findMany({
+      where: {
+        usuarioId: userId,
+        data: {
+          gte: inicioSemana,
+          lte: fimSemana,
+        },
+      },
     });
     const diasSemana = [];
     let totalSemana = 0;
     for (let i = 0; i < 7; i++) {
       const dia = addDays(inicioSemana, i);
       let status = 0;
-      if (user?.ultimoLogin) {
-        const loginDate = new Date(user.ultimoLogin);
-        if (isSameDay(loginDate, dia)) {
+      if (dia > hoje) {
+        status = 0; 
+      } else {
+        const atividadeDia = atividades.find(a => isSameDay(a.data, dia));
+        if (atividadeDia) {
           status = 2; 
         } else {
           status = 1;
@@ -352,6 +359,7 @@ export class UsersService {
         data: dia.toISOString().split("T")[0],
         status,
       });
+      if (status === 2) totalSemana++;
     }
     const diaHoje = hoje.getDay();
     const diasCompletos = diasSemana.slice(0, diaHoje + 1);
