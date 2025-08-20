@@ -15,4 +15,14 @@ export class MetricasController {
   async getRanking() {
     return await this.metricasService.getRanking();
   }
+
+  @Get(':userId/melhores-materias')
+  async getMelhoresMaterias(
+    @Param('userId') userId: string,
+    @Query('weeksAgo') weeksAgo?: string
+  ) {
+    const weeks = weeksAgo ? Number(weeksAgo) : 0;
+    const metricas = await this.metricasService.getMetricasAluno(userId, weeks);
+    return metricas.melhoresMaterias;
+  }
 }

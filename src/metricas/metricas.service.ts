@@ -51,15 +51,16 @@ export class MetricasService {
     const totalDias = atividades.length;
     const rendimentoSemanal = totalDias ? (atividades.filter(a => a.quantidade > 0).length / 7) * 100 : 0;
 
-    // Materials for the user
     const materiais = await this.prisma.materialEstudo.findMany({
       where: { autorId: userId },
+      include: { materia: true },
       orderBy: { criadoEm: 'asc' },
     });
     let totalQuestoes = 0;
     let acertos = 0;
     let erros = 0;
     const questoesPorDia: Record<string, number> = {};
+    const xpPorMateria: Record<string, { nome: string, xp: number, cor: string, icone: string }> = {};
 
     for (const material of materiais) {
       let quizzes: any[] = [];
@@ -75,6 +76,7 @@ export class MetricasService {
         const materialDate = new Date(material.criadoEm);
         if (materialDate >= inicioSemana && materialDate <= fimSemana) {
           let realizadasHoje = 0;
+          let xpMateria = 0;
           quizzes.forEach((quiz, idx) => {
             totalQuestoes++;
             const respostaUsuario = respostas[idx] || respostas[String(idx)];
@@ -82,17 +84,35 @@ export class MetricasService {
               realizadasHoje++;
               if (respostaUsuario === quiz.correta) {
                 acertos++;
+                xpMateria += 5;
               } else {
                 erros++;
+                xpMateria -= 2;
               }
             }
           });
           questoesPorDia[dateKey] = (questoesPorDia[dateKey] || 0) + realizadasHoje;
+          if (material.materia) {
+            const matId = material.materia.id;
+            if (!xpPorMateria[matId]) {
+              xpPorMateria[matId] = {
+                nome: material.materia.nome,
+                xp: 0,
+                cor: material.materia.cor,
+                icone: material.materia.icone,
+              };
+            }
+            xpPorMateria[matId].xp += xpMateria;
+          }
         }
       }
     }
     const percentualAcertos = totalQuestoes ? (acertos / totalQuestoes) * 100 : 0;
     const percentualErros = totalQuestoes ? (erros / totalQuestoes) * 100 : 0;
+
+    const topMaterias = Object.values(xpPorMateria)
+      .sort((a, b) => b.xp - a.xp)
+      .slice(0, 5);
 
     return {
       rendimentoSemanal: Number(rendimentoSemanal.toFixed(2)),
@@ -104,6 +124,7 @@ export class MetricasService {
       questoesPorDia,
       inicioSemana: inicioSemana.toISOString().slice(0, 10),
       fimSemana: fimSemana.toISOString().slice(0, 10),
+      melhoresMaterias: topMaterias,
     };
   }
 }
