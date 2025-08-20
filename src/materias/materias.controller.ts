@@ -89,6 +89,11 @@ export class MateriasController {
       throw new BadRequestException("Nome, cor e ícone são obrigatórios.");
     }
     const userId = (req.user as any).userId;
+    const nomeNormalizado = body.nome.replace(/\s+/g, '').toUpperCase();
+    const materiaExistente = await this.usersService.getMateriasByUserId(userId);
+    if (materiaExistente.some(m => m.nome.replace(/\s+/g, '').toUpperCase() === nomeNormalizado)) {
+      throw new BadRequestException("Já existe uma matéria com esse nome.");
+    }
     const materia = await this.usersService.createMateria(userId, body);
     return { message: "Matéria criada com sucesso.", materia };
   }

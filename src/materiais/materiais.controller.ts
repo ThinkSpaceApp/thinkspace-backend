@@ -140,6 +140,11 @@ export class MateriaisController {
       throw new BadRequestException("Nome designado e nome da matéria são obrigatórios.");
     }
     const userId = (req.user as any).userId;
+    const nomeMaterialNormalizado = body.nomeDesignado.replace(/\s+/g, '').toUpperCase();
+    const materiaisExistentes = await this.materiaisService.listarPorUsuario(userId);
+    if (materiaisExistentes.some(m => m.nomeDesignado && m.nomeDesignado.replace(/\s+/g, '').toUpperCase() === nomeMaterialNormalizado)) {
+      throw new BadRequestException("Já existe um material com esse nome.");
+    }
     const progresso = await this.materiaisService.getProgressoMaterial(userId);
     const origem = progresso.origem;
     const tipoMaterial = progresso.tipoMaterial;
