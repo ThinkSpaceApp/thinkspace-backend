@@ -205,7 +205,41 @@ export class MateriaisController {
     if (origem === "DOCUMENTO") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
       let materialCriado;
-      if (body.quantidadeQuestoes) {
+      if (tipoMaterial === "COMPLETO" && origem === "DOCUMENTO") {
+        let textoConteudo = progressoFinal.textoConteudo;
+        if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
+          textoConteudo = await this.materiaisService.extrairTextoPdf(progressoFinal.caminhoArquivo);
+        }
+        const quizzesResult = await this.materiaisService.gerarQuizzes({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeQuestoes,
+          origem,
+          caminhoArquivo: progressoFinal.caminhoArquivo,
+          textoConteudo,
+        });
+        const flashcardsResult = await this.materiaisService.gerarFlashcards({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeFlashcards,
+          origem,
+          caminhoArquivo: progressoFinal.caminhoArquivo,
+          textoConteudo,
+        });
+        materialCriado = {
+          ...quizzesResult.material,
+          quizzesJson: quizzesResult.material.quizzesJson,
+          quantidadeQuestoes: quizzesResult.material.quantidadeQuestoes,
+          flashcardsJson: flashcardsResult.material.flashcardsJson,
+          quantidadeFlashcards: flashcardsResult.material.quantidadeFlashcards,
+        };
+      } else if (body.quantidadeQuestoes) {
         let textoConteudo = progressoFinal.textoConteudo;
         if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
           textoConteudo = await this.materiaisService.extrairTextoPdf(progressoFinal.caminhoArquivo);
@@ -250,7 +284,36 @@ export class MateriaisController {
     if (origem === "ASSUNTO") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
       let materialCriado;
-      if (body.quantidadeQuestoes) {
+      if (tipoMaterial === "COMPLETO") {
+        const quizzesResult = await this.materiaisService.gerarQuizzes({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeQuestoes,
+          origem,
+          textoConteudo: progressoFinal.assunto,
+          assunto: progressoFinal.assunto,
+        });
+        const flashcardsResult = await this.materiaisService.gerarFlashcards({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeFlashcards,
+          origem,
+          textoConteudo: progressoFinal.assunto,
+        });
+        materialCriado = {
+          ...quizzesResult.material,
+          quizzesJson: quizzesResult.material.quizzesJson,
+          quantidadeQuestoes: quizzesResult.material.quantidadeQuestoes,
+          flashcardsJson: flashcardsResult.material.flashcardsJson,
+          quantidadeFlashcards: flashcardsResult.material.quantidadeFlashcards,
+        };
+      } else if (body.quantidadeQuestoes) {
         materialCriado = await this.materiaisService.gerarQuizzes({
           userId,
           nomeDesignado: progressoFinal.nomeDesignado,
@@ -282,7 +345,33 @@ export class MateriaisController {
     if (origem === "TOPICOS") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
       let materialCriado;
-      if (body.quantidadeQuestoes) {
+      if (tipoMaterial === "COMPLETO") {
+        const quizzesResult = await this.materiaisService.gerarQuizzes({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeQuestoes,
+          origem,
+        });
+        const flashcardsResult = await this.materiaisService.gerarFlashcards({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeFlashcards,
+          origem,
+        });
+        materialCriado = {
+          ...quizzesResult.material,
+          quizzesJson: quizzesResult.material.quizzesJson,
+          quantidadeQuestoes: quizzesResult.material.quantidadeQuestoes,
+          flashcardsJson: flashcardsResult.material.flashcardsJson,
+          quantidadeFlashcards: flashcardsResult.material.quantidadeFlashcards,
+        };
+      } else if (body.quantidadeQuestoes) {
         materialCriado = await this.materiaisService.gerarQuizzes({
           userId,
           nomeDesignado: progressoFinal.nomeDesignado,
