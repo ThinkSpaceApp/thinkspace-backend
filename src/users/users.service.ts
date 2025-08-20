@@ -200,8 +200,10 @@ export class UsersService {
         materiais: true,
       },
     });
-
-    return materias;
+    return materias.sort((a, b) => {
+      if (!a.nome || !b.nome) return 0;
+      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+    });
   }
 
   async getMateriasByUserIdOrdenadasPorUltimaRevisao(userId: string) {

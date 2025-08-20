@@ -147,6 +147,9 @@ export class MateriaisService {
     } catch {
       flashcards = [];
     }
+    if (Array.isArray(flashcards) && typeof quantidade === 'number' && quantidade > 0) {
+      flashcards = flashcards.slice(0, quantidade);
+    }
     const material = await this.prisma.materialEstudo.create({
       data: {
         titulo: nomeDesignado,
