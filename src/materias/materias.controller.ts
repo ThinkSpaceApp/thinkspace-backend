@@ -63,7 +63,22 @@ export class MateriasController {
   @ApiResponse({ status: 200, description: "Lista de matérias retornada com sucesso." })
   @Get()
   async getMaterias(@Req() req: Request) {
-    return this.usersService.getMateriasByUserId((req.user as any).userId);
+    const materias = await this.usersService.getMateriasByUserId((req.user as any).userId);
+    if (
+      Array.isArray(materias) &&
+      materias.length &&
+      materias[0].materiais &&
+      Array.isArray(materias[0].materiais) &&
+      materias[0].materiais.length &&
+      materias[0].materiais[0].criadoEm
+    ) {
+      return materias.sort((a, b) => {
+        const criadoEmA = a.materiais[0]?.criadoEm ? new Date(a.materiais[0].criadoEm).getTime() : 0;
+        const criadoEmB = b.materiais[0]?.criadoEm ? new Date(b.materiais[0].criadoEm).getTime() : 0;
+        return criadoEmA - criadoEmB;
+      });
+    }
+    return materias;
   }
 
   @ApiOperation({ summary: "Criar nova matéria" })

@@ -41,7 +41,26 @@ export class MateriaisController {
   @ApiResponse({ status: 200, description: "Materiais encontrados com sucesso." })
   @Get("/")
   async listarMateriais(@Req() req: Request) {
-    const materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
+    const { filtro } = req.query as { filtro?: string };
+    let materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
+
+    if (filtro) {
+      const filtros = Array.isArray(filtro) ? filtro : filtro.split(',');
+      filtros.forEach(f => {
+        if (f === 'maisRecentes') {
+          materiais = materiais.sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
+        }
+        if (f === 'maisAntigos') {
+          materiais = materiais.sort((a, b) => new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime());
+        }
+        if (f === 'maiorTempoEstudo') {
+          materiais = materiais.sort((a, b) => (b.tempoAtivo || 0) - (a.tempoAtivo || 0));
+        }
+        if (f === 'menorTempoEstudo') {
+          materiais = materiais.sort((a, b) => (a.tempoAtivo || 0) - (b.tempoAtivo || 0));
+        }
+      });
+    }
     return {
       message: materiais.length
         ? "Materiais encontrados com sucesso."
@@ -185,22 +204,99 @@ export class MateriaisController {
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
     if (origem === "DOCUMENTO") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
-      const materialCriado = await this.materiaisService.criarPorDocumento(userId, progressoFinal);
+      let materialCriado;
+      if (body.quantidadeQuestoes) {
+        materialCriado = await this.materiaisService.gerarQuizzes({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeQuestoes,
+          origem,
+          caminhoArquivo: progressoFinal.caminhoArquivo,
+          textoConteudo: progressoFinal.textoConteudo,
+        });
+      } else if (body.quantidadeFlashcards) {
+        materialCriado = await this.materiaisService.gerarFlashcards({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeFlashcards,
+          origem,
+          caminhoArquivo: progressoFinal.caminhoArquivo,
+          textoConteudo: progressoFinal.textoConteudo,
+        });
+      } else {
+        materialCriado = await this.materiaisService.criarPorDocumento(userId, progressoFinal);
+      }
       return {
         message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.",
         etapa: 3,
-        material: { id: materialCriado.id},
+        material: materialCriado,
         dados: dadosMaterial
       };
-
-    } else if (origem === "ASSUNTO") {
+    }
+    if (origem === "ASSUNTO") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
-      const materialCriado = await this.materiaisService.criarPorAssunto(userId, progressoFinal);
+      let materialCriado;
+      if (body.quantidadeQuestoes) {
+        materialCriado = await this.materiaisService.gerarQuizzes({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeQuestoes,
+          origem,
+          textoConteudo: progressoFinal.assunto,
+          assunto: progressoFinal.assunto,
+        });
+      } else if (body.quantidadeFlashcards) {
+        materialCriado = await this.materiaisService.gerarFlashcards({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeFlashcards,
+          origem,
+          textoConteudo: progressoFinal.assunto,
+        });
+      } else {
+        materialCriado = await this.materiaisService.criarPorAssunto(userId, progressoFinal);
+      }
       await this.materiaisService.limparProgressoMaterial(userId);
       return { message: "Material criado com sucesso.", etapa: 3, material: materialCriado };
-    } else {
+    }
+    if (origem === "TOPICOS") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
-      const materialCriado = await this.materiaisService.criarPorTopicos(userId, progressoFinal);
+      let materialCriado;
+      if (body.quantidadeQuestoes) {
+        materialCriado = await this.materiaisService.gerarQuizzes({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeQuestoes,
+          origem,
+        });
+      } else if (body.quantidadeFlashcards) {
+        materialCriado = await this.materiaisService.gerarFlashcards({
+          userId,
+          nomeDesignado: progressoFinal.nomeDesignado,
+          materiaId: progressoFinal.materiaId,
+          topicos: progressoFinal.topicos,
+          tipoMaterial: progressoFinal.tipoMaterial,
+          quantidade: body.quantidadeFlashcards,
+          origem,
+        });
+      } else {
+        materialCriado = await this.materiaisService.criarPorTopicos(userId, progressoFinal);
+      }
       await this.materiaisService.limparProgressoMaterial(userId);
       return { message: "Material criado com sucesso.", etapa: 3, material: materialCriado };
     }

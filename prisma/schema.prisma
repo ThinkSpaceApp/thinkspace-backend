@@ -164,6 +164,7 @@ model MaterialEstudo {
   revisoes       Revisao[]
   chatHistoryJson Json?
   criadoEm       DateTime       @default(now())
+  tempoAtivo     Int?           @default(0) 
 
   quantidadeQuestoes    Int?
   quantidadeFlashcards  Int?
