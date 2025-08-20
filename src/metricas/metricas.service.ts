@@ -110,7 +110,7 @@ export class MetricasService {
     const percentualAcertos = totalQuestoes ? (acertos / totalQuestoes) * 100 : 0;
     const percentualErros = totalQuestoes ? (erros / totalQuestoes) * 100 : 0;
 
-    const topMaterias = Object.values(xpPorMateria)
+    const melhoresMaterias = Object.values(xpPorMateria)
       .sort((a, b) => b.xp - a.xp)
       .slice(0, 5);
 
@@ -124,7 +124,7 @@ export class MetricasService {
       questoesPorDia,
       inicioSemana: inicioSemana.toISOString().slice(0, 10),
       fimSemana: fimSemana.toISOString().slice(0, 10),
-      melhoresMaterias: topMaterias,
+      melhoresMaterias
     };
   }
 }
