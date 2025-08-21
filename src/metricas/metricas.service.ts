@@ -157,6 +157,31 @@ export class MetricasService {
     const melhoresMaterias = Object.values(xpPorMateria)
       .sort((a, b) => b.xp - a.xp)
       .slice(0, 5);
+    const atividadesHistorico = await this.prisma.atividadeUsuario.findMany({
+      where: { usuarioId: userId },
+      orderBy: { data: "asc" },
+    });
+    let ofensiva = 0;
+    let maxOfensiva = 0;
+    let anterior: string | null = null;
+    for (const atividade of atividadesHistorico) {
+      if (atividade.quantidade > 0) {
+        const dia = new Date(atividade.data).toISOString().slice(0, 10);
+        if (anterior) {
+          const diff = (new Date(dia).getTime() - new Date(anterior).getTime()) / (1000 * 60 * 60 * 24);
+          if (diff === 1) {
+            ofensiva++;
+          } else if (diff > 1) {
+            ofensiva = 1;
+          }
+        } else {
+          ofensiva = 1;
+        }
+        anterior = dia;
+        if (ofensiva > maxOfensiva) maxOfensiva = ofensiva;
+      }
+    }
+    const mensagemOfensiva = `Sua ofensiva atual é de ${ofensiva} dia${ofensiva === 1 ? '' : 's'}`;
     return {
       rendimentoSemanal: Number(rendimentoSemanal.toFixed(2)),
       xp: experiencia ? experiencia.xp : 0,
@@ -169,6 +194,8 @@ export class MetricasService {
       inicioSemana: inicioSemana.toISOString().slice(0, 10),
       fimSemana: fimSemana.toISOString().slice(0, 10),
       melhoresMaterias,
+      ofensiva,
+      mensagemOfensiva,
     };
   }
 }
