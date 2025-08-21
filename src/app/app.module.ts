@@ -8,6 +8,7 @@ import { HomeModule } from "../home/home.module";
 import { AppController } from "./app.controller";
 import { salaEstudoModule } from "../salaEstudo/salaEstudo.module";
 import { MetricasModule } from "../metricas/metricas.module";
+import { ConfiguracoesModule } from "../configuracoes/configuracoes.module";
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { MetricasModule } from "../metricas/metricas.module";
     MateriaisModule,
     HomeModule,
     salaEstudoModule,
-    MetricasModule,
+  MetricasModule,
+  ConfiguracoesModule,
   ],
   controllers: [AppController],
 })
