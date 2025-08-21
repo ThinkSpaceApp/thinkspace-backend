@@ -41,21 +41,26 @@ export class ExperienciaService {
     const xpFinal = xpAnterior + xp;
     const { getProgressoNivel } = await import("./niveis-xp");
     const { nivel, progresso } = getProgressoNivel(xpFinal);
-      await this.prisma.experienciaUsuario.update({
-        where: { usuarioId },
-        data: {
-          xp: xpFinal,
-          progresso,
-          nivel: mapNivelNomeToEnum(nivel.nome.toLowerCase()),
-        },
-      });
+    const experienciaAtualizada = await this.prisma.experienciaUsuario.update({
+      where: { usuarioId },
+      data: {
+        xp: xpFinal,
+        progresso,
+        nivel: mapNivelNomeToEnum(nivel.nome.toLowerCase()),
+      },
+      select: {
+        xp: true,
+        progresso: true,
+        nivel: true,
+      },
+    });
     return {
       xp,
       xpAnterior,
-      xpFinal,
-      progresso,
+      xpFinal: experienciaAtualizada.xp,
+      progresso: experienciaAtualizada.progresso,
       nivel: nivel.nome,
-      mensagem: `XP calculada: +${xp} (certas: +${certas * 5}, erradas: -${erradas * 2}, participação: +10). XP final: ${xpFinal}. Progresso para o próximo nível: ${progresso.toFixed(2)}%. Nível atual: ${nivel.nome}.`,
+      mensagem: `XP calculada: +${xp} (certas: +${certas * 5}, erradas: -${erradas * 2}, participação: +10). XP final: ${experienciaAtualizada.xp}. Progresso para o próximo nível: ${experienciaAtualizada.progresso.toFixed(2)}%. Nível atual: ${nivel.nome}.`,
     };
   }
 }
