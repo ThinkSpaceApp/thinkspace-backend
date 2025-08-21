@@ -73,13 +73,8 @@ export class MateriaisService {
     } catch {
       quizzes = [];
     }
-    const material = await this.prisma.materialEstudo.findFirst({
-      where: {
-        nomeDesignado,
-        materiaId,
-        autorId: userId,
-      },
-    });
+    if (!materiaId) throw new Error('O parâmetro materiaId é obrigatório.');
+    const material = await this.prisma.materialEstudo.findUnique({ where: { id: materiaId } });
     if (!material) throw new Error('Material não encontrado para atualizar quizzes.');
     const updatedMaterial = await this.prisma.materialEstudo.update({
       where: { id: material.id },
@@ -94,7 +89,7 @@ export class MateriaisService {
       update: { quantidade: { increment: 1 } },
       create: { usuarioId: userId, data: hoje, quantidade: 1 },
     });
-  return { material: updatedMaterial, quizzes };
+    return { material: updatedMaterial, quizzes };
   }
   async gerarFlashcards({
     userId,
