@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class MetricasService {
@@ -31,13 +32,33 @@ export class MetricasService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getMetricasAluno(userId: string, weeksAgo: number = 0) {
-    const hoje = new Date();
-    const inicioSemana = new Date(hoje);
-    inicioSemana.setDate(hoje.getDate() - hoje.getDay() - (weeksAgo * 7));
-    inicioSemana.setHours(0, 0, 0, 0);
-    const fimSemana = new Date(inicioSemana);
-    fimSemana.setDate(inicioSemana.getDate() + 6);
-    fimSemana.setHours(23, 59, 59, 999);
+  const timeZone = 'America/Sao_Paulo';
+  const hoje = toZonedTime(new Date(), timeZone);
+  const dayOfWeek = hoje.getDay();
+  const inicioSemanaDate = new Date(hoje);
+  inicioSemanaDate.setDate(hoje.getDate() - dayOfWeek - (weeksAgo * 7));
+  inicioSemanaDate.setHours(0, 0, 0, 0);
+  const inicioSemana = new Date(Date.UTC(
+    inicioSemanaDate.getFullYear(),
+    inicioSemanaDate.getMonth(),
+    inicioSemanaDate.getDate(),
+    inicioSemanaDate.getHours(),
+    inicioSemanaDate.getMinutes(),
+    inicioSemanaDate.getSeconds(),
+    inicioSemanaDate.getMilliseconds()
+  ));
+  const fimSemanaDate = new Date(inicioSemanaDate);
+  fimSemanaDate.setDate(inicioSemanaDate.getDate() + 6);
+  fimSemanaDate.setHours(23, 59, 59, 999);
+  const fimSemana = new Date(Date.UTC(
+    fimSemanaDate.getFullYear(),
+    fimSemanaDate.getMonth(),
+    fimSemanaDate.getDate(),
+    fimSemanaDate.getHours(),
+    fimSemanaDate.getMinutes(),
+    fimSemanaDate.getSeconds(),
+    fimSemanaDate.getMilliseconds()
+  ));
 
     const atividades = await this.prisma.atividadeUsuario.findMany({
       where: {
@@ -71,10 +92,10 @@ export class MetricasService {
       try {
         respostas = material.respostasQuizJson ? JSON.parse(material.respostasQuizJson) : {};
       } catch {}
-      const dateKey = material.criadoEm ? new Date(material.criadoEm).toISOString().slice(0, 10) : null;
+    const materialDate = material.criadoEm ? toZonedTime(new Date(material.criadoEm), timeZone) : null;
+      const dateKey = materialDate ? materialDate.toISOString().slice(0, 10) : null;
       if (dateKey) {
-        const materialDate = new Date(material.criadoEm);
-        if (materialDate >= inicioSemana && materialDate <= fimSemana) {
+      if (materialDate && materialDate >= toZonedTime(inicioSemana, timeZone) && materialDate <= toZonedTime(fimSemana, timeZone)) {
           let realizadasHoje = 0;
           let xpMateria = 0;
           quizzes.forEach((quiz, idx) => {

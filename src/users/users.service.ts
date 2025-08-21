@@ -348,11 +348,18 @@ export class UsersService {
       const dia = addDays(inicioSemana, i);
       let status = 0;
       if (dia > hoje) {
-        status = 0; 
+        status = 0;
+      } else if (isSameDay(dia, hoje)) {
+        const atividadeDia = atividades.find(a => isSameDay(a.data, dia));
+        if (atividadeDia) {
+          status = 2;
+        } else {
+          status = 0;
+        }
       } else {
         const atividadeDia = atividades.find(a => isSameDay(a.data, dia));
         if (atividadeDia) {
-          status = 2; 
+          status = 2;
         } else {
           status = 1;
         }
