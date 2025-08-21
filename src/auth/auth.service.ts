@@ -399,6 +399,12 @@ export class AuthService {
       throw new UnauthorizedException("Senha incorreta.");
     }
 
+    if (user.suspenso) {
+      await this.usersService.update(user.id, { suspenso: false, dataSuspensao: null });
+      user.suspenso = false;
+      user.dataSuspensao = null;
+    }
+
     const hoje = new Date();
     const ultimoLogin = user.ultimoLogin ? new Date(user.ultimoLogin) : null;
     const mesmoDia =

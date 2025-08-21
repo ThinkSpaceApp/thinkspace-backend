@@ -24,4 +24,20 @@ export class ConfiguracoesService {
   async alterarNivelEscolaridade(userId: string, escolaridade: string) {
     return this.prisma.usuario.update({ where: { id: userId }, data: { escolaridade: escolaridade as any } });
   }
+
+  async suspenderConta(userId: string) {
+    return this.prisma.usuario.update({
+      where: { id: userId },
+      data: {
+        suspenso: true,
+        dataSuspensao: new Date(),
+      },
+    });
+  }
+
+  async excluirConta(userId: string) {
+    return this.prisma.usuario.delete({
+      where: { id: userId },
+    });
+  }
 }

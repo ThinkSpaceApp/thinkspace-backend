@@ -1,4 +1,4 @@
-import { Controller, Patch, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Patch, Body, Req, UseGuards, Delete } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
@@ -64,4 +64,24 @@ export class ConfiguracoesController {
     return this.configuracoesService.alterarNivelEscolaridade((req.user as any).userId, nivelEscolaridade);
   }
 
+
+  @Patch('suspender-conta')
+  @ApiOperation({ summary: 'Suspender a conta do usuário' })
+  @ApiResponse({ status: 200, description: 'Conta suspensa com sucesso.' })
+  async suspenderConta(@Req() req: Request) {
+    if (!req.user || !('userId' in req.user)) {
+      throw new Error('Usuário não autenticado ou userId ausente.');
+    }
+    return this.configuracoesService.suspenderConta((req.user as any).userId);
+  }
+
+  @Delete('excluir-conta')
+  @ApiOperation({ summary: 'Excluir a conta do usuário' })
+  @ApiResponse({ status: 200, description: 'Conta excluída com sucesso.' })
+  async excluirConta(@Req() req: Request) {
+    if (!req.user || !('userId' in req.user)) {
+      throw new Error('Usuário não autenticado ou userId ausente.');
+    }
+    return this.configuracoesService.excluirConta((req.user as any).userId);
+  }
 }
