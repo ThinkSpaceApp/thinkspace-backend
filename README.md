@@ -21,4 +21,3 @@ Este projeto tem como objetivo criar uma plataforma de materiais de estudo perso
 - **Menu de notificações**: Exibe atualizações recentes, como novas atividades adicionadas, alterações em materiais compartilhados ou mensagens importantes enviadas pelos professores ou colegas.
 
 - **Calendário de próximas pendências**: Exibe todas as tarefas, prazos e eventos importantes em um formato visual organizado. Cada evento ou tarefa é identificado com uma legenda para facilitar a visualização (ex.: "Trabalho", "Prova", "Estudo", "Lembrete"). Permite que os usuários adicionem novas pendências manualmente ou sincronizem com outras ferramentas de calendário.
-
