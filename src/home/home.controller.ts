@@ -118,9 +118,35 @@ export class HomeController {
   @Get("materias")
   async getMaterias(@Req() req: Request) {
     const userJwt = req.user as { userId: string };
-    const materias = await this.usersService.getMateriasByUserId(userJwt.userId);
-    materias.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
-    return materias;
+    const materias = await this.usersService.getMateriasByUserIdOrdenadasPorUltimaRevisao(userJwt.userId);
+    const materiasComXp = await Promise.all(
+      materias.map(async (materia) => {
+        const materiais = await this.prisma.materialEstudo.findMany({ where: { materiaId: materia.id } });
+        let xpAcumulada = 0;
+        for (const material of materiais) {
+          if (material.quizzesJson) {
+            try {
+              const quizzes = JSON.parse(material.quizzesJson);
+              if (Array.isArray(quizzes)) {
+                xpAcumulada += quizzes.reduce((acc, quiz) => acc + (quiz.xp || 0), 0);
+              }
+            } catch {}
+          }
+        }
+        const barraProgresso = Math.min(100, Math.round((xpAcumulada / 500) * 100));
+        return {
+          ...materia,
+          xpAcumulada,
+          barraProgresso,
+        };
+      })
+    );
+    materiasComXp.sort((a, b) => {
+      const aData = a.ultimaRevisao ? new Date(a.ultimaRevisao).getTime() : 0;
+      const bData = b.ultimaRevisao ? new Date(b.ultimaRevisao).getTime() : 0;
+      return bData - aData;
+    });
+    return materiasComXp;
   }
 
   @ApiOperation({ summary: "Obter calendário do mês atual" })
