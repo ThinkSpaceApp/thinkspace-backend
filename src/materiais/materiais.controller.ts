@@ -45,18 +45,22 @@ export class MateriaisController {
     let materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
 
     if (filtro) {
-      const filtros = Array.isArray(filtro) ? filtro : filtro.split(',');
-      filtros.forEach(f => {
-        if (f === 'maisRecentes') {
-          materiais = materiais.sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
+      const filtros = Array.isArray(filtro) ? filtro : filtro.split(",");
+      filtros.forEach((f) => {
+        if (f === "maisRecentes") {
+          materiais = materiais.sort(
+            (a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime(),
+          );
         }
-        if (f === 'maisAntigos') {
-          materiais = materiais.sort((a, b) => new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime());
+        if (f === "maisAntigos") {
+          materiais = materiais.sort(
+            (a, b) => new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime(),
+          );
         }
-        if (f === 'maiorTempoEstudo') {
+        if (f === "maiorTempoEstudo") {
           materiais = materiais.sort((a, b) => (b.tempoAtivo || 0) - (a.tempoAtivo || 0));
         }
-        if (f === 'menorTempoEstudo') {
+        if (f === "menorTempoEstudo") {
           materiais = materiais.sort((a, b) => (a.tempoAtivo || 0) - (b.tempoAtivo || 0));
         }
       });
@@ -80,7 +84,6 @@ export class MateriaisController {
     },
   })
   @ApiResponse({ status: 200, description: "Origem selecionada com sucesso." })
-
   @Post("escolha-origem-material")
   async etapaOrigem(@Req() req: Request, @Body() body: any) {
     const origensValidas = ["TOPICOS", "DOCUMENTO", "ASSUNTO"];
@@ -88,13 +91,14 @@ export class MateriaisController {
       throw new BadRequestException("Campo origem obrigatório.");
     }
     if (!origensValidas.includes(body.origem)) {
-      throw new BadRequestException(`A origem deve ser uma das seguintes: ${origensValidas.join(", ")}`);
+      throw new BadRequestException(
+        `A origem deve ser uma das seguintes: ${origensValidas.join(", ")}`,
+      );
     }
     const userId = (req.user as any).userId;
     await this.materiaisService.salvarProgressoMaterial(userId, { origem: body.origem });
     return { message: "Origem do material escolhida com sucesso.", origem: body.origem };
   }
-
 
   @ApiOperation({ summary: "Etapa 2 - Selecionar tipo do material" })
   @ApiBody({
@@ -107,7 +111,6 @@ export class MateriaisController {
     },
   })
   @ApiResponse({ status: 200, description: "Tipo de material selecionado com sucesso." })
-
   @Post("escolha-tipo-material")
   async etapaTipo(@Req() req: Request, @Body() body: any) {
     const tiposValidos = ["QUIZZ", "FLASHCARD", "RESUMO_IA", "COMPLETO"];
@@ -115,13 +118,16 @@ export class MateriaisController {
       throw new BadRequestException("Campo tipoMaterial obrigatório.");
     }
     if (!tiposValidos.includes(body.tipoMaterial)) {
-      throw new BadRequestException(`O tipoMaterial deve ser um dos seguintes: ${tiposValidos.join(", ")}`);
+      throw new BadRequestException(
+        `O tipoMaterial deve ser um dos seguintes: ${tiposValidos.join(", ")}`,
+      );
     }
     const userId = (req.user as any).userId;
-    await this.materiaisService.salvarProgressoMaterial(userId, { tipoMaterial: body.tipoMaterial });
+    await this.materiaisService.salvarProgressoMaterial(userId, {
+      tipoMaterial: body.tipoMaterial,
+    });
     return { message: "Tipo de material escolhido com sucesso.", tipoMaterial: body.tipoMaterial };
   }
-
 
   @ApiOperation({ summary: "Etapa 3 - Dados básicos do material (agora aceita PDF opcional)" })
   @ApiBody({
@@ -129,22 +135,46 @@ export class MateriaisController {
       type: "object",
       properties: {
         nomeDesignado: { type: "string" },
-        nomeMateria: { type: "string", description: "Nome da matéria. O backend irá alocar pelo nome." },
+        nomeMateria: {
+          type: "string",
+          description: "Nome da matéria. O backend irá alocar pelo nome.",
+        },
         topicos: { type: "array", items: { type: "string" } },
         descricao: { type: "string" },
         assunto: { type: "string" },
-        tipoMaterial: { type: "string", enum: ["QUIZZ", "FLASHCARD", "RESUMO_IA", "COMPLETO"], description: "Tipo do material. Obrigatório." },
-  quantidadeQuestoes: { type: "string", example: "10", description: "Número de questões para quizzes (máx 25) (enviar como string)" },
-  quantidadeFlashcards: { type: "string", example: "10", description: "Número de flashcards (máx 25) (enviar como string)" },
-        file: { type: "string", format: "binary", description: "Arquivo PDF opcional para materiais do tipo DOCUMENTO" },
+        tipoMaterial: {
+          type: "string",
+          enum: ["QUIZZ", "FLASHCARD", "RESUMO_IA", "COMPLETO"],
+          description: "Tipo do material. Obrigatório.",
+        },
+        quantidadeQuestoes: {
+          type: "string",
+          example: "10",
+          description: "Número de questões para quizzes (máx 25) (enviar como string)",
+        },
+        quantidadeFlashcards: {
+          type: "string",
+          example: "10",
+          description: "Número de flashcards (máx 25) (enviar como string)",
+        },
+        file: {
+          type: "string",
+          format: "binary",
+          description: "Arquivo PDF opcional para materiais do tipo DOCUMENTO",
+        },
       },
-  required: ["nomeDesignado", "nomeMateria", "tipoMaterial"],
+      required: ["nomeDesignado", "nomeMateria", "tipoMaterial"],
     },
-    description: "A origem do material é carregada automaticamente do passo 1 (escolha-origem-material) e não precisa ser enviada novamente nesta etapa. Apenas envie os campos listados acima."
+    description:
+      "A origem do material é carregada automaticamente do passo 1 (escolha-origem-material) e não precisa ser enviada novamente nesta etapa. Apenas envie os campos listados acima.",
   })
   @Post("etapa-dados")
   @UseInterceptors(FileInterceptor("file", uploadPdfConfig as MulterOptions))
-  async etapaDados(@Req() req: Request, @Body() body: any, @UploadedFile() file?: Express.Multer.File) {
+  async etapaDados(
+    @Req() req: Request,
+    @Body() body: any,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     if (typeof body.topicos === "string") {
       try {
         body.topicos = JSON.parse(body.topicos);
@@ -159,9 +189,15 @@ export class MateriaisController {
       throw new BadRequestException("Nome designado e nome da matéria são obrigatórios.");
     }
     const userId = (req.user as any).userId;
-    const nomeMaterialNormalizado = body.nomeDesignado.replace(/\s+/g, '').toUpperCase();
+    const nomeMaterialNormalizado = body.nomeDesignado.replace(/\s+/g, "").toUpperCase();
     const materiaisExistentes = await this.materiaisService.listarPorUsuario(userId);
-    if (materiaisExistentes.some(m => m.nomeDesignado && m.nomeDesignado.replace(/\s+/g, '').toUpperCase() === nomeMaterialNormalizado)) {
+    if (
+      materiaisExistentes.some(
+        (m) =>
+          m.nomeDesignado &&
+          m.nomeDesignado.replace(/\s+/g, "").toUpperCase() === nomeMaterialNormalizado,
+      )
+    ) {
       throw new BadRequestException("Já existe um material com esse nome.");
     }
     const progresso = await this.materiaisService.getProgressoMaterial(userId);
@@ -179,20 +215,38 @@ export class MateriaisController {
       body.quantidadeFlashcards = Number(body.quantidadeFlashcards);
     }
     if (tipoMaterial === "QUIZZ") {
-      if (isNaN(body.quantidadeQuestoes) || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
+      if (
+        isNaN(body.quantidadeQuestoes) ||
+        body.quantidadeQuestoes < 1 ||
+        body.quantidadeQuestoes > 25
+      ) {
         throw new BadRequestException("Para quizzes, informe quantidadeQuestoes entre 1 e 25.");
       }
     }
     if (tipoMaterial === "FLASHCARD") {
-      if (isNaN(body.quantidadeFlashcards) || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
-        throw new BadRequestException("Para flashcards, informe quantidadeFlashcards entre 1 e 25.");
+      if (
+        isNaN(body.quantidadeFlashcards) ||
+        body.quantidadeFlashcards < 1 ||
+        body.quantidadeFlashcards > 25
+      ) {
+        throw new BadRequestException(
+          "Para flashcards, informe quantidadeFlashcards entre 1 e 25.",
+        );
       }
     }
     if (tipoMaterial === "COMPLETO") {
-      if (isNaN(body.quantidadeQuestoes) || body.quantidadeQuestoes < 1 || body.quantidadeQuestoes > 25) {
+      if (
+        isNaN(body.quantidadeQuestoes) ||
+        body.quantidadeQuestoes < 1 ||
+        body.quantidadeQuestoes > 25
+      ) {
         throw new BadRequestException("Para completo, informe quantidadeQuestoes entre 1 e 25.");
       }
-      if (isNaN(body.quantidadeFlashcards) || body.quantidadeFlashcards < 1 || body.quantidadeFlashcards > 25) {
+      if (
+        isNaN(body.quantidadeFlashcards) ||
+        body.quantidadeFlashcards < 1 ||
+        body.quantidadeFlashcards > 25
+      ) {
         throw new BadRequestException("Para completo, informe quantidadeFlashcards entre 1 e 25.");
       }
     }
@@ -208,7 +262,9 @@ export class MateriaisController {
       if (tipoMaterial === "COMPLETO" && origem === "DOCUMENTO") {
         let textoConteudo = progressoFinal.textoConteudo;
         if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
-          textoConteudo = await this.materiaisService.extrairTextoPdf(progressoFinal.caminhoArquivo);
+          textoConteudo = await this.materiaisService.extrairTextoPdf(
+            progressoFinal.caminhoArquivo,
+          );
         }
         const quizzesResult = await this.materiaisService.gerarQuizzes({
           userId,
@@ -242,7 +298,9 @@ export class MateriaisController {
       } else if (body.quantidadeQuestoes) {
         let textoConteudo = progressoFinal.textoConteudo;
         if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
-          textoConteudo = await this.materiaisService.extrairTextoPdf(progressoFinal.caminhoArquivo);
+          textoConteudo = await this.materiaisService.extrairTextoPdf(
+            progressoFinal.caminhoArquivo,
+          );
         }
         materialCriado = await this.materiaisService.gerarQuizzes({
           userId,
@@ -258,7 +316,9 @@ export class MateriaisController {
       } else if (body.quantidadeFlashcards) {
         let textoConteudo = progressoFinal.textoConteudo;
         if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
-          textoConteudo = await this.materiaisService.extrairTextoPdf(progressoFinal.caminhoArquivo);
+          textoConteudo = await this.materiaisService.extrairTextoPdf(
+            progressoFinal.caminhoArquivo,
+          );
         }
         materialCriado = await this.materiaisService.gerarFlashcards({
           userId,
@@ -278,7 +338,7 @@ export class MateriaisController {
         message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.",
         etapa: 3,
         material: materialCriado,
-        dados: dadosMaterial
+        dados: dadosMaterial,
       };
     }
     if (origem === "ASSUNTO") {
@@ -469,34 +529,43 @@ export class MateriaisController {
     }
   }
 
-  @ApiOperation({ 
+  @ApiOperation({
     summary: "Upload de PDF para gerar resumo IA (agora só precisa do id)",
-    description: "Faz upload de um arquivo PDF, extrai o texto, gera um resumo usando IA e cria um material de estudo"
+    description:
+      "Faz upload de um arquivo PDF, extrai o texto, gera um resumo usando IA e cria um material de estudo",
   })
   @ApiBody({
     schema: {
       type: "object",
       properties: {
-        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
+        id: {
+          type: "string",
+          example: "123e4567-e89b-12d3-a456-426614174000",
+          description: "ID do material de estudo",
+        },
       },
       required: ["id"],
     },
   })
-  @ApiResponse({ status: 201, description: "Resumo IA gerado e atualizado com sucesso a partir do PDF.", schema: {
-    type: "object",
-    properties: {
-      message: { type: "string" },
-      material: { type: "object" },
-      resumoIA: { type: "string" },
-      estatisticas: {
-        type: "object",
-        properties: {
-          caminhoArquivo: { type: "string" },
-          dataUpload: { type: "string", format: "date-time" },
+  @ApiResponse({
+    status: 201,
+    description: "Resumo IA gerado e atualizado com sucesso a partir do PDF.",
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        material: { type: "object" },
+        resumoIA: { type: "string" },
+        estatisticas: {
+          type: "object",
+          properties: {
+            caminhoArquivo: { type: "string" },
+            dataUpload: { type: "string", format: "date-time" },
+          },
         },
       },
     },
-  }})
+  })
   @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
   @ApiResponse({ status: 413, description: "Arquivo muito grande (máximo 10MB)." })
   @ApiResponse({ status: 500, description: "Erro interno do servidor." })
@@ -513,7 +582,10 @@ export class MateriaisController {
     if (!material.caminhoArquivo) {
       throw new BadRequestException("O material não possui PDF armazenado.");
     }
-    const resultado = await this.materiaisService.gerarResumoIaPorPdfMaterial(material, material.caminhoArquivo);
+    const resultado = await this.materiaisService.gerarResumoIaPorPdfMaterial(
+      material,
+      material.caminhoArquivo,
+    );
     return {
       message: "Resumo IA gerado e atualizado com sucesso a partir do PDF.",
       material: resultado.material,
@@ -525,7 +597,7 @@ export class MateriaisController {
     };
   }
 
-      @ApiOperation({ summary: "Obter resumo automático por documento" })
+  @ApiOperation({ summary: "Obter resumo automático por documento" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
   @ApiResponse({ status: 200, description: "Resumo retornado com sucesso." })
   @ApiResponse({ status: 404, description: "Resumo por documento não encontrado." })
@@ -574,7 +646,7 @@ export class MateriaisController {
     };
   }
 
-  @ApiOperation({summary: "Get resumo IA por assunto"})
+  @ApiOperation({ summary: "Get resumo IA por assunto" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
   @ApiResponse({ status: 200, description: "Resumo retornado com sucesso." })
   @ApiResponse({ status: 404, description: "Resumo por assunto não encontrado." })
@@ -593,9 +665,10 @@ export class MateriaisController {
     };
   }
 
-   @ApiOperation({
+  @ApiOperation({
     summary: "Gerar resumo IA por tópicos",
-    description: "Gera um resumo automático usando IA a partir dos tópicos fornecidos. Cria e retorna o material."
+    description:
+      "Gera um resumo automático usando IA a partir dos tópicos fornecidos. Cria e retorna o material.",
   })
   @ApiBody({
     schema: {
@@ -645,47 +718,54 @@ export class MateriaisController {
       topicos: material.topicos,
     };
   }
-  
+
   @ApiOperation({ summary: "Gerar quizzes automáticos via IA" })
   @ApiBody({
     schema: {
       type: "object",
       properties: {
-        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
+        id: {
+          type: "string",
+          example: "123e4567-e89b-12d3-a456-426614174000",
+          description: "ID do material de estudo",
+        },
       },
       required: ["id"],
     },
   })
-  @ApiResponse({ status: 201, description: "Quizzes gerados com sucesso.", schema: {
-    type: "object",
-    properties: {
-      message: { type: "string" },
-      material: { type: "object" },
-      quizzes: { type: "array", items: { type: "object" } },
-      estatisticas: {
-        type: "object",
-        properties: {
-          quantidadeQuestoes: { type: "number" },
-          dataCriacao: { type: "string", format: "date-time" },
+  @ApiResponse({
+    status: 201,
+    description: "Quizzes gerados com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        material: { type: "object" },
+        quizzes: { type: "array", items: { type: "object" } },
+        estatisticas: {
+          type: "object",
+          properties: {
+            quantidadeQuestoes: { type: "number" },
+            dataCriacao: { type: "string", format: "date-time" },
+          },
         },
       },
     },
-  }})
+  })
   @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
-  
-  @Post('quizzes')
+  @Post("quizzes")
   async gerarQuizzes(@Body() body: any) {
     const { id } = body;
     if (!id) {
-      throw new BadRequestException('O id do material é obrigatório');
+      throw new BadRequestException("O id do material é obrigatório");
     }
     const material = await this.materiaisService.buscarMaterialPorId(id);
     if (!material) {
-      throw new NotFoundException('Material não encontrado');
+      throw new NotFoundException("Material não encontrado");
     }
     const result = await this.materiaisService.gerarQuizzesIaPorMaterial(material);
     return {
-      message: 'Quizzes gerados com sucesso.',
+      message: "Quizzes gerados com sucesso.",
       material: result.material,
       quizzes: result.quizzes,
       estatisticas: {
@@ -703,7 +783,7 @@ export class MateriaisController {
     const material = await this.materiaisService.obterPorId(id, userId);
     const quizzes = material.quizzesJson ? JSON.parse(material.quizzesJson) : [];
     return {
-      message: 'Quizzes retornados com sucesso.',
+      message: "Quizzes retornados com sucesso.",
       material,
       quizzes,
       estatisticas: {
@@ -718,40 +798,48 @@ export class MateriaisController {
     schema: {
       type: "object",
       properties: {
-        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
+        id: {
+          type: "string",
+          example: "123e4567-e89b-12d3-a456-426614174000",
+          description: "ID do material de estudo",
+        },
       },
       required: ["id"],
     },
   })
-  @ApiResponse({ status: 201, description: "Flashcards gerados com sucesso.", schema: {
-    type: "object",
-    properties: {
-      message: { type: "string" },
-      material: { type: "object" },
-      flashcards: { type: "array", items: { type: "object" } },
-      estatisticas: {
-        type: "object",
-        properties: {
-          quantidadeFlashcards: { type: "number" },
-          dataCriacao: { type: "string", format: "date-time" },
+  @ApiResponse({
+    status: 201,
+    description: "Flashcards gerados com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        material: { type: "object" },
+        flashcards: { type: "array", items: { type: "object" } },
+        estatisticas: {
+          type: "object",
+          properties: {
+            quantidadeFlashcards: { type: "number" },
+            dataCriacao: { type: "string", format: "date-time" },
+          },
         },
       },
     },
-  }})
+  })
   @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
-  @Post('flashcards')
+  @Post("flashcards")
   async gerarFlashcards(@Body() body: any) {
     const { id } = body;
     if (!id) {
-      throw new BadRequestException('O id do material é obrigatório');
+      throw new BadRequestException("O id do material é obrigatório");
     }
     const material = await this.materiaisService.buscarMaterialPorId(id);
     if (!material) {
-      throw new NotFoundException('Material não encontrado');
+      throw new NotFoundException("Material não encontrado");
     }
     const result = await this.materiaisService.gerarFlashcardsIaPorMaterial(material);
     return {
-      message: 'Flashcards gerados com sucesso.',
+      message: "Flashcards gerados com sucesso.",
       material: result.material,
       flashcards: result.flashcards,
       estatisticas: {
@@ -766,27 +854,34 @@ export class MateriaisController {
     schema: {
       type: "object",
       properties: {
-        id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
+        id: {
+          type: "string",
+          example: "123e4567-e89b-12d3-a456-426614174000",
+          description: "ID do material de estudo",
+        },
       },
       required: ["id"],
     },
   })
-  @ApiResponse({ status: 201, description: "Flashcards gerados com sucesso a partir do PDF.", schema: {
-    type: "object",
-    properties: {
-      message: { type: "string" },
-      material: { type: "object" },
-      flashcards: { type: "array", items: { type: "object" } },
-      estatisticas: {
-        type: "object",
-        properties: {
-          caminhoArquivo: { type: "string" },
-          dataUpload: { type: "string", format: "date-time" },
+  @ApiResponse({
+    status: 201,
+    description: "Flashcards gerados com sucesso a partir do PDF.",
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        material: { type: "object" },
+        flashcards: { type: "array", items: { type: "object" } },
+        estatisticas: {
+          type: "object",
+          properties: {
+            caminhoArquivo: { type: "string" },
+            dataUpload: { type: "string", format: "date-time" },
+          },
         },
       },
     },
-  }})
-
+  })
   @ApiOperation({ summary: "Obter flashcards de um material" })
   @ApiResponse({ status: 200, description: "Flashcards retornados com sucesso." })
   @Get("flashcards/:id")
@@ -795,7 +890,7 @@ export class MateriaisController {
     const material = await this.materiaisService.obterPorId(id, userId);
     const flashcards = material.flashcardsJson ? JSON.parse(material.flashcardsJson) : [];
     return {
-      message: 'Flashcards retornados com sucesso.',
+      message: "Flashcards retornados com sucesso.",
       material,
       flashcards,
       estatisticas: {
@@ -806,22 +901,22 @@ export class MateriaisController {
   }
 
   @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
-  @Post('flashcards-pdf')
+  @Post("flashcards-pdf")
   async gerarFlashcardsPorPdf(@Body() body: any) {
     const { id } = body;
     if (!id) {
-      throw new BadRequestException('O id do material é obrigatório');
+      throw new BadRequestException("O id do material é obrigatório");
     }
     const material = await this.materiaisService.buscarMaterialPorId(id);
     if (!material) {
-      throw new NotFoundException('Material não encontrado');
+      throw new NotFoundException("Material não encontrado");
     }
     if (!material.caminhoArquivo) {
-      throw new BadRequestException('O material não possui PDF armazenado.');
+      throw new BadRequestException("O material não possui PDF armazenado.");
     }
     const result = await this.materiaisService.gerarFlashcardsIaPorPdfMaterial(material);
     return {
-      message: 'Flashcards gerados com sucesso a partir do PDF.',
+      message: "Flashcards gerados com sucesso a partir do PDF.",
       material: result.material,
       flashcards: result.flashcards,
       estatisticas: {
@@ -831,40 +926,47 @@ export class MateriaisController {
     };
   }
 
-    @ApiOperation({ summary: "Obter flashcards gerados via IA a partir de PDF salvo" })
-    @ApiParam({ name: "id", required: true, description: "ID do material" })
-    @ApiResponse({ status: 200, description: "Flashcards retornados com sucesso." })
-    @ApiResponse({ status: 404, description: "Flashcards por PDF não encontrados." })
-    @Get('flashcards-pdf/:id')
-    async getFlashcardsPorPdf(@Param('id') id: string, @Req() req: Request) {
-      const userId = (req.user as any)?.id || (req.user as any)?.userId;
-      const material = await this.materiaisService.obterPorId(id, userId);
-      if (!material || !material.caminhoArquivo) {
-        throw new NotFoundException('Flashcards por PDF não encontrados.');
-      }
-      const flashcards = material.flashcardsJson ? JSON.parse(material.flashcardsJson) : [];
-      return {
-        message: 'Flashcards retornados com sucesso.',
-        material,
-        flashcards,
-        estatisticas: {
-          caminhoArquivo: material.caminhoArquivo,
-          dataUpload: material.criadoEm || null,
-        },
-      };
+  @ApiOperation({ summary: "Obter flashcards gerados via IA a partir de PDF salvo" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Flashcards retornados com sucesso." })
+  @ApiResponse({ status: 404, description: "Flashcards por PDF não encontrados." })
+  @Get("flashcards-pdf/:id")
+  async getFlashcardsPorPdf(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || !material.caminhoArquivo) {
+      throw new NotFoundException("Flashcards por PDF não encontrados.");
     }
-
-    @ApiOperation({ summary: "Gerar quizzes automáticos via IA a partir de PDF salvo" })
-    @ApiBody({
-      schema: {
-        type: "object",
-        properties: {
-          id: { type: "string", example: "123e4567-e89b-12d3-a456-426614174000", description: "ID do material de estudo" },
-        },
-        required: ["id"],
+    const flashcards = material.flashcardsJson ? JSON.parse(material.flashcardsJson) : [];
+    return {
+      message: "Flashcards retornados com sucesso.",
+      material,
+      flashcards,
+      estatisticas: {
+        caminhoArquivo: material.caminhoArquivo,
+        dataUpload: material.criadoEm || null,
       },
-    })
-    @ApiResponse({ status: 201, description: "Quizzes gerados com sucesso a partir do PDF.", schema: {
+    };
+  }
+
+  @ApiOperation({ summary: "Gerar quizzes automáticos via IA a partir de PDF salvo" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          example: "123e4567-e89b-12d3-a456-426614174000",
+          description: "ID do material de estudo",
+        },
+      },
+      required: ["id"],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Quizzes gerados com sucesso a partir do PDF.",
+    schema: {
       type: "object",
       properties: {
         message: { type: "string" },
@@ -878,56 +980,56 @@ export class MateriaisController {
           },
         },
       },
-    }})
-    @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
-    @Post('quizzes-pdf')
-    async gerarQuizzesPorPdf(@Body() body: any) {
-      const { id } = body;
-      if (!id) {
-        throw new BadRequestException('O id do material é obrigatório');
-      }
-      const material = await this.materiaisService.buscarMaterialPorId(id);
-      if (!material) {
-        throw new NotFoundException('Material não encontrado');
-      }
-      if (!material.caminhoArquivo) {
-        throw new BadRequestException('O material não possui PDF armazenado.');
-      }
-      const result = await this.materiaisService.gerarQuizzesIaPorPdfMaterial(material);
-      return {
-        message: 'Quizzes gerados com sucesso a partir do PDF.',
-        material: result.material,
-        quizzes: result.quizzes,
-        estatisticas: {
-          caminhoArquivo: material.caminhoArquivo,
-          dataUpload: new Date().toISOString(),
-        },
-      };
+    },
+  })
+  @ApiResponse({ status: 400, description: "O id do material é obrigatório ou inválido." })
+  @Post("quizzes-pdf")
+  async gerarQuizzesPorPdf(@Body() body: any) {
+    const { id } = body;
+    if (!id) {
+      throw new BadRequestException("O id do material é obrigatório");
     }
+    const material = await this.materiaisService.buscarMaterialPorId(id);
+    if (!material) {
+      throw new NotFoundException("Material não encontrado");
+    }
+    if (!material.caminhoArquivo) {
+      throw new BadRequestException("O material não possui PDF armazenado.");
+    }
+    const result = await this.materiaisService.gerarQuizzesIaPorPdfMaterial(material);
+    return {
+      message: "Quizzes gerados com sucesso a partir do PDF.",
+      material: result.material,
+      quizzes: result.quizzes,
+      estatisticas: {
+        caminhoArquivo: material.caminhoArquivo,
+        dataUpload: new Date().toISOString(),
+      },
+    };
+  }
 
-      @ApiOperation({ summary: "Obter quizzes gerados via IA a partir de PDF salvo" })
-      @ApiParam({ name: "id", required: true, description: "ID do material" })
-      @ApiResponse({ status: 200, description: "Quizzes retornados com sucesso." })
-      @ApiResponse({ status: 404, description: "Quizzes por PDF não encontrados." })
-      @Get('quizzes-pdf/:id')
-      async getQuizzesPorPdf(@Param('id') id: string, @Req() req: Request) {
-        const userId = (req.user as any)?.id || (req.user as any)?.userId;
-        const material = await this.materiaisService.obterPorId(id, userId);
-        if (!material || !material.caminhoArquivo) {
-          throw new NotFoundException('Quizzes por PDF não encontrados.');
-        }
-        const quizzes = material.quizzesJson ? JSON.parse(material.quizzesJson) : [];
-        return {
-          message: 'Quizzes retornados com sucesso.',
-          material,
-          quizzes,
-          estatisticas: {
-            caminhoArquivo: material.caminhoArquivo,
-            dataUpload: material.criadoEm || null,
-          },
-        };
-      }
-
+  @ApiOperation({ summary: "Obter quizzes gerados via IA a partir de PDF salvo" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Quizzes retornados com sucesso." })
+  @ApiResponse({ status: 404, description: "Quizzes por PDF não encontrados." })
+  @Get("quizzes-pdf/:id")
+  async getQuizzesPorPdf(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || !material.caminhoArquivo) {
+      throw new NotFoundException("Quizzes por PDF não encontrados.");
+    }
+    const quizzes = material.quizzesJson ? JSON.parse(material.quizzesJson) : [];
+    return {
+      message: "Quizzes retornados com sucesso.",
+      material,
+      quizzes,
+      estatisticas: {
+        caminhoArquivo: material.caminhoArquivo,
+        dataUpload: material.criadoEm || null,
+      },
+    };
+  }
 
   @ApiOperation({ summary: "Enviar mensagem ao tutor IA (chatbox)" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
@@ -940,32 +1042,40 @@ export class MateriaisController {
       required: ["mensagem"],
     },
   })
-  @ApiResponse({ status: 200, description: "Resposta do tutor IA retornada com sucesso.", schema: {
-    type: "object",
-    properties: {
-      message: { type: "string" },
-      respostaIa: { type: "string" },
-      chatMensagem: {
-        type: "object",
-        properties: {
-          id: { type: "string" },
-          materialId: { type: "string" },
-          autorId: { type: "string" },
-          mensagemUsuario: { type: "string" },
-          mensagemIa: { type: "string" },
-          horarioMensagem: { type: "string", format: "date-time" },
-          criadoEm: { type: "string", format: "date-time" },
+  @ApiResponse({
+    status: 200,
+    description: "Resposta do tutor IA retornada com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        respostaIa: { type: "string" },
+        chatMensagem: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            materialId: { type: "string" },
+            autorId: { type: "string" },
+            mensagemUsuario: { type: "string" },
+            mensagemIa: { type: "string" },
+            horarioMensagem: { type: "string", format: "date-time" },
+            criadoEm: { type: "string", format: "date-time" },
+          },
         },
       },
     },
-  }})
+  })
   @Post("chatbox/:id")
-  async enviarMensagemChatbox(@Param("id") id: string, @Req() req: Request, @Body() body: { mensagem: string }) {
+  async enviarMensagemChatbox(
+    @Param("id") id: string,
+    @Req() req: Request,
+    @Body() body: { mensagem: string },
+  ) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
     if (!body.mensagem || typeof body.mensagem !== "string") {
       throw new BadRequestException("Mensagem obrigatória.");
     }
-  const promptTutor = `Você é um tutor educacional. Responda de forma clara, objetiva e direta, em no máximo dois parágrafos. Não use <think> ou estrutura de planejamento. Seja breve e didático, focando apenas na explicação solicitada. Responda sempre em português do Brasil. Pergunta: "${body.mensagem}"`;
+    const promptTutor = `Você é um tutor educacional. Responda de forma clara, objetiva e direta, em no máximo dois parágrafos. Não use <think> ou estrutura de planejamento. Seja breve e didático, focando apenas na explicação solicitada. Responda sempre em português do Brasil. Pergunta: "${body.mensagem}"`;
     const respostaIa = await this.materiaisService.gerarRespostaTutorIa({ prompt: promptTutor });
     const chatMensagem = await this.materiaisService.salvarChatMensagem({
       materialId: id,
@@ -982,27 +1092,31 @@ export class MateriaisController {
 
   @ApiOperation({ summary: "Obter todas as mensagens enviadas pelo usuário no chatbox" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
-  @ApiResponse({ status: 200, description: "Mensagens do usuário retornadas com sucesso.", schema: {
-    type: "object",
-    properties: {
-      message: { type: "string" },
-      mensagensChatbox: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            materialId: { type: "string" },
-            autorId: { type: "string" },
-            mensagemUsuario: { type: "string" },
-            mensagemIa: { type: "string" },
-            horarioMensagem: { type: "string", format: "date-time" },
-            criadoEm: { type: "string", format: "date-time" },
+  @ApiResponse({
+    status: 200,
+    description: "Mensagens do usuário retornadas com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        mensagensChatbox: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              materialId: { type: "string" },
+              autorId: { type: "string" },
+              mensagemUsuario: { type: "string" },
+              mensagemIa: { type: "string" },
+              horarioMensagem: { type: "string", format: "date-time" },
+              criadoEm: { type: "string", format: "date-time" },
+            },
           },
         },
       },
     },
-  }})
+  })
   @Get("chatbox/mensagens-usuario/:id")
   async getMensagensUsuarioChatbox(@Param("id") id: string, @Req() req: Request) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
@@ -1010,13 +1124,13 @@ export class MateriaisController {
       materialId: id,
       autorId: userId,
     });
-    const mensagensUsuario = mensagensChatbox.map(msg => ({
+    const mensagensUsuario = mensagensChatbox.map((msg) => ({
       id: msg.id,
       materialId: msg.materialId,
       autorId: msg.autorId,
       mensagemUsuario: msg.mensagemUsuario,
       horarioMensagem: msg.horarioMensagem,
-      criadoEm: msg.criadoEm
+      criadoEm: msg.criadoEm,
     }));
     return {
       message: "Mensagens do usuário retornadas com sucesso.",
@@ -1026,26 +1140,30 @@ export class MateriaisController {
 
   @ApiOperation({ summary: "Obter todas as mensagens da IA no chatbox" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
-  @ApiResponse({ status: 200, description: "Mensagens da IA retornadas com sucesso.", schema: {
-    type: "object",
-    properties: {
-      message: { type: "string" },
-      mensagensIa: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            materialId: { type: "string" },
-            autorId: { type: "string" },
-            mensagemIa: { type: "string" },
-            horarioMensagem: { type: "string", format: "date-time" },
-            criadoEm: { type: "string", format: "date-time" },
-          }
-        }
-      }
-    }
-  }})
+  @ApiResponse({
+    status: 200,
+    description: "Mensagens da IA retornadas com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        mensagensIa: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              materialId: { type: "string" },
+              autorId: { type: "string" },
+              mensagemIa: { type: "string" },
+              horarioMensagem: { type: "string", format: "date-time" },
+              criadoEm: { type: "string", format: "date-time" },
+            },
+          },
+        },
+      },
+    },
+  })
   @Get("chatbox/mensagens-IA/:id")
   async getMensagensIaChatbox(@Param("id") id: string, @Req() req: Request) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
@@ -1053,13 +1171,13 @@ export class MateriaisController {
       materialId: id,
       autorId: userId,
     });
-    const mensagensIa = mensagensChatbox.map(msg => ({
+    const mensagensIa = mensagensChatbox.map((msg) => ({
       id: msg.id,
       materialId: msg.materialId,
       autorId: msg.autorId,
       mensagemIa: msg.mensagemIa,
       horarioMensagem: msg.horarioMensagem,
-      criadoEm: msg.criadoEm
+      criadoEm: msg.criadoEm,
     }));
     return {
       message: "Mensagens da IA retornadas com sucesso.",
@@ -1073,13 +1191,16 @@ export class MateriaisController {
     schema: {
       type: "object",
       properties: {
-        questaoIndex: { type: "number", example: 0, description: "Índice da questão respondida (começa em 0)" },
+        questaoIndex: {
+          type: "number",
+          example: 0,
+          description: "Índice da questão respondida (começa em 0)",
+        },
         resposta: { type: "string", example: "A", description: "Resposta do usuário" },
       },
       required: ["questaoIndex", "resposta"],
     },
   })
-
   @ApiResponse({ status: 201, description: "Resposta armazenada com sucesso." })
   @ApiResponse({
     status: 201,
@@ -1090,12 +1211,16 @@ export class MateriaisController {
         message: { type: "string" },
         questaoRespondida: { type: "number" },
         totalQuestoes: { type: "number" },
-        resposta: { type: "string" }
-      }
-    }
+        resposta: { type: "string" },
+      },
+    },
   })
   @Post("responder-questao/:id")
-  async responderQuestaoMaterial(@Param("id") id: string, @Req() req: Request, @Body() body: { questaoIndex: number, resposta: string }) {
+  async responderQuestaoMaterial(
+    @Param("id") id: string,
+    @Req() req: Request,
+    @Body() body: { questaoIndex: number; resposta: string },
+  ) {
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
     if (typeof body.questaoIndex !== "number" || !body.resposta) {
       throw new BadRequestException("questaoIndex e resposta são obrigatórios.");
@@ -1106,7 +1231,7 @@ export class MateriaisController {
     }
     const quizzes = JSON.parse(material.quizzesJson);
     const totalQuestoes = quizzes.length;
-  let respostasQuiz: Record<string, string> = {};
+    let respostasQuiz: Record<string, string> = {};
     if (material.respostasQuizJson) {
       try {
         respostasQuiz = JSON.parse(material.respostasQuizJson);
@@ -1114,13 +1239,13 @@ export class MateriaisController {
         respostasQuiz = {};
       }
     }
-  respostasQuiz[String(body.questaoIndex)] = body.resposta;
+    respostasQuiz[String(body.questaoIndex)] = body.resposta;
     await this.materiaisService.atualizarRespostasQuiz(id, userId, respostasQuiz);
     return {
       message: `Questão ${body.questaoIndex + 1} de ${totalQuestoes} respondida!`,
       questaoRespondida: body.questaoIndex + 1,
       totalQuestoes,
-      resposta: body.resposta
+      resposta: body.resposta,
     };
   }
 
@@ -1137,9 +1262,9 @@ export class MateriaisController {
         respondidas: { type: "number" },
         totalQuestoes: { type: "number" },
         finalizado: { type: "boolean" },
-        mensagem: { type: "string" }
-      }
-    }
+        mensagem: { type: "string" },
+      },
+    },
   })
   @Get("respostas-quiz/:id")
   async getRespostasQuiz(@Param("id") id: string, @Req() req: Request) {
@@ -1168,7 +1293,7 @@ export class MateriaisController {
       respondidas,
       totalQuestoes,
       finalizado,
-      mensagem
+      mensagem,
     };
   }
 
@@ -1193,14 +1318,20 @@ export class MateriaisController {
         xp: { type: "number", description: "XP obtida nesta atividade" },
         xpAnterior: { type: "number", description: "XP do usuário antes da atividade" },
         xpFinal: { type: "number", description: "XP total do usuário após a atividade" },
-        progresso: { type: "number", description: "Progresso percentual para o próximo nível (0-100)" },
+        progresso: {
+          type: "number",
+          description: "Progresso percentual para o próximo nível (0-100)",
+        },
         nivel: { type: "string", description: "Nome do nível atual do usuário" },
-        mensagem: { type: "string", description: "Mensagem informativa sobre o resultado" }
-      }
-    }
+        mensagem: { type: "string", description: "Mensagem informativa sobre o resultado" },
+      },
+    },
   })
   @Post("calcular-xp-quiz/:id")
-  async calcularXpQuiz(@Param("id") materialId: string, @Body() body: { totalQuestoes: number, certas: number }) {
+  async calcularXpQuiz(
+    @Param("id") materialId: string,
+    @Body() body: { totalQuestoes: number; certas: number },
+  ) {
     const { ExperienciaService } = await import("../experiencia/experiencia.service");
     const prisma = this.materiaisService["prisma"];
     const material = await prisma.materialEstudo.findUnique({ where: { id: materialId } });
@@ -1209,8 +1340,11 @@ export class MateriaisController {
     }
     const usuarioId = material.autorId;
     const experienciaService = new ExperienciaService(prisma);
-    const result = await experienciaService.calcularXpQuiz(usuarioId, body.totalQuestoes, body.certas);
+    const result = await experienciaService.calcularXpQuiz(
+      usuarioId,
+      body.totalQuestoes,
+      body.certas,
+    );
     return result;
   }
-
 }

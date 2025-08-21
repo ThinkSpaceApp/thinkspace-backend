@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class ConfiguracoesService {
@@ -22,7 +22,10 @@ export class ConfiguracoesService {
   }
 
   async alterarNivelEscolaridade(userId: string, escolaridade: string) {
-    return this.prisma.usuario.update({ where: { id: userId }, data: { escolaridade: escolaridade as any } });
+    return this.prisma.usuario.update({
+      where: { id: userId },
+      data: { escolaridade: escolaridade as any },
+    });
   }
 
   async suspenderConta(userId: string) {

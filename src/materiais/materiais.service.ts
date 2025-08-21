@@ -15,7 +15,11 @@ export class MateriaisService {
   async extrairTextoPdf(caminhoArquivo: string): Promise<string> {
     return await this.pdfProcessor.extrairTextoDoPdf(caminhoArquivo);
   }
-  async atualizarRespostasQuiz(materialId: string, userId: string, respostasQuiz: Record<string | number, string>) {
+  async atualizarRespostasQuiz(
+    materialId: string,
+    userId: string,
+    respostasQuiz: Record<string | number, string>,
+  ) {
     return await this.prisma.materialEstudo.update({
       where: { id: materialId },
       data: {
@@ -42,20 +46,20 @@ export class MateriaisService {
     caminhoArquivo?: string;
     tipoMaterial?: string;
     quantidade: number;
-    origem: 'TOPICOS' | 'DOCUMENTO' | 'PDF' | 'ASSUNTO';
+    origem: "TOPICOS" | "DOCUMENTO" | "PDF" | "ASSUNTO";
     textoConteudo?: string;
     assunto?: string;
   }) {
-    let textoBase = textoConteudo || '';
-    if (origem === 'PDF' && caminhoArquivo) {
+    let textoBase = textoConteudo || "";
+    if (origem === "PDF" && caminhoArquivo) {
       textoBase = await this.pdfProcessor.extrairTextoDoPdf(caminhoArquivo);
-    } else if (origem === 'TOPICOS' && topicos) {
-      textoBase = topicos.join(', ');
-    } else if (origem === 'ASSUNTO' && assunto) {
+    } else if (origem === "TOPICOS" && topicos) {
+      textoBase = topicos.join(", ");
+    } else if (origem === "ASSUNTO" && assunto) {
       textoBase = assunto;
     }
     if (!textoBase || textoBase.trim().length === 0) {
-      throw new Error('Não foi possível obter o conteúdo base para gerar quizzes.');
+      throw new Error("Não foi possível obter o conteúdo base para gerar quizzes.");
     }
     const prompt = `Gere ${quantidade} questões de múltipla escolha sobre o conteúdo abaixo. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     const quizzesJson = await this.glm45Service.gerarTextoEducativo({
@@ -73,9 +77,9 @@ export class MateriaisService {
     } catch {
       quizzes = [];
     }
-    if (!materiaId) throw new Error('O parâmetro materiaId é obrigatório.');
+    if (!materiaId) throw new Error("O parâmetro materiaId é obrigatório.");
     const material = await this.prisma.materialEstudo.findUnique({ where: { id: materiaId } });
-    if (!material) throw new Error('Material não encontrado para atualizar quizzes.');
+    if (!material) throw new Error("Material não encontrado para atualizar quizzes.");
     const updatedMaterial = await this.prisma.materialEstudo.update({
       where: { id: material.id },
       data: {
@@ -109,32 +113,32 @@ export class MateriaisService {
     caminhoArquivo?: string;
     tipoMaterial?: string;
     quantidade: number;
-    origem: 'TOPICOS' | 'DOCUMENTO' | 'PDF';
+    origem: "TOPICOS" | "DOCUMENTO" | "PDF";
     textoConteudo?: string;
   }) {
-    let textoBase = textoConteudo || '';
-    if (origem === 'PDF' && caminhoArquivo) {
+    let textoBase = textoConteudo || "";
+    if (origem === "PDF" && caminhoArquivo) {
       textoBase = await this.pdfProcessor.extrairTextoDoPdf(caminhoArquivo);
-    } else if (origem === 'TOPICOS' && topicos) {
-      textoBase = topicos.join(', ');
+    } else if (origem === "TOPICOS" && topicos) {
+      textoBase = topicos.join(", ");
     }
     if (!textoBase || textoBase.trim().length === 0) {
-      throw new Error('Não foi possível obter o conteúdo base para gerar flashcards.');
+      throw new Error("Não foi possível obter o conteúdo base para gerar flashcards.");
     }
     const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o tema "${nomeDesignado}" e os tópicos: ${textoBase}. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
-      userPrompt: '',
+      userPrompt: "",
       maxTokens: 10000,
       temperature: 0.5,
       thinking: false,
     });
     if (flashcardsJson) {
-      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, (match) => {
         const jsonMatch = match.match(/\[.*\]/s);
-        return jsonMatch ? jsonMatch[0] : '';
+        return jsonMatch ? jsonMatch[0] : "";
       });
-      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, '').trim();
+      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, "").trim();
     }
     let flashcards: any[] = [];
     try {
@@ -142,7 +146,7 @@ export class MateriaisService {
     } catch {
       flashcards = [];
     }
-    if (Array.isArray(flashcards) && typeof quantidade === 'number' && quantidade > 0) {
+    if (Array.isArray(flashcards) && typeof quantidade === "number" && quantidade > 0) {
       flashcards = flashcards.slice(0, quantidade);
     }
     const material = await this.prisma.materialEstudo.findFirst({
@@ -152,7 +156,7 @@ export class MateriaisService {
         autorId: userId,
       },
     });
-    if (!material) throw new Error('Material não encontrado para atualizar flashcards.');
+    if (!material) throw new Error("Material não encontrado para atualizar flashcards.");
     const updatedMaterial = await this.prisma.materialEstudo.update({
       where: { id: material.id },
       data: {
@@ -166,10 +170,15 @@ export class MateriaisService {
       update: { quantidade: { increment: 1 } },
       create: { usuarioId: userId, data: hoje, quantidade: 1 },
     });
-  return { material: updatedMaterial, flashcards, respostaIaCrua: flashcardsJson };
+    return { material: updatedMaterial, flashcards, respostaIaCrua: flashcardsJson };
   }
 
-  async gerarResumoIaPorTopicos({ userId, nomeDesignado, materiaId, topicos }: {
+  async gerarResumoIaPorTopicos({
+    userId,
+    nomeDesignado,
+    materiaId,
+    topicos,
+  }: {
     userId: string;
     nomeDesignado: string;
     materiaId: string;
@@ -188,7 +197,7 @@ export class MateriaisService {
       console.log(`Texto base criado com ${textoParaResumo.length} caracteres`);
       console.log("Iniciando geração do resumo com IA usando GLM-4.5...");
       let resumoIA = await this.glm45Service.gerarTextoEducativo({
-  systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Todo o texto deve estar em português-br. Não inclua pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
+        systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Todo o texto deve estar em português-br. Não inclua pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
         userPrompt: textoParaResumo,
         maxTokens: 5000,
         temperature: 0.7,
@@ -227,11 +236,10 @@ export class MateriaisService {
       throw error;
     }
   }
-    async buscarMaterialPorId(id: string) {
-      return this.prisma.materialEstudo.findUnique({ where: { id } });
-    }
+  async buscarMaterialPorId(id: string) {
+    return this.prisma.materialEstudo.findUnique({ where: { id } });
+  }
   private progressoMaterial: Map<string, any> = new Map();
-
 
   async salvarProgressoMaterial(userId: string, dados: any) {
     const atual = this.progressoMaterial.get(userId) || {};
@@ -350,7 +358,13 @@ export class MateriaisService {
       descricao?: string;
     },
   ) {
-    if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.assunto || !data.tipoMaterial) {
+    if (
+      !data.nomeDesignado ||
+      !data.materiaId ||
+      !data.topicos?.length ||
+      !data.assunto ||
+      !data.tipoMaterial
+    ) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por assunto.");
     }
     return this.prisma.materialEstudo.create({
@@ -363,7 +377,7 @@ export class MateriaisService {
         assunto: data.assunto,
         autorId: userId,
         tipoMaterial: data.tipoMaterial as any,
-        conteudo: data.assunto, 
+        conteudo: data.assunto,
       },
     });
   }
@@ -425,13 +439,12 @@ export class MateriaisService {
 
       console.log(`Texto extraído com sucesso. Tamanho: ${textoExtraido.length} caracteres`);
 
-      let prompt =
-        `Você é um especialista em educação. Analise o texto extraído de um documento PDF abaixo e gere um resumo didático e detalhado, na mesma linguagem dos outros resumos da plataforma. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Se o conteúdo for muito curto ou superficial, adicione pontos relevantes e complementares para enriquecer o material. Se o conteúdo for muito extenso, resuma de forma clara e objetiva, mantendo os pontos principais. Reescreva o texto para torná-lo mais didático e organizado. Não inclua comentários ou texto extra, apenas o resumo final.`;
+      let prompt = `Você é um especialista em educação. Analise o texto extraído de um documento PDF abaixo e gere um resumo didático e detalhado, na mesma linguagem dos outros resumos da plataforma. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Se o conteúdo for muito curto ou superficial, adicione pontos relevantes e complementares para enriquecer o material. Se o conteúdo for muito extenso, resuma de forma clara e objetiva, mantendo os pontos principais. Reescreva o texto para torná-lo mais didático e organizado. Não inclua comentários ou texto extra, apenas o resumo final.`;
 
       const maxTokens = 5000;
 
       let resumoIA = await this.glm45Service.gerarTextoEducativo({
-  systemPrompt: prompt,
+        systemPrompt: prompt,
         userPrompt: textoExtraido,
         maxTokens,
         temperature: 0.7,
@@ -464,7 +477,6 @@ export class MateriaisService {
 
       console.log(`Material criado com sucesso. ID: ${material.id}`);
       return material;
-
     } catch (error) {
       console.error("Erro ao processar PDF:", error);
       throw error;
@@ -518,7 +530,8 @@ export class MateriaisService {
       }
       console.log(`Texto base criado com ${textoParaResumo.length} caracteres`);
       let resumoIA = await this.glm45Service.gerarTextoEducativo({
-        systemPrompt: 'Você é um especialista em educação. Gere um texto didático e detalhado sobre o tema abaixo. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Use o texto fornecido como base para o resumo.',
+        systemPrompt:
+          "Você é um especialista em educação. Gere um texto didático e detalhado sobre o tema abaixo. O texto deve estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Use o texto fornecido como base para o resumo.",
         userPrompt: textoParaResumo,
         maxTokens: 5000,
         temperature: 0.7,
@@ -567,7 +580,7 @@ export class MateriaisService {
       throw new Error("Não foi possível montar o texto base para o resumo IA.");
     }
     let resumoIA = await this.glm45Service.gerarTextoEducativo({
-  systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Todo o texto deve estar em português-br. Não inclua pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
+      systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Todo o texto deve estar em português-br. Não inclua pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
       userPrompt: textoParaResumo,
       maxTokens: 5000,
       temperature: 0.7,
@@ -594,13 +607,16 @@ export class MateriaisService {
         textoBase += `\n\nTópicos complementares: ${topicos.map((t: any) => t.nome || t).join(", ")}`;
       }
     } else {
-      textoBase = topicos.length > 0 ? topicos.map((t: any) => t.nome || t).join(", ") : material.conteudo || "";
+      textoBase =
+        topicos.length > 0
+          ? topicos.map((t: any) => t.nome || t).join(", ")
+          : material.conteudo || "";
     }
     if (!textoBase || textoBase.trim().length === 0) {
       throw new Error("Não foi possível obter o conteúdo base para gerar flashcards.");
     }
-  const quantidade = material.quantidadeFlashcards || 10;
-  const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o tema e tópicos abaixo. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    const quantidade = material.quantidadeFlashcards || 10;
+    const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o tema e tópicos abaixo. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
@@ -609,11 +625,11 @@ export class MateriaisService {
       thinking: false,
     });
     if (flashcardsJson) {
-      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, (match) => {
         const jsonMatch = match.match(/\[.*\]/s);
-        return jsonMatch ? jsonMatch[0] : '';
+        return jsonMatch ? jsonMatch[0] : "";
       });
-      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, '').trim();
+      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, "").trim();
     }
     let flashcards: any[] = [];
     try {
@@ -640,13 +656,16 @@ export class MateriaisService {
         textoBase += `\n\nTópicos complementares: ${topicos.map((t: any) => t.nome || t).join(", ")}`;
       }
     } else {
-      textoBase = topicos.length > 0 ? topicos.map((t: any) => t.nome || t).join(", ") : material.conteudo || "";
+      textoBase =
+        topicos.length > 0
+          ? topicos.map((t: any) => t.nome || t).join(", ")
+          : material.conteudo || "";
     }
     if (!textoBase || textoBase.trim().length === 0) {
       throw new Error("Não foi possível obter o conteúdo base para gerar quizzes.");
     }
-  const quantidade = material.quantidadeQuestoes || 10;
-  const prompt = `Gere ${quantidade} questões de múltipla escolha sobre o tema e tópicos abaixo. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    const quantidade = material.quantidadeQuestoes || 10;
+    const prompt = `Gere ${quantidade} questões de múltipla escolha sobre o tema e tópicos abaixo. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let quizzesJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
@@ -655,11 +674,11 @@ export class MateriaisService {
       thinking: false,
     });
     if (quizzesJson) {
-      quizzesJson = quizzesJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+      quizzesJson = quizzesJson.replace(/<think>[\s\S]*?<\/think>/gi, (match) => {
         const jsonMatch = match.match(/\[.*\]/s);
-        return jsonMatch ? jsonMatch[0] : '';
+        return jsonMatch ? jsonMatch[0] : "";
       });
-      quizzesJson = quizzesJson.replace(/<think>|<\/think>/gi, '').trim();
+      quizzesJson = quizzesJson.replace(/<think>|<\/think>/gi, "").trim();
     }
     let quizzes: any[] = [];
     try {
@@ -680,14 +699,14 @@ export class MateriaisService {
   async gerarQuizzesIaPorPdfMaterial(material: any, caminhoArquivo?: string) {
     const pdfPath = caminhoArquivo || material.caminhoArquivo;
     if (!pdfPath) {
-      throw new Error('O material não possui PDF armazenado.');
+      throw new Error("O material não possui PDF armazenado.");
     }
     const textoBase = await this.pdfProcessor.extrairTextoDoPdf(pdfPath);
     if (!textoBase || textoBase.trim().length === 0) {
-      throw new Error('Não foi possível extrair texto do PDF para gerar quizzes.');
+      throw new Error("Não foi possível extrair texto do PDF para gerar quizzes.");
     }
-  const quantidade = material.quantidadeQuestoes || 10;
-  const prompt = `Gere ${quantidade} questões de múltipla escolha sobre o conteúdo abaixo extraído de um PDF. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    const quantidade = material.quantidadeQuestoes || 10;
+    const prompt = `Gere ${quantidade} questões de múltipla escolha sobre o conteúdo abaixo extraído de um PDF. Cada questão deve conter uma pergunta clara e objetiva, 4 alternativas (A, B, C, D), e indicar a alternativa correta. Formate como uma lista JSON: [{"pergunta": "...", "alternativas": ["A) ...", "B) ...", "C) ...", "D) ..."], "correta": "A"}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let quizzesJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
@@ -696,11 +715,11 @@ export class MateriaisService {
       thinking: false,
     });
     if (quizzesJson) {
-      quizzesJson = quizzesJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+      quizzesJson = quizzesJson.replace(/<think>[\s\S]*?<\/think>/gi, (match) => {
         const jsonMatch = match.match(/\[.*\]/s);
-        return jsonMatch ? jsonMatch[0] : '';
+        return jsonMatch ? jsonMatch[0] : "";
       });
-      quizzesJson = quizzesJson.replace(/<think>|<\/think>/gi, '').trim();
+      quizzesJson = quizzesJson.replace(/<think>|<\/think>/gi, "").trim();
     }
     let quizzes: any[] = [];
     try {
@@ -719,7 +738,7 @@ export class MateriaisService {
   }
 
   private montarTextoParaResumo(assunto: string, topicos: string[]): string {
-    const topicosFormatados = topicos.map(t => `- ${t}`).join('\n');
+    const topicosFormatados = topicos.map((t) => `- ${t}`).join("\n");
 
     return `
 
@@ -742,22 +761,26 @@ ${topicosFormatados}
 `;
   }
 
-async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
-  let resposta = await this.glm45Service.gerarTextoEducativo({
-    systemPrompt: prompt,
-    userPrompt: "",
-    maxTokens: 10000,
-    temperature: 0.7,
-    thinking: false,
-  });
-  if (resposta) {
-    resposta = resposta.replace(/<think>/gi, "").replace(/<\/think>/gi, "").trim();
+  async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
+    let resposta = await this.glm45Service.gerarTextoEducativo({
+      systemPrompt: prompt,
+      userPrompt: "",
+      maxTokens: 10000,
+      temperature: 0.7,
+      thinking: false,
+    });
+    if (resposta) {
+      resposta = resposta
+        .replace(/<think>/gi, "")
+        .replace(/<\/think>/gi, "")
+        .trim();
+    }
+    if (!resposta || resposta === "") {
+      resposta =
+        "Desculpe, não consegui gerar uma resposta no momento. Tente novamente ou reformule sua pergunta.";
+    }
+    return resposta;
   }
-  if (!resposta || resposta === "") {
-    resposta = "Desculpe, não consegui gerar uma resposta no momento. Tente novamente ou reformule sua pergunta.";
-  }
-  return resposta;
-}
 
   async atualizarChatHistory(materialId: string, chatHistory: any[]) {
     await this.prisma.materialEstudo.update({
@@ -769,16 +792,16 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
   async gerarResumoIaPorPdfMaterial(material: any, caminhoArquivo?: string) {
     const pdfPath = caminhoArquivo || material.caminhoArquivo;
     if (!pdfPath) {
-      throw new Error('O material não possui PDF armazenado.');
+      throw new Error("O material não possui PDF armazenado.");
     }
     const textoBase = await this.pdfProcessor.extrairTextoDoPdf(pdfPath);
     if (!textoBase || textoBase.trim().length === 0) {
-      throw new Error('Não foi possível extrair texto do PDF para gerar resumo.');
+      throw new Error("Não foi possível extrair texto do PDF para gerar resumo.");
     }
-  const markdownPrompt = `Gere um resumo didático e detalhado sobre o conteúdo abaixo extraído de um PDF. O texto deve ser claro, objetivo, acessível para iniciantes, estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar.`;
-  const prompt = `Gere um resumo didático e detalhado sobre o conteúdo abaixo extraído de um PDF. O texto deve ser claro, objetivo, acessível para iniciantes, estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar.`;
+    const markdownPrompt = `Gere um resumo didático e detalhado sobre o conteúdo abaixo extraído de um PDF. O texto deve ser claro, objetivo, acessível para iniciantes, estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar.`;
+    const prompt = `Gere um resumo didático e detalhado sobre o conteúdo abaixo extraído de um PDF. O texto deve ser claro, objetivo, acessível para iniciantes, estar em português-br e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Não deve incluir pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar.`;
     let resumoIA = await this.glm45Service.gerarTextoEducativo({
-  systemPrompt: markdownPrompt,
+      systemPrompt: markdownPrompt,
       userPrompt: textoBase,
       maxTokens: 5000,
       temperature: 0.7,
@@ -802,14 +825,14 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
   async gerarFlashcardsIaPorPdfMaterial(material: any, caminhoArquivo?: string) {
     const pdfPath = caminhoArquivo || material.caminhoArquivo;
     if (!pdfPath) {
-      throw new Error('O material não possui PDF armazenado.');
+      throw new Error("O material não possui PDF armazenado.");
     }
     const textoBase = await this.pdfProcessor.extrairTextoDoPdf(pdfPath);
     if (!textoBase || textoBase.trim().length === 0) {
-      throw new Error('Não foi possível extrair texto do PDF para gerar flashcards.');
+      throw new Error("Não foi possível extrair texto do PDF para gerar flashcards.");
     }
-  const quantidade = material.quantidadeFlashcards || 10;
-  const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o conteúdo abaixo extraído de um PDF. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
+    const quantidade = material.quantidadeFlashcards || 10;
+    const prompt = `Gere ${quantidade} flashcards didáticos e objetivos sobre o conteúdo abaixo extraído de um PDF. Cada flashcard deve conter uma pergunta e uma resposta curta, clara e direta, sem explicações longas. Formate como uma lista JSON: [{"pergunta": "...", "resposta": "..."}, ...]. Não inclua comentários ou texto extra, apenas a lista JSON.`;
     let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
@@ -818,11 +841,11 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
       thinking: false,
     });
     if (flashcardsJson) {
-      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, match => {
+      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, (match) => {
         const jsonMatch = match.match(/\[.*\]/s);
-        return jsonMatch ? jsonMatch[0] : '';
+        return jsonMatch ? jsonMatch[0] : "";
       });
-      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, '').trim();
+      flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, "").trim();
     }
     let flashcards: any[] = [];
     try {
@@ -840,7 +863,12 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
     return { material: updatedMaterial, flashcards };
   }
 
-    async salvarChatMensagem({ materialId, autorId, mensagemUsuario, mensagemIa }: {
+  async salvarChatMensagem({
+    materialId,
+    autorId,
+    mensagemUsuario,
+    mensagemIa,
+  }: {
     materialId: string;
     autorId: string;
     mensagemUsuario: string;
@@ -857,14 +885,20 @@ async gerarRespostaTutorIa({ prompt }: { prompt: string }) {
     });
   }
 
-  async buscarMensagensChatboxUsuario({ materialId, autorId }: { materialId: string; autorId: string }) {
+  async buscarMensagensChatboxUsuario({
+    materialId,
+    autorId,
+  }: {
+    materialId: string;
+    autorId: string;
+  }) {
     return await this.prisma.chatMensagem.findMany({
       where: {
         materialId,
         autorId,
       },
       orderBy: {
-        horarioMensagem: 'asc',
+        horarioMensagem: "asc",
       },
     });
   }

@@ -10,7 +10,6 @@ import { salaEstudoService } from "../salaEstudo/salaEstudo.service";
 @ApiBearerAuth()
 @UseGuards(AuthGuard("jwt"))
 @Controller("home")
-
 export class HomeController {
   @ApiOperation({ summary: "Verificar status da ofensiva semanal do usuário" })
   @ApiResponse({ status: 200, description: "Status semanal retornado com sucesso." })
@@ -22,8 +21,8 @@ export class HomeController {
     }
     const metrica = await this.usersService.getMetricaSemanal(userId);
     return {
-      dias: metrica.diasSemana.map(d => d.data),
-      status: metrica.diasSemana.map(d => d.status),
+      dias: metrica.diasSemana.map((d) => d.data),
+      status: metrica.diasSemana.map((d) => d.status),
       message: "Status semanal da ofensiva calculado com sucesso.",
     };
   }
@@ -70,8 +69,8 @@ export class HomeController {
     const salas = await this.usersService.getSalasEstudoByEmail(userJwt.email);
 
     const ultimosUsuarios = await this.prisma.usuario.findMany({
-      where: { funcao: 'ESTUDANTE' },
-      orderBy: { ultimoLogin: 'desc' },
+      where: { funcao: "ESTUDANTE" },
+      orderBy: { ultimoLogin: "desc" },
       take: 4,
       select: {
         primeiroNome: true,
@@ -79,30 +78,33 @@ export class HomeController {
         foto: true,
         id: true,
         nomeCompleto: true,
-        email: true
-      }
+        email: true,
+      },
     });
-    const avatares = ultimosUsuarios.map(u => {
-      if (u.foto && !u.foto.includes('ui-avatars.com/api/?name=User')) {
+    const avatares = ultimosUsuarios.map((u) => {
+      if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
         return u.foto;
       }
-      let iniciais = '';
-      const nome = u.primeiroNome?.trim() || '';
-      const sobrenome = u.sobrenome?.trim() || '';
+      let iniciais = "";
+      const nome = u.primeiroNome?.trim() || "";
+      const sobrenome = u.sobrenome?.trim() || "";
       if (nome || sobrenome) {
         iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
       } else if (u.nomeCompleto) {
-        const partes = u.nomeCompleto.trim().split(' ');
-        iniciais = partes.length > 1 ? `${partes[0][0]}${partes[1][0]}`.toUpperCase() : `${partes[0][0]}`.toUpperCase();
+        const partes = u.nomeCompleto.trim().split(" ");
+        iniciais =
+          partes.length > 1
+            ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+            : `${partes[0][0]}`.toUpperCase();
       } else if (u.email) {
         iniciais = u.email.charAt(0).toUpperCase();
       } else {
-        iniciais = 'U';
+        iniciais = "U";
       }
       return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=8e44ad&color=fff`;
     });
 
-    const totalEstudantes = await this.prisma.usuario.count({ where: { funcao: 'ESTUDANTE' } });
+    const totalEstudantes = await this.prisma.usuario.count({ where: { funcao: "ESTUDANTE" } });
 
     return {
       ...salas,
@@ -117,7 +119,7 @@ export class HomeController {
   async getMaterias(@Req() req: Request) {
     const userJwt = req.user as { userId: string };
     const materias = await this.usersService.getMateriasByUserId(userJwt.userId);
-    materias.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+    materias.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
     return materias;
   }
 
