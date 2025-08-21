@@ -136,15 +136,26 @@ export class HomeController {
         const materiais = await this.prisma.materialEstudo.findMany({ where: { materiaId: materia.id } });
         let xpAcumulada = 0;
         for (const material of materiais) {
-          if (material.quizzesJson) {
-            try {
-              const quizzes = JSON.parse(material.quizzesJson);
-              if (Array.isArray(quizzes)) {
-                xpAcumulada += quizzes.reduce((acc, quiz) => acc + (quiz.xp || 0), 0);
+          let quizzes = [];
+          let respostas: Record<string, any> = {};
+          try {
+            quizzes = material.quizzesJson ? JSON.parse(material.quizzesJson) : [];
+          } catch {}
+          try {
+            respostas = material.respostasQuizJson ? JSON.parse(material.respostasQuizJson) : {};
+          } catch {}
+          quizzes.forEach((quiz: { correta: any }, idx: number) => {
+            const respostaUsuario = respostas[idx] || respostas[String(idx)];
+            if (respostaUsuario) {
+              if (respostaUsuario === quiz.correta) {
+                xpAcumulada += 5;
+              } else {
+                xpAcumulada -= 2;
               }
-            } catch {}
-          }
+            }
+          });
         }
+        if (xpAcumulada < 0) xpAcumulada = 0;
         const barraProgresso = Math.min(100, Math.round((xpAcumulada / 500) * 100));
         return {
           ...materia,
