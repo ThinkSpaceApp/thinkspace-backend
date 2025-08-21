@@ -92,12 +92,14 @@ export class MetricasService {
       try {
         respostas = material.respostasQuizJson ? JSON.parse(material.respostasQuizJson) : {};
       } catch {}
-    const materialDate = material.criadoEm ? toZonedTime(new Date(material.criadoEm), timeZone) : null;
+      const materialDate = material.criadoEm ? toZonedTime(new Date(material.criadoEm), timeZone) : null;
       const dateKey = materialDate ? materialDate.toISOString().slice(0, 10) : null;
       if (dateKey) {
-      if (materialDate && materialDate >= toZonedTime(inicioSemana, timeZone) && materialDate <= toZonedTime(fimSemana, timeZone)) {
+        if (materialDate && materialDate >= toZonedTime(inicioSemana, timeZone) && materialDate <= toZonedTime(fimSemana, timeZone)) {
           let realizadasHoje = 0;
           let xpMateria = 0;
+          let questoesCertasXp = 0;
+          let questoesErradasXp = 0;
           quizzes.forEach((quiz, idx) => {
             totalQuestoes++;
             const respostaUsuario = respostas[idx] || respostas[String(idx)];
@@ -112,6 +114,15 @@ export class MetricasService {
               }
             }
           });
+          // Se não houver respostas, calcula acertos/erros pelo XP do usuário
+          if (realizadasHoje === 0 && material.quantidadeQuestoes && material.quantidadeQuestoes > 0) {
+            const experiencia = await this.prisma.experienciaUsuario.findUnique({ where: { usuarioId: userId } });
+            if (experiencia && experiencia.xp > 0) {
+              questoesCertasXp = Math.floor(experiencia.xp / 5);
+              acertos += questoesCertasXp;
+              erros += (material.quantidadeQuestoes - questoesCertasXp);
+            }
+          }
           questoesPorDia[dateKey] = (questoesPorDia[dateKey] || 0) + realizadasHoje;
           if (material.materia) {
             const matId = material.materia.id;

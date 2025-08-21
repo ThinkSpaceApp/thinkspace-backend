@@ -77,10 +77,30 @@ export class HomeController {
         primeiroNome: true,
         sobrenome: true,
         foto: true,
-        id: true
+        id: true,
+        nomeCompleto: true,
+        email: true
       }
     });
-    const avatares = ultimosUsuarios.map(u => u.foto || `https://ui-avatars.com/api/?name=${(u.primeiroNome?.charAt(0) ?? '')}${(u.sobrenome?.charAt(0) ?? '')}&background=8e44ad&color=fff`);
+    const avatares = ultimosUsuarios.map(u => {
+      if (u.foto && !u.foto.includes('ui-avatars.com/api/?name=User')) {
+        return u.foto;
+      }
+      let iniciais = '';
+      const nome = u.primeiroNome?.trim() || '';
+      const sobrenome = u.sobrenome?.trim() || '';
+      if (nome || sobrenome) {
+        iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+      } else if (u.nomeCompleto) {
+        const partes = u.nomeCompleto.trim().split(' ');
+        iniciais = partes.length > 1 ? `${partes[0][0]}${partes[1][0]}`.toUpperCase() : `${partes[0][0]}`.toUpperCase();
+      } else if (u.email) {
+        iniciais = u.email.charAt(0).toUpperCase();
+      } else {
+        iniciais = 'U';
+      }
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=8e44ad&color=fff`;
+    });
 
     const totalEstudantes = await this.prisma.usuario.count({ where: { funcao: 'ESTUDANTE' } });
 

@@ -107,7 +107,9 @@ export class salaEstudoController {
                   id: true,
                   email: true,
                   primeiroNome: true,
-                  sobrenome: true
+                  sobrenome: true,
+                  foto: true,
+                  nomeCompleto: true
                 }
               }
             }
@@ -120,6 +122,27 @@ export class salaEstudoController {
           message: 'Sala padrão não encontrada'
         });
       }
+        const avataresUltimosUsuarios = Array.isArray(defaultRoom.membros)
+          ? defaultRoom.membros.slice(-4).map(membro => {
+              if (membro.usuario.foto && !membro.usuario.foto.includes('ui-avatars.com/api/?name=User')) {
+                return membro.usuario.foto;
+              }
+              let iniciais = '';
+              const nome = membro.usuario.primeiroNome?.trim() || '';
+              const sobrenome = membro.usuario.sobrenome?.trim() || '';
+              if (nome || sobrenome) {
+                iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+              } else if (membro.usuario.nomeCompleto) {
+                const partes = membro.usuario.nomeCompleto.trim().split(' ');
+                iniciais = partes.length > 1 ? `${partes[0][0]}${partes[1][0]}`.toUpperCase() : `${partes[0][0]}`.toUpperCase();
+              } else if (membro.usuario.email) {
+                iniciais = membro.usuario.email.charAt(0).toUpperCase();
+              } else {
+                iniciais = 'U';
+              }
+              return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=8e44ad&color=fff`;
+            })
+          : [];
         return res.status(HttpStatus.OK).json({
           sala: {
             id: defaultRoom.id,
@@ -129,7 +152,8 @@ export class salaEstudoController {
             banner: defaultRoom.banner,
             moderadorId: defaultRoom.moderadorId,
             totalMembros: Array.isArray(defaultRoom.membros) ? defaultRoom.membros.length : 0,
-            topicosComunidade: Array.isArray(defaultRoom.TopicoComunidade) ? defaultRoom.TopicoComunidade.length : 0
+            topicosComunidade: Array.isArray(defaultRoom.TopicoComunidade) ? defaultRoom.TopicoComunidade.length : 0,
+            avataresUltimosUsuarios
           },
           membros: Array.isArray(defaultRoom.membros)
             ? defaultRoom.membros.map(membro => ({
