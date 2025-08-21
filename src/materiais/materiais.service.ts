@@ -73,19 +73,19 @@ export class MateriaisService {
     } catch {
       quizzes = [];
     }
-    const material = await this.prisma.materialEstudo.create({
-      data: {
-        titulo: nomeDesignado,
+    const material = await this.prisma.materialEstudo.findFirst({
+      where: {
         nomeDesignado,
         materiaId,
-        topicos,
-        origem: origem as any,
-        caminhoArquivo,
-        conteudo: textoBase,
-        quantidadeQuestoes: quizzes.length,
         autorId: userId,
-        tipoMaterial: (tipoMaterial as TipoMaterialEstudo) || (origem as any),
+      },
+    });
+    if (!material) throw new Error('Material não encontrado para atualizar quizzes.');
+    const updatedMaterial = await this.prisma.materialEstudo.update({
+      where: { id: material.id },
+      data: {
         quizzesJson: JSON.stringify(quizzes),
+        quantidadeQuestoes: quizzes.length,
       },
     });
     const hoje = new Date();
@@ -94,7 +94,7 @@ export class MateriaisService {
       update: { quantidade: { increment: 1 } },
       create: { usuarioId: userId, data: hoje, quantidade: 1 },
     });
-    return { material, quizzes };
+  return { material: updatedMaterial, quizzes };
   }
   async gerarFlashcards({
     userId,
@@ -150,19 +150,19 @@ export class MateriaisService {
     if (Array.isArray(flashcards) && typeof quantidade === 'number' && quantidade > 0) {
       flashcards = flashcards.slice(0, quantidade);
     }
-    const material = await this.prisma.materialEstudo.create({
-      data: {
-        titulo: nomeDesignado,
+    const material = await this.prisma.materialEstudo.findFirst({
+      where: {
         nomeDesignado,
         materiaId,
-        topicos,
-        origem: origem as any,
-        caminhoArquivo,
-        conteudo: textoBase,
-        quantidadeFlashcards: flashcards.length,
         autorId: userId,
-        tipoMaterial: (tipoMaterial as TipoMaterialEstudo) || (origem as any),
+      },
+    });
+    if (!material) throw new Error('Material não encontrado para atualizar flashcards.');
+    const updatedMaterial = await this.prisma.materialEstudo.update({
+      where: { id: material.id },
+      data: {
         flashcardsJson: JSON.stringify(flashcards),
+        quantidadeFlashcards: flashcards.length,
       },
     });
     const hoje = new Date();
@@ -171,7 +171,7 @@ export class MateriaisService {
       update: { quantidade: { increment: 1 } },
       create: { usuarioId: userId, data: hoje, quantidade: 1 },
     });
-    return { material, flashcards, respostaIaCrua: flashcardsJson };
+  return { material: updatedMaterial, flashcards, respostaIaCrua: flashcardsJson };
   }
 
   async gerarResumoIaPorTopicos({ userId, nomeDesignado, materiaId, topicos }: {
