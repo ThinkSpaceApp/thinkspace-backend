@@ -69,8 +69,9 @@ export class MetricasService {
         },
       },
     });
-    const totalDias = atividades.length;
-    const rendimentoSemanal = totalDias ? (atividades.filter(a => a.quantidade > 0).length / 7) * 100 : 0;
+  const diasComAtividade = new Set(atividades.filter(a => a.quantidade > 0).map(a => new Date(a.data).toISOString().slice(0, 10))).size;
+  const diasNaSemana = 7;
+  const rendimentoSemanal = diasNaSemana > 0 ? Math.min((diasComAtividade / diasNaSemana) * 100, 100) : 0;
 
     const materiais = await this.prisma.materialEstudo.findMany({
       where: { autorId: userId },
@@ -128,15 +129,19 @@ export class MetricasService {
         }
       }
     }
-    const percentualAcertos = totalQuestoes ? (acertos / totalQuestoes) * 100 : 0;
-    const percentualErros = totalQuestoes ? (erros / totalQuestoes) * 100 : 0;
-
+    const experiencia = await this.prisma.experienciaUsuario.findUnique({ where: { usuarioId: userId } });
+    if (acertos < 0) acertos = 0;
+    if (erros < 0) erros = 0;
+    let percentualAcertos = totalQuestoes ? (acertos / totalQuestoes) * 100 : 0;
+    let percentualErros = totalQuestoes ? (erros / totalQuestoes) * 100 : 0;
+    percentualAcertos = Math.max(0, Math.min(percentualAcertos, 100));
+    percentualErros = Math.max(0, Math.min(percentualErros, 100));
     const melhoresMaterias = Object.values(xpPorMateria)
       .sort((a, b) => b.xp - a.xp)
       .slice(0, 5);
-
     return {
       rendimentoSemanal: Number(rendimentoSemanal.toFixed(2)),
+      xp: experiencia ? experiencia.xp : 0,
       percentualAcertos: Number(percentualAcertos.toFixed(2)),
       percentualErros: Number(percentualErros.toFixed(2)),
       totalQuestoes,
