@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InferenceClient } from '@huggingface/inference';
+import { Injectable, Logger } from "@nestjs/common";
+import { InferenceClient } from "@huggingface/inference";
 
 @Injectable()
 export class Glm45Service {
@@ -7,7 +7,7 @@ export class Glm45Service {
   private readonly client: InferenceClient;
 
   constructor() {
-    const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || '';
+    const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || "";
     this.client = new InferenceClient(HF_TOKEN);
   }
 
@@ -30,26 +30,33 @@ export class Glm45Service {
         temperature,
       };
       if (thinking) {
-        parameters.thinking = { type: 'enabled' };
+        parameters.thinking = { type: "enabled" };
       }
       const resp = await this.client.chatCompletion({
-        model: 'zai-org/GLM-4.5',
+        model: "zai-org/GLM-4.5",
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
         ...parameters,
       });
       if (resp.text) {
-        return typeof resp.text === 'string' ? resp.text : JSON.stringify(resp.text);
+        return typeof resp.text === "string" ? resp.text : JSON.stringify(resp.text);
       }
-      if (resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content) {
+      if (
+        resp.choices &&
+        resp.choices[0] &&
+        resp.choices[0].message &&
+        resp.choices[0].message.content
+      ) {
         return resp.choices[0].message.content;
       }
-      return '';
+      return "";
     } catch (error) {
-      this.logger.error(`Erro ao gerar texto educativo com GLM-4.5: ${error instanceof Error ? error.message : String(error)}`);
-      return 'Erro ao gerar texto com IA.';
+      this.logger.error(
+        `Erro ao gerar texto educativo com GLM-4.5: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return "Erro ao gerar texto com IA.";
     }
   }
 }

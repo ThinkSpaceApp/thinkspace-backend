@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { toZonedTime } from 'date-fns-tz';
+import { toZonedTime } from "date-fns-tz";
 
 @Injectable()
 export class MetricasService {
   async getRanking() {
     const topExp = await this.prisma.experienciaUsuario.findMany({
-      orderBy: { xp: 'desc' },
+      orderBy: { xp: "desc" },
       take: 10,
       include: {
         usuario: {
@@ -32,33 +32,37 @@ export class MetricasService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getMetricasAluno(userId: string, weeksAgo: number = 0) {
-  const timeZone = 'America/Sao_Paulo';
-  const hoje = toZonedTime(new Date(), timeZone);
-  const dayOfWeek = hoje.getDay();
-  const inicioSemanaDate = new Date(hoje);
-  inicioSemanaDate.setDate(hoje.getDate() - dayOfWeek - (weeksAgo * 7));
-  inicioSemanaDate.setHours(0, 0, 0, 0);
-  const inicioSemana = new Date(Date.UTC(
-    inicioSemanaDate.getFullYear(),
-    inicioSemanaDate.getMonth(),
-    inicioSemanaDate.getDate(),
-    inicioSemanaDate.getHours(),
-    inicioSemanaDate.getMinutes(),
-    inicioSemanaDate.getSeconds(),
-    inicioSemanaDate.getMilliseconds()
-  ));
-  const fimSemanaDate = new Date(inicioSemanaDate);
-  fimSemanaDate.setDate(inicioSemanaDate.getDate() + 6);
-  fimSemanaDate.setHours(23, 59, 59, 999);
-  const fimSemana = new Date(Date.UTC(
-    fimSemanaDate.getFullYear(),
-    fimSemanaDate.getMonth(),
-    fimSemanaDate.getDate(),
-    fimSemanaDate.getHours(),
-    fimSemanaDate.getMinutes(),
-    fimSemanaDate.getSeconds(),
-    fimSemanaDate.getMilliseconds()
-  ));
+    const timeZone = "America/Sao_Paulo";
+    const hoje = toZonedTime(new Date(), timeZone);
+    const dayOfWeek = hoje.getDay();
+    const inicioSemanaDate = new Date(hoje);
+    inicioSemanaDate.setDate(hoje.getDate() - dayOfWeek - weeksAgo * 7);
+    inicioSemanaDate.setHours(0, 0, 0, 0);
+    const inicioSemana = new Date(
+      Date.UTC(
+        inicioSemanaDate.getFullYear(),
+        inicioSemanaDate.getMonth(),
+        inicioSemanaDate.getDate(),
+        inicioSemanaDate.getHours(),
+        inicioSemanaDate.getMinutes(),
+        inicioSemanaDate.getSeconds(),
+        inicioSemanaDate.getMilliseconds(),
+      ),
+    );
+    const fimSemanaDate = new Date(inicioSemanaDate);
+    fimSemanaDate.setDate(inicioSemanaDate.getDate() + 6);
+    fimSemanaDate.setHours(23, 59, 59, 999);
+    const fimSemana = new Date(
+      Date.UTC(
+        fimSemanaDate.getFullYear(),
+        fimSemanaDate.getMonth(),
+        fimSemanaDate.getDate(),
+        fimSemanaDate.getHours(),
+        fimSemanaDate.getMinutes(),
+        fimSemanaDate.getSeconds(),
+        fimSemanaDate.getMilliseconds(),
+      ),
+    );
 
     const atividades = await this.prisma.atividadeUsuario.findMany({
       where: {
@@ -69,20 +73,26 @@ export class MetricasService {
         },
       },
     });
-  const diasComAtividade = new Set(atividades.filter(a => a.quantidade > 0).map(a => new Date(a.data).toISOString().slice(0, 10))).size;
-  const diasNaSemana = 7;
-  const rendimentoSemanal = diasNaSemana > 0 ? Math.min((diasComAtividade / diasNaSemana) * 100, 100) : 0;
+    const diasComAtividade = new Set(
+      atividades
+        .filter((a) => a.quantidade > 0)
+        .map((a) => new Date(a.data).toISOString().slice(0, 10)),
+    ).size;
+    const diasNaSemana = 7;
+    const rendimentoSemanal =
+      diasNaSemana > 0 ? Math.min((diasComAtividade / diasNaSemana) * 100, 100) : 0;
 
     const materiais = await this.prisma.materialEstudo.findMany({
       where: { autorId: userId },
       include: { materia: true },
-      orderBy: { criadoEm: 'asc' },
+      orderBy: { criadoEm: "asc" },
     });
     let totalQuestoes = 0;
     let acertos = 0;
     let erros = 0;
     const questoesPorDia: Record<string, number> = {};
-    const xpPorMateria: Record<string, { nome: string, xp: number, cor: string, icone: string }> = {};
+    const xpPorMateria: Record<string, { nome: string; xp: number; cor: string; icone: string }> =
+      {};
 
     for (const material of materiais) {
       let quizzes: any[] = [];
@@ -93,10 +103,16 @@ export class MetricasService {
       try {
         respostas = material.respostasQuizJson ? JSON.parse(material.respostasQuizJson) : {};
       } catch {}
-    const materialDate = material.criadoEm ? toZonedTime(new Date(material.criadoEm), timeZone) : null;
+      const materialDate = material.criadoEm
+        ? toZonedTime(new Date(material.criadoEm), timeZone)
+        : null;
       const dateKey = materialDate ? materialDate.toISOString().slice(0, 10) : null;
       if (dateKey) {
-      if (materialDate && materialDate >= toZonedTime(inicioSemana, timeZone) && materialDate <= toZonedTime(fimSemana, timeZone)) {
+        if (
+          materialDate &&
+          materialDate >= toZonedTime(inicioSemana, timeZone) &&
+          materialDate <= toZonedTime(fimSemana, timeZone)
+        ) {
           let realizadasHoje = 0;
           let xpMateria = 0;
           quizzes.forEach((quiz, idx) => {
@@ -129,7 +145,9 @@ export class MetricasService {
         }
       }
     }
-    const experiencia = await this.prisma.experienciaUsuario.findUnique({ where: { usuarioId: userId } });
+    const experiencia = await this.prisma.experienciaUsuario.findUnique({
+      where: { usuarioId: userId },
+    });
     if (acertos < 0) acertos = 0;
     if (erros < 0) erros = 0;
     let percentualAcertos = totalQuestoes ? (acertos / totalQuestoes) * 100 : 0;
@@ -150,7 +168,7 @@ export class MetricasService {
       questoesPorDia,
       inicioSemana: inicioSemana.toISOString().slice(0, 10),
       fimSemana: fimSemana.toISOString().slice(0, 10),
-      melhoresMaterias
+      melhoresMaterias,
     };
   }
 }

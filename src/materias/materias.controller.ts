@@ -73,8 +73,12 @@ export class MateriasController {
       materias[0].materiais[0].criadoEm
     ) {
       return materias.sort((a, b) => {
-        const criadoEmA = a.materiais[0]?.criadoEm ? new Date(a.materiais[0].criadoEm).getTime() : 0;
-        const criadoEmB = b.materiais[0]?.criadoEm ? new Date(b.materiais[0].criadoEm).getTime() : 0;
+        const criadoEmA = a.materiais[0]?.criadoEm
+          ? new Date(a.materiais[0].criadoEm).getTime()
+          : 0;
+        const criadoEmB = b.materiais[0]?.criadoEm
+          ? new Date(b.materiais[0].criadoEm).getTime()
+          : 0;
         return criadoEmA - criadoEmB;
       });
     }
@@ -104,9 +108,11 @@ export class MateriasController {
       throw new BadRequestException("Nome, cor e ícone são obrigatórios.");
     }
     const userId = (req.user as any).userId;
-    const nomeNormalizado = body.nome.replace(/\s+/g, '').toUpperCase();
+    const nomeNormalizado = body.nome.replace(/\s+/g, "").toUpperCase();
     const materiaExistente = await this.usersService.getMateriasByUserId(userId);
-    if (materiaExistente.some(m => m.nome.replace(/\s+/g, '').toUpperCase() === nomeNormalizado)) {
+    if (
+      materiaExistente.some((m) => m.nome.replace(/\s+/g, "").toUpperCase() === nomeNormalizado)
+    ) {
       throw new BadRequestException("Já existe uma matéria com esse nome.");
     }
     const materia = await this.usersService.createMateria(userId, body);
@@ -175,7 +181,10 @@ export class MateriasController {
       await this.usersService.excluirMateria(id);
       return { message: "Matéria excluída com sucesso." };
     } catch (error: any) {
-      throw new BadRequestException("Erro ao excluir matéria e seus dados vinculados: " + (error?.message || "Erro desconhecido"));
+      throw new BadRequestException(
+        "Erro ao excluir matéria e seus dados vinculados: " +
+          (error?.message || "Erro desconhecido"),
+      );
     }
   }
 
@@ -252,14 +261,18 @@ export class MateriasController {
 
   @ApiOperation({ summary: "Obter informações detalhadas da matéria" })
   @ApiParam({ name: "id", required: true, description: "ID da matéria" })
-  @ApiResponse({ status: 200, description: "Informações da matéria retornadas com sucesso.", schema: {
-    type: "object",
-    properties: {
-      quantidadeMateriais: { type: "number" },
-      tempoAtivo: { type: "number", description: "Tempo ativo em minutos" },
-      ultimaRevisao: { type: "string", format: "date-time" },
+  @ApiResponse({
+    status: 200,
+    description: "Informações da matéria retornadas com sucesso.",
+    schema: {
+      type: "object",
+      properties: {
+        quantidadeMateriais: { type: "number" },
+        tempoAtivo: { type: "number", description: "Tempo ativo em minutos" },
+        ultimaRevisao: { type: "string", format: "date-time" },
+      },
     },
-  }})
+  })
   @ApiResponse({ status: 400, description: "Matéria não encontrada ou não pertence ao usuário." })
   @Get("informacoes/:id")
   async getInformacoesMateria(@Req() req: Request, @Param("id") id: string) {

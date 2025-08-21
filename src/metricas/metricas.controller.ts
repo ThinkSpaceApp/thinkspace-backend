@@ -1,26 +1,23 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { MetricasService } from './metricas.service';
+import { Controller, Get, Param, Query } from "@nestjs/common";
+import { MetricasService } from "./metricas.service";
 
-@Controller('metricas')
+@Controller("metricas")
 export class MetricasController {
   constructor(private readonly metricasService: MetricasService) {}
 
-  @Get('ranking')
+  @Get("ranking")
   async getRanking() {
     return await this.metricasService.getRanking();
   }
 
-  @Get(':userId')
-  async getMetricas(@Param('userId') userId: string, @Query('weeksAgo') weeksAgo?: string) {
+  @Get(":userId")
+  async getMetricas(@Param("userId") userId: string, @Query("weeksAgo") weeksAgo?: string) {
     const weeks = weeksAgo ? Number(weeksAgo) : 0;
     return await this.metricasService.getMetricasAluno(userId, weeks);
   }
 
-  @Get(':userId/melhores-materias')
-  async getMelhoresMaterias(
-    @Param('userId') userId: string,
-    @Query('weeksAgo') weeksAgo?: string
-  ) {
+  @Get(":userId/melhores-materias")
+  async getMelhoresMaterias(@Param("userId") userId: string, @Query("weeksAgo") weeksAgo?: string) {
     const weeks = weeksAgo ? Number(weeksAgo) : 0;
     const metricas = await this.metricasService.getMetricasAluno(userId, weeks);
     return metricas.melhoresMaterias;

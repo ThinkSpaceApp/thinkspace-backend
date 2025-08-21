@@ -19,7 +19,7 @@ export class UsersService {
   }
   constructor(
     private readonly prisma: PrismaService,
-    private readonly salaEstudoService: salaEstudoService
+    private readonly salaEstudoService: salaEstudoService,
   ) {}
 
   async findById(userId: string) {
@@ -173,7 +173,7 @@ export class UsersService {
           salasModeradas: true,
         },
       });
-      
+
       if (!user) {
         throw new BadRequestException("Usuário não encontrado.");
       }
@@ -187,8 +187,8 @@ export class UsersService {
         // salasModerador,
       };
     } catch (error) {
-      console.error('Erro em getSalasEstudoByEmail:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error("Erro em getSalasEstudoByEmail:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       throw new BadRequestException(`Erro ao buscar salas de estudo: ${errorMessage}`);
     }
   }
@@ -202,7 +202,7 @@ export class UsersService {
     });
     return materias.sort((a, b) => {
       if (!a.nome || !b.nome) return 0;
-      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+      return a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     });
   }
 
@@ -330,7 +330,7 @@ export class UsersService {
 
   async getMetricaSemanal(userId: string) {
     const hoje = new Date();
-    const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 }); 
+    const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 });
     const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
 
     const atividades = await this.prisma.atividadeUsuario.findMany({
@@ -350,14 +350,14 @@ export class UsersService {
       if (dia > hoje) {
         status = 0;
       } else if (isSameDay(dia, hoje)) {
-        const atividadeDia = atividades.find(a => isSameDay(a.data, dia));
+        const atividadeDia = atividades.find((a) => isSameDay(a.data, dia));
         if (atividadeDia) {
           status = 2;
         } else {
           status = 0;
         }
       } else {
-        const atividadeDia = atividades.find(a => isSameDay(a.data, dia));
+        const atividadeDia = atividades.find((a) => isSameDay(a.data, dia));
         if (atividadeDia) {
           status = 2;
         } else {
@@ -372,7 +372,8 @@ export class UsersService {
     }
     const diaHoje = hoje.getDay();
     const diasCompletos = diasSemana.slice(0, diaHoje + 1);
-    const rendimentoSemanal = diasCompletos.filter((d) => d.status === 2).length / diasCompletos.length;
+    const rendimentoSemanal =
+      diasCompletos.filter((d) => d.status === 2).length / diasCompletos.length;
     return {
       diasSemana,
       totalSemana,
@@ -428,11 +429,11 @@ export class UsersService {
   async testDatabase(email?: string) {
     try {
       const userCount = await this.prisma.usuario.count();
-      
+
       const salaCount = await this.prisma.salaEstudo.count();
-      
+
       const membroCount = await this.prisma.membroSala.count();
-      
+
       let userTest = null;
       if (email) {
         userTest = await this.prisma.usuario.findUnique({
@@ -447,22 +448,24 @@ export class UsersService {
           },
         });
       }
-      
+
       return {
         counts: {
           usuarios: userCount,
           salas: salaCount,
-          membros: membroCount
+          membros: membroCount,
         },
-        userTest: userTest ? {
-          id: userTest.id,
-          email: userTest.email,
-          membroSalasCount: userTest.membroSalas.length,
-          salasModeradasCount: userTest.salasModeradas.length
-        } : null
+        userTest: userTest
+          ? {
+              id: userTest.id,
+              email: userTest.email,
+              membroSalasCount: userTest.membroSalas.length,
+              salasModeradasCount: userTest.salasModeradas.length,
+            }
+          : null,
       };
     } catch (error) {
-      console.error('Erro no teste de banco de dados:', error);
+      console.error("Erro no teste de banco de dados:", error);
       throw error;
     }
   }
@@ -470,7 +473,7 @@ export class UsersService {
   async testDefaultRoom() {
     try {
       const defaultRoom = await this.prisma.salaEstudo.findFirst({
-        where: { nome: 'thinkspace' },
+        where: { nome: "thinkspace" },
         include: {
           membros: {
             include: {
@@ -479,18 +482,18 @@ export class UsersService {
                   id: true,
                   email: true,
                   primeiroNome: true,
-                  sobrenome: true
-                }
-              }
-            }
-          }
-        }
+                  sobrenome: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!defaultRoom) {
         return {
           exists: false,
-          message: "Sala padrão não encontrada"
+          message: "Sala padrão não encontrada",
         };
       }
 
@@ -501,16 +504,16 @@ export class UsersService {
           id: defaultRoom.id,
           nome: defaultRoom.nome,
           descricao: defaultRoom.descricao,
-          totalMembros: defaultRoom.membros.length
+          totalMembros: defaultRoom.membros.length,
         },
-        membros: defaultRoom.membros.map(membro => ({
+        membros: defaultRoom.membros.map((membro) => ({
           usuarioId: membro.usuarioId,
           funcao: membro.funcao,
-          usuario: membro.usuario
-        }))
+          usuario: membro.usuario,
+        })),
       };
     } catch (error) {
-      console.error('Erro no teste da sala padrão:', error);
+      console.error("Erro no teste da sala padrão:", error);
       throw error;
     }
   }
@@ -520,7 +523,7 @@ export class UsersService {
       where: { materiaId },
       select: { id: true },
     });
-    const materialIds = materiais.map(m => m.id);
+    const materialIds = materiais.map((m) => m.id);
     if (materialIds.length === 0) return;
     await this.prisma.chatMensagem.deleteMany({
       where: { materialId: { in: materialIds } },
