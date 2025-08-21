@@ -2,7 +2,7 @@ export interface NivelXp {
   nivel: number;
   nome: string;
   minXp: number;
-  maxXp: number | null; 
+  maxXp: number | null;
 }
 
 export const NIVEIS_XP: NivelXp[] = [

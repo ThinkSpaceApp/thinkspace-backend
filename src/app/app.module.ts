@@ -22,8 +22,8 @@ import { ConfiguracoesModule } from "../configuracoes/configuracoes.module";
     MateriaisModule,
     HomeModule,
     salaEstudoModule,
-  MetricasModule,
-  ConfiguracoesModule,
+    MetricasModule,
+    ConfiguracoesModule,
   ],
   controllers: [AppController],
 })
