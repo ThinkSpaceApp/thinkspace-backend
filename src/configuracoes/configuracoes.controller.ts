@@ -136,4 +136,49 @@ export class ConfiguracoesController {
     }
     return this.configuracoesService.excluirConta((req.user as any).userId);
   }
+
+  @Patch('email/solicitar')
+  @ApiOperation({ summary: 'Solicitar troca de email (passo 1)' })
+  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', format: 'email' } }, required: ['email'] } })
+  @ApiResponse({ status: 200, description: 'Email para troca enviado com sucesso.' })
+  async solicitarTrocaEmail(@Req() req: Request, @Body('email') email: string) {
+    if (!req.user || !('userId' in req.user)) {
+      throw new Error('Usuário não autenticado ou userId ausente.');
+    }
+    return this.configuracoesService.solicitarTrocaEmail((req.user as any).userId, email);
+  }
+
+  @Patch('email/enviar-codigo')
+  @ApiOperation({ summary: 'Enviar código de verificação para troca de email (passo 2)' })
+  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', format: 'email' } }, required: ['email'] } })
+  @ApiResponse({ status: 200, description: 'Código de verificação enviado para o email.' })
+  async enviarCodigoTrocaEmail(@Req() req: Request, @Body('email') email: string) {
+    if (!req.user || !('userId' in req.user)) {
+      throw new Error('Usuário não autenticado ou userId ausente.');
+    }
+    return this.configuracoesService.enviarCodigoTrocaEmail((req.user as any).userId, email);
+  }
+
+  @Patch('email/verificar-codigo')
+  @ApiOperation({ summary: 'Verificar código de troca de email' })
+  @ApiBody({ schema: { type: 'object', properties: { codigo: { type: 'string' } }, required: ['codigo'] } })
+  @ApiResponse({ status: 200, description: 'Código verificado com sucesso.' })
+  async verificarCodigoTrocaEmail(@Req() req: Request, @Body('codigo') codigo: string) {
+    if (!req.user || !('userId' in req.user)) {
+      throw new Error('Usuário não autenticado ou userId ausente.');
+    }
+    return this.configuracoesService.verificarCodigoTrocaEmail((req.user as any).userId, codigo);
+  }
+
+  @Patch('email/confirmar')
+  @ApiOperation({ summary: 'Confirmar troca de email (passo 3)' })
+  @ApiBody({ schema: { type: 'object', properties: { novoEmail: { type: 'string', format: 'email' }, codigo: { type: 'string' } }, required: ['novoEmail', 'codigo'] } })
+  @ApiResponse({ status: 200, description: 'Email alterado com sucesso.' })
+  async confirmarTrocaEmail(@Req() req: Request, @Body('novoEmail') novoEmail: string, @Body('codigo') codigo: string) {
+    if (!req.user || !('userId' in req.user)) {
+      throw new Error('Usuário não autenticado ou userId ausente.');
+    }
+    return this.configuracoesService.confirmarTrocaEmail((req.user as any).userId, novoEmail, codigo);
+  }
 }
+
