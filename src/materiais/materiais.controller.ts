@@ -276,88 +276,89 @@ export class MateriaisController {
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
     if (origem === "DOCUMENTO") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
-      let materialCriado;
-      if (tipoMaterial === "COMPLETO" && origem === "DOCUMENTO") {
-        let textoConteudo = progressoFinal.textoConteudo;
-        if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
-          textoConteudo = await this.materiaisService.extrairTextoPdf(
-            progressoFinal.caminhoArquivo,
-          );
-        }
-        const quizzesResult = await this.materiaisService.gerarQuizzes({
+      const materialCriado = await this.materiaisService.criarPorDocumento(userId, progressoFinal);
+      let quizzesResult, flashcardsResult;
+      let textoConteudo = progressoFinal.textoConteudo;
+      if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
+        textoConteudo = await this.materiaisService.extrairTextoPdf(progressoFinal.caminhoArquivo);
+      }
+      if (tipoMaterial === "COMPLETO") {
+        quizzesResult = await this.materiaisService.gerarQuizzes({
           userId,
-          nomeDesignado: progressoFinal.nomeDesignado,
-          materiaId: progressoFinal.materiaId,
-          topicos: progressoFinal.topicos,
-          tipoMaterial: progressoFinal.tipoMaterial,
+          nomeDesignado: materialCriado.nomeDesignado ?? "",
+          materiaId: materialCriado.id,
+          topicos: materialCriado.topicos,
+          caminhoArquivo: materialCriado.caminhoArquivo ?? undefined,
+          tipoMaterial: materialCriado.tipoMaterial,
           quantidade: body.quantidadeQuestoes,
           origem,
-          caminhoArquivo: progressoFinal.caminhoArquivo,
           textoConteudo,
         });
-        const flashcardsResult = await this.materiaisService.gerarFlashcards({
+        flashcardsResult = await this.materiaisService.gerarFlashcards({
           userId,
-          nomeDesignado: progressoFinal.nomeDesignado,
-          materiaId: progressoFinal.materiaId,
-          topicos: progressoFinal.topicos,
-          tipoMaterial: progressoFinal.tipoMaterial,
+          nomeDesignado: materialCriado.nomeDesignado ?? "",
+          materiaId: materialCriado.id,
+          topicos: materialCriado.topicos,
+          caminhoArquivo: materialCriado.caminhoArquivo ?? undefined,
+          tipoMaterial: materialCriado.tipoMaterial,
           quantidade: body.quantidadeFlashcards,
           origem,
-          caminhoArquivo: progressoFinal.caminhoArquivo,
           textoConteudo,
         });
-        materialCriado = {
-          ...quizzesResult.material,
-          quizzesJson: quizzesResult.material.quizzesJson,
-          quantidadeQuestoes: quizzesResult.material.quantidadeQuestoes,
-          flashcardsJson: flashcardsResult.material.flashcardsJson,
-          quantidadeFlashcards: flashcardsResult.material.quantidadeFlashcards,
+        return {
+          message: "Dados básicos recebidos. PDF armazenado. Quizzes e flashcards gerados.",
+          etapa: 3,
+          material: materialCriado,
+          quizzes: quizzesResult?.quizzes,
+          flashcards: flashcardsResult?.flashcards,
+          dados: dadosMaterial,
         };
       } else if (body.quantidadeQuestoes) {
-        let textoConteudo = progressoFinal.textoConteudo;
-        if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
-          textoConteudo = await this.materiaisService.extrairTextoPdf(
-            progressoFinal.caminhoArquivo,
-          );
-        }
-        materialCriado = await this.materiaisService.gerarQuizzes({
+        quizzesResult = await this.materiaisService.gerarQuizzes({
           userId,
-          nomeDesignado: progressoFinal.nomeDesignado,
-          materiaId: progressoFinal.materiaId,
-          topicos: progressoFinal.topicos,
-          tipoMaterial: progressoFinal.tipoMaterial,
+          nomeDesignado: materialCriado.nomeDesignado ?? "",
+          materiaId: materialCriado.id,
+          topicos: materialCriado.topicos,
+          caminhoArquivo: materialCriado.caminhoArquivo ?? undefined,
+          tipoMaterial: materialCriado.tipoMaterial,
           quantidade: body.quantidadeQuestoes,
           origem,
-          caminhoArquivo: progressoFinal.caminhoArquivo,
           textoConteudo,
         });
+        return {
+          message: "Dados básicos recebidos. PDF armazenado. Quizzes gerados.",
+          etapa: 3,
+          material: materialCriado,
+          quizzes: quizzesResult?.quizzes,
+          dados: dadosMaterial,
+        };
       } else if (body.quantidadeFlashcards) {
-        let textoConteudo = progressoFinal.textoConteudo;
-        if ((!textoConteudo || textoConteudo.trim() === "") && progressoFinal.caminhoArquivo) {
-          textoConteudo = await this.materiaisService.extrairTextoPdf(
-            progressoFinal.caminhoArquivo,
-          );
-        }
-        materialCriado = await this.materiaisService.gerarFlashcards({
+        flashcardsResult = await this.materiaisService.gerarFlashcards({
           userId,
-          nomeDesignado: progressoFinal.nomeDesignado,
-          materiaId: progressoFinal.materiaId,
-          topicos: progressoFinal.topicos,
-          tipoMaterial: progressoFinal.tipoMaterial,
+          nomeDesignado: materialCriado.nomeDesignado ?? "",
+          materiaId: materialCriado.id,
+          topicos: materialCriado.topicos,
+          caminhoArquivo: materialCriado.caminhoArquivo ?? undefined,
+          tipoMaterial: materialCriado.tipoMaterial,
           quantidade: body.quantidadeFlashcards,
           origem,
-          caminhoArquivo: progressoFinal.caminhoArquivo,
           textoConteudo,
         });
+        return {
+          message: "Dados básicos recebidos. PDF armazenado. Flashcards gerados.",
+          etapa: 3,
+          material: materialCriado,
+          flashcards: flashcardsResult?.flashcards,
+          dados: dadosMaterial,
+        };
       } else {
-        materialCriado = await this.materiaisService.criarPorDocumento(userId, progressoFinal);
+        return {
+          message: "Dados básicos recebidos. PDF armazenado.",
+          etapa: 3,
+          material: materialCriado,
+          dados: dadosMaterial,
+        };
       }
-      return {
-        message: "Dados básicos recebidos. PDF armazenado. Aguarde a geração do resumo.",
-        etapa: 3,
-        material: materialCriado,
-        dados: dadosMaterial,
-      };
     }
     if (origem === "ASSUNTO") {
       const progressoFinal = await this.materiaisService.getProgressoMaterial(userId);
