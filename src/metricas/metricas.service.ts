@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { toZonedTime } from "date-fns-tz";
+import { getNivelInfo } from "../experiencia/niveis-xp";
 
 @Injectable()
 export class MetricasService {
@@ -21,13 +22,17 @@ export class MetricasService {
         },
       },
     });
-    return topExp.map((exp, idx) => ({
-      rank: idx + 1,
-      xp: exp.xp,
-      nivel: exp.nivel,
-      progresso: exp.progresso,
-      usuario: exp.usuario,
-    }));
+    return topExp.map((exp, idx) => {
+      const nivelInfo = getNivelInfo(exp.xp);
+      return {
+        rank: idx + 1,
+        xp: exp.xp,
+        nivel: exp.nivel,
+        progresso: exp.progresso,
+        maxXp: nivelInfo.maxXp,
+        usuario: exp.usuario,
+      };
+    });
   }
   constructor(private readonly prisma: PrismaService) {}
 
@@ -181,7 +186,6 @@ export class MetricasService {
         if (ofensiva > maxOfensiva) maxOfensiva = ofensiva;
       }
     }
-    const mensagemOfensiva = `Sua ofensiva atual é de ${ofensiva} dia${ofensiva === 1 ? '' : 's'}`;
     return {
       rendimentoSemanal: Number(rendimentoSemanal.toFixed(2)),
       xp: experiencia ? experiencia.xp : 0,
@@ -194,8 +198,6 @@ export class MetricasService {
       inicioSemana: inicioSemana.toISOString().slice(0, 10),
       fimSemana: fimSemana.toISOString().slice(0, 10),
       melhoresMaterias,
-      ofensiva,
-      mensagemOfensiva,
     };
   }
 }
