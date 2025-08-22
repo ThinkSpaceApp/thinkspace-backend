@@ -39,13 +39,31 @@ export class MateriaisController {
 
   @ApiOperation({ summary: "Listar materiais do usuário" })
   @ApiResponse({ status: 200, description: "Materiais encontrados com sucesso." })
+  @ApiParam({
+    name: "filtro",
+    required: false,
+    description:
+      "Filtro opcional para ordenação dos materiais. Pode ser uma string ou lista separada por vírgula. Valores aceitos: maisRecentes, maisAntigos, maiorTempoEstudo, menorTempoEstudo. Exemplo: ?filtro=maisRecentes,maiorTempoEstudo",
+    example: "maisRecentes,maiorTempoEstudo",
+  })
   @Get("/")
   async listarMateriais(@Req() req: Request) {
     const { filtro } = req.query as { filtro?: string };
     let materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
 
     if (filtro) {
-      const filtros = Array.isArray(filtro) ? filtro : filtro.split(",");
+      let filtros = Array.isArray(filtro) ? filtro : filtro.split(",");
+      const opostos = [
+        ["maiorTempoEstudo", "menorTempoEstudo"],
+        ["maisRecentes", "maisAntigos"],
+      ];
+      opostos.forEach(([a, b]) => {
+        if (filtros.includes(a) && filtros.includes(b)) {
+          const ultimo = filtros.lastIndexOf(a) > filtros.lastIndexOf(b) ? a : b;
+          filtros = filtros.filter((f) => f !== a && f !== b);
+          filtros.push(ultimo);
+        }
+      });
       filtros.forEach((f) => {
         if (f === "maisRecentes") {
           materiais = materiais.sort(
