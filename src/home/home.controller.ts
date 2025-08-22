@@ -78,7 +78,25 @@ export class HomeController {
     await this.salaEstudoService.ensureDefaultRoom();
     await this.salaEstudoService.ensureAllUsersInDefaultRoom();
     const userJwt = req.user as { email: string };
-    const salas = await this.usersService.getSalasEstudoByEmail(userJwt.email);
+      const salas = await this.usersService.getSalasEstudoByEmail(userJwt.email);
+      const palette = ["#7C3AED", "#a18ddfff", "#ee82a2ff", "#1a355fff"];
+      let salasComCor;
+      if (Array.isArray(salas)) {
+        salasComCor = salas.map((sala: any, idx: number) => ({
+          ...sala,
+          cor: palette[idx % palette.length],
+        }));
+      } else if (salas && Array.isArray(salas.salasMembro)) {
+        salasComCor = {
+          ...salas,
+          salasMembro: salas.salasMembro.map((sala: any, idx: number) => ({
+            ...sala,
+            cor: palette[idx % palette.length],
+          })),
+        };
+      } else {
+        salasComCor = salas;
+      }
 
     const ultimosUsuarios = await this.prisma.usuario.findMany({
       where: { funcao: "ESTUDANTE" },
@@ -119,7 +137,7 @@ export class HomeController {
     const totalEstudantes = await this.prisma.usuario.count({ where: { funcao: "ESTUDANTE" } });
 
     return {
-      ...salas,
+      ...(Array.isArray(salasComCor) ? { salas: salasComCor } : salasComCor),
       avataresUltimosUsuarios: avatares,
       totalEstudantes,
     };
