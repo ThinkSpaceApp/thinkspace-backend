@@ -149,12 +149,8 @@ export class MateriaisService {
     if (Array.isArray(flashcards) && typeof quantidade === "number" && quantidade > 0) {
       flashcards = flashcards.slice(0, quantidade);
     }
-    const material = await this.prisma.materialEstudo.findFirst({
-      where: {
-        nomeDesignado,
-        materiaId,
-        autorId: userId,
-      },
+    const material = await this.prisma.materialEstudo.findUnique({
+      where: { id: materiaId },
     });
     if (!material) throw new Error("Material não encontrado para atualizar flashcards.");
     const updatedMaterial = await this.prisma.materialEstudo.update({

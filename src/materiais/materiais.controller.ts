@@ -297,7 +297,7 @@ export class MateriaisController {
         flashcardsResult = await this.materiaisService.gerarFlashcards({
           userId,
           nomeDesignado: materialCriado.nomeDesignado ?? "",
-          materiaId: materialCriado.id,
+          materiaId: materialCriado.id, 
           topicos: materialCriado.topicos,
           caminhoArquivo: materialCriado.caminhoArquivo ?? undefined,
           tipoMaterial: materialCriado.tipoMaterial,
