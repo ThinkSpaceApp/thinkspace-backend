@@ -54,7 +54,11 @@ export class ConfiguracoesService {
     return { message: 'Solicitação de troca de email registrada. Siga as instruções enviadas.', emailTemporario: email };
   }
 
-  async enviarCodigoTrocaEmail(userId: string, email: string) {
+  async enviarCodigoTrocaEmail(userId: string) {
+    const email = this.emailTrocaMap.get(userId);
+    if (!email) {
+      return { success: false, message: 'Nenhum email registrado para troca de email.' };
+    }
     const codigo = Math.floor(100000 + Math.random() * 900000).toString();
     this.codigoVerificacaoMap.set(userId, codigo);
 
@@ -113,7 +117,11 @@ export class ConfiguracoesService {
     return { message: 'Solicitação de troca de senha registrada. Siga as instruções enviadas.', emailTemporario: email };
   }
 
-  async enviarCodigoTrocaSenha(userId: string, email: string) {
+  async enviarCodigoTrocaSenha(userId: string) {
+    const email = this.senhaTrocaMap.get(userId);
+    if (!email) {
+      return { success: false, message: 'Nenhum email registrado para troca de senha.' };
+    }
     const codigo = Math.floor(100000 + Math.random() * 900000).toString();
     this.codigoVerificacaoSenhaMap.set(userId, codigo);
 

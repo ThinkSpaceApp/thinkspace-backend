@@ -1,4 +1,4 @@
-import { Controller, Patch, Body, Req, UseGuards, Delete } from "@nestjs/common";
+import { Controller, Patch, Body, Req, UseGuards, Delete, Post } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody, ApiResponse } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 import { Request } from "express";
@@ -137,7 +137,7 @@ export class ConfiguracoesController {
     return this.configuracoesService.excluirConta((req.user as any).userId);
   }
 
-  @Patch('email/solicitar')
+  @Post('email/solicitar')
   @ApiOperation({ summary: 'Solicitar troca de email (passo 1)' })
   @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', format: 'email' } }, required: ['email'] } })
   @ApiResponse({ status: 200, description: 'Email para troca enviado com sucesso.' })
@@ -148,18 +148,17 @@ export class ConfiguracoesController {
     return this.configuracoesService.solicitarTrocaEmail((req.user as any).userId, email);
   }
 
-  @Patch('email/enviar-codigo')
+  @Post('email/enviar-codigo')
   @ApiOperation({ summary: 'Enviar código de verificação para troca de email (passo 2)' })
-  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', format: 'email' } }, required: ['email'] } })
   @ApiResponse({ status: 200, description: 'Código de verificação enviado para o email.' })
-  async enviarCodigoTrocaEmail(@Req() req: Request, @Body('email') email: string) {
+  async enviarCodigoTrocaEmail(@Req() req: Request) {
     if (!req.user || !('userId' in req.user)) {
       throw new Error('Usuário não autenticado ou userId ausente.');
     }
-    return this.configuracoesService.enviarCodigoTrocaEmail((req.user as any).userId, email);
+    return this.configuracoesService.enviarCodigoTrocaEmail((req.user as any).userId);
   }
 
-  @Patch('email/verificar-codigo')
+  @Post('email/verificar-codigo')
   @ApiOperation({ summary: 'Verificar código de troca de email' })
   @ApiBody({ schema: { type: 'object', properties: { codigo: { type: 'string' } }, required: ['codigo'] } })
   @ApiResponse({ status: 200, description: 'Código verificado com sucesso.' })
@@ -181,7 +180,7 @@ export class ConfiguracoesController {
     return this.configuracoesService.confirmarTrocaEmail((req.user as any).userId, novoEmail, codigo);
   }
 
-  @Patch('senha/solicitar')
+  @Post('senha/solicitar')
   @ApiOperation({ summary: 'Solicitar troca de senha (passo 1)' })
   @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', format: 'email' } }, required: ['email'] } })
   @ApiResponse({ status: 200, description: 'Solicitação de troca de senha registrada.' })
@@ -192,18 +191,17 @@ export class ConfiguracoesController {
     return this.configuracoesService.solicitarTrocaSenha((req.user as any).userId, email);
   }
 
-  @Patch('senha/enviar-codigo')
+  @Post('senha/enviar-codigo')
   @ApiOperation({ summary: 'Enviar código de verificação para troca de senha (passo 2)' })
-  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', format: 'email' } }, required: ['email'] } })
   @ApiResponse({ status: 200, description: 'Código de verificação enviado para o email.' })
-  async enviarCodigoTrocaSenha(@Req() req: Request, @Body('email') email: string) {
+  async enviarCodigoTrocaSenha(@Req() req: Request) {
     if (!req.user || !('userId' in req.user)) {
       throw new Error('Usuário não autenticado ou userId ausente.');
     }
-    return this.configuracoesService.enviarCodigoTrocaSenha((req.user as any).userId, email);
+    return this.configuracoesService.enviarCodigoTrocaSenha((req.user as any).userId);
   }
 
-  @Patch('senha/verificar-codigo')
+  @Post('senha/verificar-codigo')
   @ApiOperation({ summary: 'Verificar código de troca de senha' })
   @ApiBody({ schema: { type: 'object', properties: { codigo: { type: 'string' } }, required: ['codigo'] } })
   @ApiResponse({ status: 200, description: 'Código verificado com sucesso.' })
