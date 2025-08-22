@@ -24,6 +24,11 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from "@nes
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+  
+  @Get("/users/id")
+  async getLoggedUserId(@Req() req: any) {
+    return { userId: req.user.userId };
+  }
 
   @ApiOperation({ summary: "Registrar novo usuário" })
   @ApiResponse({ status: 201, description: "Usuário registrado com sucesso." })
