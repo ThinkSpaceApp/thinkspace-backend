@@ -282,6 +282,8 @@ export class MateriaisService {
       topicos: string[];
       tipoMaterial: string;
       descricao?: string;
+      quantidadeQuestoes?: number | string;
+      quantidadeFlashcards?: number | string;
     },
   ) {
     if (!data.nomeDesignado || !data.materiaId || !data.topicos?.length || !data.tipoMaterial) {
@@ -299,6 +301,8 @@ export class MateriaisService {
           autorId: userId,
           tipoMaterial: data.tipoMaterial as any,
           conteudo: data.descricao,
+          quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
+          quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
         },
       });
     } catch (error) {
@@ -323,6 +327,8 @@ export class MateriaisService {
       caminhoArquivo: string;
       tipoMaterial: string;
       descricao?: string;
+      quantidadeQuestoes?: number | string;
+      quantidadeFlashcards?: number | string;
     },
   ) {
     if (!data.nomeDesignado || !data.materiaId || !data.caminhoArquivo || !data.tipoMaterial) {
@@ -339,6 +345,8 @@ export class MateriaisService {
         autorId: userId,
         tipoMaterial: data.tipoMaterial as any,
         conteudo: data.descricao,
+        quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
+        quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
       },
     });
   }
@@ -352,6 +360,8 @@ export class MateriaisService {
       assunto: string;
       tipoMaterial: string;
       descricao?: string;
+      quantidadeQuestoes?: number | string;
+      quantidadeFlashcards?: number | string;
     },
   ) {
     if (
@@ -374,6 +384,8 @@ export class MateriaisService {
         autorId: userId,
         tipoMaterial: data.tipoMaterial as any,
         conteudo: data.assunto,
+        quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
+        quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
       },
     });
   }
