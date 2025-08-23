@@ -153,6 +153,7 @@ model MaterialEstudo {
   materia        Materia        @relation(fields: [materiaId], references: [id])
   topicos        String[]
   caminhoArquivo String?
+  pdfBinario    Bytes?
   conteudo       String? @db.Text
   assunto        String?
   autorId        String

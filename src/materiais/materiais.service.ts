@@ -334,6 +334,15 @@ export class MateriaisService {
     if (!data.nomeDesignado || !data.materiaId || !data.caminhoArquivo || !data.tipoMaterial) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por documento.");
     }
+    let pdfBinario: Buffer | undefined = undefined;
+    if (data.caminhoArquivo) {
+      const fs = require('fs');
+      try {
+        pdfBinario = fs.readFileSync(data.caminhoArquivo);
+      } catch (e) {
+        pdfBinario = undefined;
+      }
+    }
     return this.prisma.materialEstudo.create({
       data: {
         titulo: data.nomeDesignado,
@@ -347,6 +356,7 @@ export class MateriaisService {
         conteudo: data.descricao,
         quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
         quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
+        pdfBinario: pdfBinario,
       },
     });
   }
