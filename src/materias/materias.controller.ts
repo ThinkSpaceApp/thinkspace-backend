@@ -51,15 +51,19 @@ export class MateriasController {
     }
     
     const { getNivelInfo } = await import("../experiencia/niveis-xp");
-    const nivelInfo = getNivelInfo(user.experiencia.xp);
+    const nivelInfo = getNivelInfo(user.experiencia.xp ?? 0);
+    let maxXp = nivelInfo.maxXp;
+    if (maxXp === null && nivelInfo.nivel === 1) {
+      maxXp = 99;
+    }
     return {
       avatar: user.experiencia.avatar,
       primeiroNome: user.primeiroNome,
       cargo,
-      xp: user.experiencia.xp,
-      progresso: user.experiencia.progresso,
-      nivel: user.experiencia.nivel,
-      maxXp: nivelInfo.maxXp,
+      xp: user.experiencia.xp ?? 0,
+      progresso: user.experiencia.progresso ?? 0,
+      nivel: user.experiencia.nivel ?? "Iniciante",
+      maxXp,
     };
   }
 
