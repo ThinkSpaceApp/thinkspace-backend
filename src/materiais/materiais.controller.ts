@@ -268,7 +268,14 @@ export class MateriaisController {
         throw new BadRequestException("Para completo, informe quantidadeFlashcards entre 1 e 25.");
       }
     }
-    let dadosMaterial = { ...body, materiaId, origem, tipoMaterial };
+    let dadosMaterial = {
+      ...body,
+      materiaId,
+      origem,
+      tipoMaterial,
+      quantidadeQuestoes: body.quantidadeQuestoes,
+      quantidadeFlashcards: body.quantidadeFlashcards,
+    };
     if (origem === "DOCUMENTO" && file) {
       dadosMaterial.caminhoArquivo = file.path;
       dadosMaterial.nomeArquivo = file.originalname;
