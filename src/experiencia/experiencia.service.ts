@@ -74,7 +74,7 @@ export class ExperienciaService {
       xpFinal: experienciaAtualizada.xp,
       progresso: experienciaAtualizada.progresso,
       nivel: nivel.nome,
-      mensagem: `XP calculada: +${xp} (certas: +${certas * 5}, erradas: -${erradas * 2}, participação: +10). XP final: ${experienciaAtualizada.xp}. Progresso para o próximo nível: ${experienciaAtualizada.progresso.toFixed(2)}%. Nível atual: ${nivel.nome}.`,
+      mensagem: `XP calculada: +${xp} (certas: +${certas * 5}, erradas: -${erradas * 2}, participação: +10). XP atual: ${experienciaAtualizada.xp}. Progresso para o próximo nível: ${experienciaAtualizada.progresso.toFixed(2)}%. Nível atual: ${nivel.nome}.`,
     };
   }
 }
