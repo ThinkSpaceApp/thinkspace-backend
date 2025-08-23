@@ -114,6 +114,11 @@ export class MetricasService {
     const rendimentoSemanal =
       diasNaSemana > 0 ? Math.min((diasComAtividade / diasNaSemana) * 100, 100) : 0;
 
+    const materiasUsuario = await this.prisma.materia.findMany({
+      where: { usuarioId: userId },
+      select: { id: true },
+    });
+    const materiaIdsUsuario = materiasUsuario.map(m => m.id);
     const materiais = await this.prisma.materialEstudo.findMany({
       where: { autorId: userId },
       include: { materia: true },
@@ -162,7 +167,7 @@ export class MetricasService {
             }
           });
           questoesPorDia[dateKey] = (questoesPorDia[dateKey] || 0) + realizadasHoje;
-          if (material.materia) {
+          if (material.materia && materiaIdsUsuario.includes(material.materia.id)) {
             const matId = material.materia.id;
             if (!xpPorMateria[matId]) {
               xpPorMateria[matId] = {
