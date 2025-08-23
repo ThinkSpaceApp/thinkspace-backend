@@ -93,28 +93,6 @@ export class UsersController {
     return this.usersService.getMateriasByUserId((req.user as any).userId);
   }
 
-  @ApiOperation({ summary: "Registrar atividade" })
-  @ApiResponse({ status: 200, description: "Atividade registrada com sucesso." })
-  @Post("metrica/registrar-atividade")
-  async registrarAtividade(@Req() req: Request, @Body() body: { data?: string }) {
-    const userId = (req.user as any)?.userId;
-    if (!userId) throw new BadRequestException("Usuário não autenticado.");
-    const data = body.data ? new Date(body.data) : new Date();
-    const dia = new Date(data.getFullYear(), data.getMonth(), data.getDate());
-
-    await this.usersService.registrarAtividadeDiaria(userId, dia);
-    return { message: "Atividade registrada com sucesso." };
-  }
-
-  @ApiOperation({ summary: "Obter métrica semanal" })
-  @ApiResponse({ status: 200, description: "Métrica semanal obtida com sucesso." })
-  @Get("metrica/semanal")
-  async getMetricaSemanal(@Req() req: Request) {
-    const userId = (req.user as any)?.userId;
-    if (!userId) throw new BadRequestException("Usuário não autenticado.");
-    return this.usersService.getMetricaSemanal(userId);
-  }
-
   @ApiOperation({ summary: "Obter e-mail do usuário" })
   @ApiResponse({ status: 200, description: "E-mail do usuário retornado com sucesso." })
   @Get("email")
@@ -172,65 +150,65 @@ export class UsersController {
     return { message: "Configurações atualizadas com sucesso.", usuario: usuarioAtualizado };
   }
 
-  @ApiOperation({ summary: "Editar e-mail do usuário" })
-  @ApiResponse({ status: 200, description: "E-mail atualizado com sucesso." })
-  @Patch("editar-email")
-  async editarEmail(@Req() req: Request, @Body() body: { novoEmail: string }) {
-    const userId = (req.user as any)?.userId;
-    if (!userId) {
-      throw new BadRequestException("Usuário não autenticado.");
-    }
-    if (!body.novoEmail) {
-      throw new BadRequestException("Novo e-mail é obrigatório.");
-    }
-    const existente = await this.usersService.findByEmail(body.novoEmail);
-    if (existente) {
-      throw new BadRequestException("E-mail já está em uso.");
-    }
-    const usuarioAtualizado = await this.usersService.update(userId, { email: body.novoEmail });
-    return { message: "E-mail atualizado com sucesso.", usuario: usuarioAtualizado };
-  }
+  // @ApiOperation({ summary: "Editar e-mail do usuário" })
+  // @ApiResponse({ status: 200, description: "E-mail atualizado com sucesso." })
+  // @Patch("editar-email")
+  // async editarEmail(@Req() req: Request, @Body() body: { novoEmail: string }) {
+  //   const userId = (req.user as any)?.userId;
+  //   if (!userId) {
+  //     throw new BadRequestException("Usuário não autenticado.");
+  //   }
+  //   if (!body.novoEmail) {
+  //     throw new BadRequestException("Novo e-mail é obrigatório.");
+  //   }
+  //   const existente = await this.usersService.findByEmail(body.novoEmail);
+  //   if (existente) {
+  //     throw new BadRequestException("E-mail já está em uso.");
+  //   }
+  //   const usuarioAtualizado = await this.usersService.update(userId, { email: body.novoEmail });
+  //   return { message: "E-mail atualizado com sucesso.", usuario: usuarioAtualizado };
+  // }
 
-  @ApiOperation({ summary: "Editar senha do usuário" })
-  @ApiResponse({ status: 200, description: "Senha atualizada com sucesso." })
-  @Patch("editar-senha")
-  async editarSenha(@Req() req: Request, @Body() body: { novaSenha: string }) {
-    const userId = (req.user as any)?.userId;
-    if (!userId) {
-      throw new BadRequestException("Usuário não autenticado.");
-    }
-    if (!body.novaSenha) {
-      throw new BadRequestException("Todos os campos são obrigatórios.");
-    }
-    const user = await this.usersService.findById(userId);
-    if (!user) {
-      throw new BadRequestException("Usuário não encontrado.");
-    }
-    const passwordErrors: string[] = [];
-    if (body.novaSenha.length < 8) {
-      passwordErrors.push("A senha deve ter pelo menos 8 caracteres");
-    }
-    if (!/[A-Z]/.test(body.novaSenha)) {
-      passwordErrors.push("A senha deve conter pelo menos uma letra maiúscula");
-    }
-    if (!/[a-z]/.test(body.novaSenha)) {
-      passwordErrors.push("A senha deve conter pelo menos uma letra minúscula");
-    }
-    if (!/\d/.test(body.novaSenha)) {
-      passwordErrors.push("A senha deve conter pelo menos um número");
-    }
-    if (!/[@$!%*?&]/.test(body.novaSenha)) {
-      passwordErrors.push("A senha deve conter pelo menos um caractere especial (@$!%*?&)");
-    }
-    if (passwordErrors.length > 0) {
-      throw new BadRequestException(
-        `A nova senha não atende aos requisitos: ${passwordErrors.join(", ")}.`,
-      );
-    }
-    const novaSenhaHash = await bcrypt.hash(body.novaSenha, 10);
-    const usuarioAtualizado = await this.usersService.update(userId, { senha: novaSenhaHash });
-    return { message: "Senha atualizada com sucesso.", usuario: usuarioAtualizado };
-  }
+  // @ApiOperation({ summary: "Editar senha do usuário" })
+  // @ApiResponse({ status: 200, description: "Senha atualizada com sucesso." })
+  // @Patch("editar-senha")
+  // async editarSenha(@Req() req: Request, @Body() body: { novaSenha: string }) {
+  //   const userId = (req.user as any)?.userId;
+  //   if (!userId) {
+  //     throw new BadRequestException("Usuário não autenticado.");
+  //   }
+  //   if (!body.novaSenha) {
+  //     throw new BadRequestException("Todos os campos são obrigatórios.");
+  //   }
+  //   const user = await this.usersService.findById(userId);
+  //   if (!user) {
+  //     throw new BadRequestException("Usuário não encontrado.");
+  //   }
+  //   const passwordErrors: string[] = [];
+  //   if (body.novaSenha.length < 8) {
+  //     passwordErrors.push("A senha deve ter pelo menos 8 caracteres");
+  //   }
+  //   if (!/[A-Z]/.test(body.novaSenha)) {
+  //     passwordErrors.push("A senha deve conter pelo menos uma letra maiúscula");
+  //   }
+  //   if (!/[a-z]/.test(body.novaSenha)) {
+  //     passwordErrors.push("A senha deve conter pelo menos uma letra minúscula");
+  //   }
+  //   if (!/\d/.test(body.novaSenha)) {
+  //     passwordErrors.push("A senha deve conter pelo menos um número");
+  //   }
+  //   if (!/[@$!%*?&]/.test(body.novaSenha)) {
+  //     passwordErrors.push("A senha deve conter pelo menos um caractere especial (@$!%*?&)");
+  //   }
+  //   if (passwordErrors.length > 0) {
+  //     throw new BadRequestException(
+  //       `A nova senha não atende aos requisitos: ${passwordErrors.join(", ")}.`,
+  //     );
+  //   }
+  //   const novaSenhaHash = await bcrypt.hash(body.novaSenha, 10);
+  //   const usuarioAtualizado = await this.usersService.update(userId, { senha: novaSenhaHash });
+  //   return { message: "Senha atualizada com sucesso.", usuario: usuarioAtualizado };
+  // }
 
   @ApiOperation({ summary: "Obter nome da instituição do usuário" })
   @ApiResponse({ status: 200, description: "Nome da instituição retornado com sucesso." })

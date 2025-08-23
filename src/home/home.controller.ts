@@ -20,17 +20,17 @@ export class HomeController {
       throw new BadRequestException("Usuário não autenticado.");
     }
     const metrica = await this.usersService.getMetricaSemanal(userId);
-    let ofensiva = 0;
-    let maxOfensiva = 0;
+    let ofensivaAtual = 0;
     for (let i = 0; i < metrica.diasSemana.length; i++) {
       if (metrica.diasSemana[i].status === 2) {
-        ofensiva++;
-        if (ofensiva > maxOfensiva) maxOfensiva = ofensiva;
+        ofensivaAtual++;
       } else {
-        ofensiva = 0;
+        ofensivaAtual = 0;
       }
     }
-    const mensagemOfensiva = `Sua ofensiva atual é de ${maxOfensiva} dia${maxOfensiva === 1 ? '' : 's'}`;
+    const mensagemOfensiva = ofensivaAtual > 0
+      ? `Sua ofensiva atual é de ${ofensivaAtual} dia${ofensivaAtual === 1 ? '' : 's'} consecutivo${ofensivaAtual === 1 ? '' : 's'}`
+      : "Você perdeu a ofensiva. Volte a estudar para iniciar uma nova sequência!";
     return {
       dias: metrica.diasSemana.map((d) => d.data),
       status: metrica.diasSemana.map((d) => d.status),
