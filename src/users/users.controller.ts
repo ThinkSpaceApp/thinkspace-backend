@@ -24,8 +24,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from "@nes
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-  
-  @Get("/users/id")
+
+  @Get("/id")
   async getLoggedUserId(@Req() req: any) {
     return { userId: req.user.userId };
   }

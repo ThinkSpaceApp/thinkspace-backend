@@ -22,15 +22,42 @@ export class MetricasService {
         },
       },
     });
+    const palette = ["8e44ad", "a18ddf", "ee82a2", "1a355f"];
     return topExp.map((exp, idx) => {
       const nivelInfo = getNivelInfo(exp.xp);
+      const usuario = exp.usuario;
+      let iniciais = "";
+      const nome = usuario.primeiroNome?.trim() || "";
+      const sobrenome = usuario.sobrenome?.trim() || "";
+      if (nome || sobrenome) {
+        iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+      } else if (usuario.nomeCompleto) {
+        const partes = usuario.nomeCompleto.trim().split(" ");
+        iniciais =
+          partes.length > 1
+            ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+            : `${partes[0][0]}`.toUpperCase();
+      } else if (usuario.email) {
+        iniciais = usuario.email.charAt(0).toUpperCase();
+      } else {
+        iniciais = "U";
+      }
+      const corAvatar = palette[idx % palette.length];
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corAvatar}&color=fff`;
       return {
         rank: idx + 1,
         xp: exp.xp,
         nivel: exp.nivel,
         progresso: exp.progresso,
         maxXp: nivelInfo.maxXp,
-        usuario: exp.usuario,
+        usuario: {
+          id: usuario.id,
+          primeiroNome: usuario.primeiroNome,
+          sobrenome: usuario.sobrenome,
+          nomeCompleto: usuario.nomeCompleto,
+          email: usuario.email,
+          foto: avatarUrl,
+        },
       };
     });
   }
