@@ -49,6 +49,9 @@ export class MateriasController {
     } else if (user.funcao === "ESTUDANTE") {
       cargo = "Estudante";
     }
+    
+    const { getNivelInfo } = await import("../experiencia/niveis-xp");
+    const nivelInfo = getNivelInfo(user.experiencia.xp);
     return {
       avatar: user.experiencia.avatar,
       primeiroNome: user.primeiroNome,
@@ -56,6 +59,7 @@ export class MateriasController {
       xp: user.experiencia.xp,
       progresso: user.experiencia.progresso,
       nivel: user.experiencia.nivel,
+      maxXp: nivelInfo.maxXp,
     };
   }
 
