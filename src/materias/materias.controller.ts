@@ -40,9 +40,20 @@ export class MateriasController {
       throw new BadRequestException("Usuário não autenticado.");
     }
     const user = await this.usersService.findByEmail((req.user as any).email);
-    if (!user || !user.experiencia) {
-      throw new BadRequestException("Perfil do usuário não encontrado.");
-    }
+      if (!user) {
+        throw new BadRequestException("Perfil do usuário não encontrado.");
+      }
+      let experiencia = user.experiencia;
+      if (!experiencia) {
+        experiencia = {
+          id: "",
+          usuarioId: user.id ?? "",
+          avatar: "",
+          xp: 0,
+          progresso: 0,
+          nivel: "INICIANTE"
+        };
+      }
     let cargo = "Usuário";
     if (user.funcao === "ADMINISTRADOR_GERAL") {
       cargo = "Administrador Geral";
@@ -51,18 +62,18 @@ export class MateriasController {
     }
     
     const { getNivelInfo } = await import("../experiencia/niveis-xp");
-    const nivelInfo = getNivelInfo(user.experiencia.xp ?? 0);
+    const nivelInfo = getNivelInfo(experiencia.xp ?? 0);
     let maxXp = nivelInfo.maxXp;
     if (maxXp === null && nivelInfo.nivel === 1) {
       maxXp = 99;
     }
     return {
-      avatar: user.experiencia.avatar,
+      avatar: experiencia.avatar,
       primeiroNome: user.primeiroNome,
       cargo,
-      xp: user.experiencia.xp ?? 0,
-      progresso: user.experiencia.progresso ?? 0,
-      nivel: user.experiencia.nivel ?? "Iniciante",
+      xp: experiencia.xp ?? 0,
+      progresso: experiencia.progresso ?? 0,
+      nivel: experiencia.nivel ?? "INICIANTE",
       maxXp,
     };
   }
