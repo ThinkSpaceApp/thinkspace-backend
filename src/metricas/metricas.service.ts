@@ -124,9 +124,13 @@ export class MetricasService {
       include: { materia: true },
       orderBy: { criadoEm: "asc" },
     });
-    let totalQuestoes = 0;
-    let acertos = 0;
-    let erros = 0;
+  let totalQuestoes = 0;
+  let acertos = 0;
+  let erros = 0;
+  const atividadesQuiz = atividades.filter(a => typeof a.acertou === 'boolean');
+  acertos = atividadesQuiz.filter(a => a.acertou).length;
+  erros = atividadesQuiz.filter(a => a.acertou === false).length;
+  totalQuestoes = atividadesQuiz.length;
     const questoesPorDia: Record<string, number> = {};
     const xpPorMateria: Record<string, { nome: string; xp: number; cor: string; icone: string }> =
       {};

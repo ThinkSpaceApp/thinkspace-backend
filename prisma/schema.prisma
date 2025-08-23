@@ -428,5 +428,6 @@ model AtividadeUsuario {
   usuario   Usuario  @relation(fields: [usuarioId], references: [id])
   data      DateTime
   quantidade Int     @default(1)
+  acertou    Boolean  @default(false)
   @@unique([usuarioId, data])
 }
