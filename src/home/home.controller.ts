@@ -21,16 +21,23 @@ export class HomeController {
     }
     const metrica = await this.usersService.getMetricaSemanal(userId);
     let ofensivaAtual = 0;
+    let estudouAlgumDia = false;
     for (let i = 0; i < metrica.diasSemana.length; i++) {
       if (metrica.diasSemana[i].status === 2) {
         ofensivaAtual++;
+        estudouAlgumDia = true;
       } else {
         ofensivaAtual = 0;
       }
     }
-    const mensagemOfensiva = ofensivaAtual > 0
-      ? `Sua ofensiva atual é de ${ofensivaAtual} dia${ofensivaAtual === 1 ? '' : 's'} consecutivo${ofensivaAtual === 1 ? '' : 's'}`
-      : "Você perdeu a ofensiva. Volte a estudar para iniciar uma nova sequência!";
+    let mensagemOfensiva = "";
+    if (!estudouAlgumDia) {
+      mensagemOfensiva = "Comece a estudar para iniciar sua ofensiva!";
+    } else if (ofensivaAtual > 0) {
+      mensagemOfensiva = `Sua ofensiva atual é de ${ofensivaAtual} dia${ofensivaAtual === 1 ? '' : 's'} consecutivo${ofensivaAtual === 1 ? '' : 's'}`;
+    } else {
+      mensagemOfensiva = "Você perdeu a ofensiva. Volte a estudar para iniciar uma nova sequência!";
+    }
     return {
       dias: metrica.diasSemana.map((d) => d.data),
       status: metrica.diasSemana.map((d) => d.status),
