@@ -111,7 +111,8 @@ export class HomeController {
         email: true,
       },
     });
-    const avatares = ultimosUsuarios.map((u) => {
+    const paletteBg = ["7C3AED", "A78BFA", "FBCFE8", "1E293B"];
+    const avatares = ultimosUsuarios.map((u, idx) => {
       if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
         return u.foto;
       }
@@ -131,7 +132,8 @@ export class HomeController {
       } else {
         iniciais = "U";
       }
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=8e44ad&color=fff`;
+      const corBg = paletteBg[idx % paletteBg.length];
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
     });
 
     const totalEstudantes = await this.prisma.usuario.count({ where: { funcao: "ESTUDANTE" } });
