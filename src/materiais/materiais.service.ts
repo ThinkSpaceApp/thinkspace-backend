@@ -588,12 +588,21 @@ export class MateriaisService {
       throw new Error("Não foi possível montar o texto base para o resumo IA.");
     }
     let resumoIA = await this.glm45Service.gerarTextoEducativo({
-      systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e formatado em Markdown, usando títulos (#), subtítulos (##), listas, negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Todo o texto deve estar em português-br. Não inclua pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
+      systemPrompt: `Você é um especialista em educação. Gere um texto extenso, didático e detalhado, dividido em 5 parágrafos, explicando o tema e todos os tópicos listados abaixo. O texto deve ser claro, objetivo, acessível para iniciantes e formatado em Markdown, usando títulos (#), subtítulos (##), listas, tabelas (se necessário), negrito (**termo**), e quebras de linha (\n\n) para separar parágrafos. Todo o texto deve estar em português-br. Não inclua pensamentos, planos, tags como <think> ou estrutura de planejamento. Apenas entregue o texto final, sem introdução sobre o processo de escrita, sem mencionar o que vai fazer ou como vai estruturar. O texto deve abordar diretamente os tópicos, conectando-os de forma natural e progressiva, e pode ser ainda mais longo se necessário para cobrir o assunto de forma completa.`,
       userPrompt: textoParaResumo,
       maxTokens: 5000,
       temperature: 0.7,
       thinking: false,
     });
+    if (resumoIA) {
+      resumoIA = resumoIA.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+      resumoIA = resumoIA.replace(/([^\n])\n([^\n])/g, "$1\n\n$2");
+      resumoIA = resumoIA.replace(/\n *(#)/g, "\n$1");
+      resumoIA = resumoIA.replace(/\n *([\-\*]) /g, "\n$1 ");
+      if (!/^#/.test(resumoIA.trim())) {
+        resumoIA = `# Resumo\n\n${resumoIA}`;
+      }
+    }
     if (!resumoIA || resumoIA.trim().length === 0) {
       resumoIA = "Resumo não disponível";
     }
