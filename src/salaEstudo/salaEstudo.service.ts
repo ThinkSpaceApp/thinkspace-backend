@@ -13,9 +13,22 @@ export class salaEstudoService {
   }
 
   async ensureDefaultRoom() {
-    let defaultRoom = await this.prisma.salaEstudo.findFirst({
-      where: { nome: "thinkspace" },
+    const allDefaultRooms = await this.prisma.salaEstudo.findMany({
+      where: {
+        nome: {
+          equals: "ThinkSpace",
+          mode: "insensitive"
+        }
+      }
     });
+    let defaultRoom = allDefaultRooms[0];
+
+    if (allDefaultRooms.length > 1) {
+      const toDeleteIds = allDefaultRooms.slice(1).map(sala => sala.id);
+      await this.prisma.$transaction(
+        toDeleteIds.map(id => this.prisma.salaEstudo.delete({ where: { id } }))
+      );
+    }
 
     if (!defaultRoom) {
       defaultRoom = await this.prisma.salaEstudo.create({
@@ -30,25 +43,23 @@ export class salaEstudoService {
           },
         },
       });
-
-      let defaultCommunity = await this.prisma.topicoComunidade.findUnique({
-        where: { id: "thinkspace-comunidade-id" },
-      });
-      if (!defaultCommunity) {
-        defaultCommunity = await this.prisma.topicoComunidade.create({
-          data: {
-            id: "thinkspace-comunidade-id",
-            nome: "thinkspace-comunidade",
-            salaId: defaultRoom.id,
-          },
-        });
-        return { sala: defaultRoom, topico: defaultCommunity };
-      } else {
-        return { sala: defaultRoom, topico: null };
-      }
     }
 
-    return { sala: defaultRoom, topico: null };
+    let defaultCommunity = await this.prisma.topicoComunidade.findUnique({
+      where: { id: "thinkspace-comunidade-id" },
+    });
+    if (!defaultCommunity) {
+      defaultCommunity = await this.prisma.topicoComunidade.create({
+        data: {
+          id: "thinkspace-comunidade-id",
+          nome: "thinkspace-comunidade",
+          salaId: defaultRoom.id,
+        },
+      });
+      return { sala: defaultRoom, topico: defaultCommunity };
+    } else {
+      return { sala: defaultRoom, topico: null };
+    }
   }
 
   async addUserToDefaultRoom(userId: string) {
