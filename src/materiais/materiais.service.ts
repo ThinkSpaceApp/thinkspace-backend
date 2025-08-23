@@ -645,12 +645,15 @@ export class MateriaisService {
     } catch {
       flashcards = [];
     }
+    const updateData: any = {
+      flashcardsJson: JSON.stringify(flashcards),
+    };
+    if (flashcards.length > 0) {
+      updateData.quantidadeFlashcards = flashcards.length;
+    }
     const updatedMaterial = await this.prisma.materialEstudo.update({
       where: { id: material.id },
-      data: {
-        flashcardsJson: JSON.stringify(flashcards),
-        quantidadeFlashcards: flashcards.length,
-      },
+      data: updateData,
     });
     return { material: updatedMaterial, flashcards };
   }
@@ -694,12 +697,15 @@ export class MateriaisService {
     } catch {
       quizzes = [];
     }
+    const updateData: any = {
+      quizzesJson: JSON.stringify(quizzes),
+    };
+    if (quizzes.length > 0) {
+      updateData.quantidadeQuestoes = quizzes.length;
+    }
     const updatedMaterial = await this.prisma.materialEstudo.update({
       where: { id: material.id },
-      data: {
-        quizzesJson: JSON.stringify(quizzes),
-        quantidadeQuestoes: quizzes.length,
-      },
+      data: updateData,
     });
     return { material: updatedMaterial, quizzes };
   }
@@ -735,12 +741,15 @@ export class MateriaisService {
     } catch {
       quizzes = [];
     }
+    const updateData: any = {
+      quizzesJson: JSON.stringify(quizzes),
+    };
+    if (quizzes.length > 0) {
+      updateData.quantidadeQuestoes = quizzes.length;
+    }
     const updatedMaterial = await this.prisma.materialEstudo.update({
       where: { id: material.id },
-      data: {
-        quizzesJson: JSON.stringify(quizzes),
-        quantidadeQuestoes: quizzes.length,
-      },
+      data: updateData,
     });
     return { material: updatedMaterial, quizzes };
   }
@@ -861,12 +870,15 @@ ${topicosFormatados}
     } catch {
       flashcards = [];
     }
+    const updateData: any = {
+      flashcardsJson: JSON.stringify(flashcards),
+    };
+    if (flashcards.length > 0) {
+      updateData.quantidadeFlashcards = flashcards.length;
+    }
     const updatedMaterial = await this.prisma.materialEstudo.update({
       where: { id: material.id },
-      data: {
-        flashcardsJson: JSON.stringify(flashcards),
-        quantidadeFlashcards: flashcards.length,
-      },
+      data: updateData,
     });
     return { material: updatedMaterial, flashcards };
   }
