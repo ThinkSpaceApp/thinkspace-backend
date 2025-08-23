@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Req,
+  Res,
   UseGuards,
   BadRequestException,
   NotFoundException,
@@ -35,6 +36,27 @@ import { uploadPdfConfig } from "./config/upload.config";
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
 export class MateriaisController {
+  
+  @ApiOperation({ summary: "Obter PDF do material para prévia" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Retorna o PDF do material." })
+  @ApiResponse({ status: 404, description: "Material ou PDF não encontrado." })
+  @Get("pdf/:id")
+  async getPdfMaterial(@Param("id") id: string, @Res() res: import('express').Response) {
+    const material = await this.materiaisService.buscarMaterialPorId(id);
+    if (!material || !material.caminhoArquivo) {
+      return res.status(404).json({ message: "Material ou PDF não encontrado." });
+    }
+    const fs = require("fs");
+    const path = require("path");
+    const filePath = path.resolve(material.caminhoArquivo);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "Arquivo PDF não encontrado." });
+    }
+    res.setHeader("Content-Type", "application/pdf");
+    const stream = fs.createReadStream(filePath);
+    stream.pipe(res);
+  }
   constructor(private readonly materiaisService: MateriaisService) {}
 
   @ApiOperation({ summary: "Listar materiais do usuário" })
