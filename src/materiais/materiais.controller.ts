@@ -166,14 +166,14 @@ export class MateriaisController {
           description: "Tipo do material. Obrigatório.",
         },
         quantidadeQuestoes: {
-          type: "string",
+          oneOf: [{ type: "string" }, { type: "number" }],
           example: "10",
-          description: "Número de questões para quizzes (máx 25) (enviar como string)",
+          description: "Número de questões para quizzes ou completo (obrigatório para QUIZZ ou COMPLETO, máx 25). Pode ser string ou número.",
         },
         quantidadeFlashcards: {
-          type: "string",
+          oneOf: [{ type: "string" }, { type: "number" }],
           example: "10",
-          description: "Número de flashcards (máx 25) (enviar como string)",
+          description: "Número de flashcards (obrigatório para FLASHCARD ou COMPLETO, máx 25). Pode ser string ou número.",
         },
         file: {
           type: "string",
@@ -184,7 +184,7 @@ export class MateriaisController {
       required: ["nomeDesignado", "nomeMateria", "tipoMaterial"],
     },
     description:
-      "A origem do material é carregada automaticamente do passo 1 (escolha-origem-material) e não precisa ser enviada novamente nesta etapa. Apenas envie os campos listados acima.",
+      "A origem do material é carregada automaticamente do passo 1 (escolha-origem-material) e não precisa ser enviada novamente nesta etapa.\n\nCampos obrigatórios para cada tipo:\n- QUIZZ: quantidadeQuestoes\n- FLASHCARD: quantidadeFlashcards\n- COMPLETO: quantidadeQuestoes e quantidadeFlashcards\n\nOs campos quantidadeQuestoes e quantidadeFlashcards podem ser enviados como string ou número. Máximo permitido: 25.",
   })
   @Post("etapa-dados")
   @UseInterceptors(FileInterceptor("file", uploadPdfConfig as MulterOptions))
