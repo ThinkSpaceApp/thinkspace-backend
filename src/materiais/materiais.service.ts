@@ -329,13 +329,16 @@ export class MateriaisService {
       descricao?: string;
       quantidadeQuestoes?: number | string;
       quantidadeFlashcards?: number | string;
+      pdfBinario?: Buffer;
     },
   ) {
     if (!data.nomeDesignado || !data.materiaId || !data.caminhoArquivo || !data.tipoMaterial) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por documento.");
     }
     let pdfBinario: Buffer | undefined = undefined;
-    if (data.caminhoArquivo) {
+    if (data.pdfBinario) {
+      pdfBinario = data.pdfBinario;
+    } else if (data.caminhoArquivo) {
       const fs = require('fs');
       try {
         pdfBinario = fs.readFileSync(data.caminhoArquivo);
