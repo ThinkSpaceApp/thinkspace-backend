@@ -33,15 +33,11 @@ export class MateriaisService {
     });
     const limite = quizzes.length;
     let atividadesRegistradas = atividadesExistentes.length;
-    for (const idx in respostasQuiz) {
+    for (let quizIdx = 0; quizIdx < quizzes.length; quizIdx++) {
       if (atividadesRegistradas >= limite) break;
-      const respostaUsuario = respostasQuiz[idx];
-      const quizIdx = Number(idx);
       const quiz = quizzes[quizIdx];
-      let acertou = false;
-      if (quiz && respostaUsuario) {
-        acertou = respostaUsuario === quiz.correta;
-      }
+      const respostaUsuario = respostasQuiz[quizIdx];
+      const acertou = respostaUsuario === quiz?.correta;
       await this.prisma.atividadeUsuario.create({
         data: {
           usuarioId: userId,
