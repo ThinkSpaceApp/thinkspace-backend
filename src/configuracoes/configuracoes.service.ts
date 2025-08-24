@@ -86,7 +86,7 @@ export class ConfiguracoesService {
       return { success: false, message: 'Nenhum email registrado para troca de email.' };
     }
     this.emailTrocaMap.set(userId, email);
-    const codigo = Math.floor(1000 + Math.random() * 9000).toString();
+    const codigo = Math.floor(10000 + Math.random() * 90000).toString();
     this.codigoVerificacaoMap.set(userId, codigo);
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY || 'YOUR_RESEND_API_KEY';
@@ -98,7 +98,7 @@ export class ConfiguracoesService {
       subject: '🔄Código de verificação para troca de email',
       html: `
         <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-          <img src="https://i.imgur.com/4JBPx3E.png" alt="ThinkSpace Logo" style="height: 80px; width: 80px; margin-bottom: 20px;" />
+          <img src="https://i.imgur.com/4JBPx3E.png" alt="ThinkSpace Logo" style="height: full; width: full; margin-bottom: 20px;" />
           <h1 style="color:rgb(146, 102, 204);">🔄 Troca de email no ThinkSpace</h1>
           <p style="color:#333;">Você solicitou a troca do seu email na plataforma. Para confirmar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
           <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
@@ -161,7 +161,7 @@ export class ConfiguracoesService {
       subject: '🔄Código de verificação para troca de senha',
       html: `
         <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-          <img src="https://i.imgur.com/4JBPx3E.png" alt="ThinkSpace Logo" style="height: 80px; width: 80px; margin-bottom: 20px;" />
+          <img src="https://i.imgur.com/4JBPx3E.png" alt="ThinkSpace Logo" style="height: full; width: full; margin-bottom: 20px;" />
           <h1 style="color:rgb(146, 102, 204);">🔄 Troca de senha no ThinkSpace</h1>
           <p style="color:#333;">Você solicitou a troca da sua senha na plataforma. Para confirmar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
           <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
