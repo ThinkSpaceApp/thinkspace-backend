@@ -116,6 +116,34 @@ export class UsersService {
   }
 
   async update(userId: string, data: Partial<Usuario>) {
+    if (data.dataNascimento) {
+      if (typeof data.dataNascimento === 'string') {
+        const dateStr = (data.dataNascimento as string).replace(/\//g, '-');
+        if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+          const [day, month, year] = dateStr.split('-').map(Number);
+          data.dataNascimento = new Date(year, month - 1, day);
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          data.dataNascimento = new Date(dateStr);
+        } else {
+          const parsed = Date.parse(dateStr);
+          if (!isNaN(parsed)) {
+            data.dataNascimento = new Date(parsed);
+          } else {
+            throw new BadRequestException('Formato de dataNascimento inválido. Use yyyy-mm-dd ou dd-mm-yyyy.');
+          }
+        }
+      }
+      if (!(data.dataNascimento instanceof Date)) {
+        try {
+          data.dataNascimento = new Date(data.dataNascimento as any);
+        } catch {
+          throw new BadRequestException('Formato de dataNascimento inválido.');
+        }
+      }
+      if (isNaN((data.dataNascimento as Date).getTime())) {
+        throw new BadRequestException('Formato de dataNascimento inválido.');
+      }
+    }
     if (data.instituicaoId) {
       const instituicao = await this.prisma.instituicao.findUnique({
         where: { id: data.instituicaoId },
