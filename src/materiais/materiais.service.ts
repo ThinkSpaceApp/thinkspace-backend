@@ -110,10 +110,6 @@ export class MateriaisService {
         quantidadeQuestoes: quizzes.length,
       },
     });
-    const hoje = new Date();
-    await this.prisma.atividadeUsuario.create({
-      data: { usuarioId: userId, data: hoje, quantidade: 1 }
-    });
     return { material: updatedMaterial, quizzes };
   }
   async gerarFlashcards({
@@ -181,10 +177,7 @@ export class MateriaisService {
         quantidadeFlashcards: flashcards.length,
       },
     });
-    const hoje = new Date();
-    await this.prisma.atividadeUsuario.create({
-      data: { usuarioId: userId, data: hoje, quantidade: 1 }
-    });
+  // Não registra atividade ao criar flashcard
     return { material: updatedMaterial, flashcards, respostaIaCrua: flashcardsJson };
   }
 
@@ -237,10 +230,6 @@ export class MateriaisService {
           autorId: userId,
           tipoMaterial: "RESUMO_IA" as TipoMaterialEstudo,
         },
-      });
-      const hoje = new Date();
-      await this.prisma.atividadeUsuario.create({
-        data: { usuarioId: userId, data: hoje, quantidade: 1 }
       });
       console.log(`Material criado com sucesso. ID: ${material.id}`);
       return material;
