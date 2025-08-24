@@ -36,14 +36,25 @@ export class MateriaisService {
       const respostaUsuario = respostasQuiz[quizIdx] ?? respostasQuiz[String(quizIdx)];
       if (typeof respostaUsuario !== 'undefined' && respostaUsuario !== null) {
         const acertou = String(respostaUsuario).trim() === String(quiz?.correta).trim();
-        await this.prisma.atividadeUsuario.create({
-          data: {
+        const atividadeExistente = await this.prisma.atividadeUsuario.findFirst({
+          where: {
             usuarioId: userId,
-            data: hoje,
-            quantidade: 1,
-            acertou: acertou
-          }
+            materialId: materialId,
+            quizIndex: quizIdx,
+          },
         });
+        if (!atividadeExistente) {
+          await this.prisma.atividadeUsuario.create({
+            data: {
+              usuarioId: userId,
+              materialId: materialId,
+              quizIndex: quizIdx,
+              data: hoje,
+              quantidade: 1,
+              acertou: acertou
+            }
+          });
+        }
       }
     }
     return await this.prisma.materialEstudo.update({

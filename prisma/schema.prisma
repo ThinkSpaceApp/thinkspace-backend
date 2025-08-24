@@ -176,6 +176,7 @@ model MaterialEstudo {
   materias       Materia[]      @relation("MateriaParaMaterial")
   @@map("MaterialEstudo")
   ChatMensagem ChatMensagem[]
+  atividadesUsuario AtividadeUsuario[]
 }
 
 model ChatMensagem {
@@ -423,10 +424,13 @@ model ExperienciaUsuario {
 }
 
 model AtividadeUsuario {
-  id        String   @id @default(uuid())
-  usuarioId String
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
-  data      DateTime
-  quantidade Int     @default(1)
-  acertou    Boolean  @default(false)
+  id         String         @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario        @relation(fields: [usuarioId], references: [id])
+  materialId String?
+  material   MaterialEstudo? @relation(fields: [materialId], references: [id])
+  quizIndex  Int?
+  data       DateTime
+  quantidade Int            @default(1)
+  acertou    Boolean        @default(false)
 }
