@@ -346,6 +346,12 @@ export class MateriaisService {
         pdfBinario = undefined;
       }
     }
+    if (pdfBinario) {
+      console.log('DEBUG pdfBinario type:', typeof pdfBinario);
+      console.log('DEBUG pdfBinario instanceof Buffer:', pdfBinario instanceof Buffer);
+      console.log('DEBUG pdfBinario length:', pdfBinario.length);
+      console.log('DEBUG pdfBinario (first 20 bytes):', pdfBinario.slice(0, 20));
+    }
     return this.prisma.materialEstudo.create({
       data: {
         titulo: data.nomeDesignado,
