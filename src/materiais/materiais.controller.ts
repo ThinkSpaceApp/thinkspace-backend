@@ -36,25 +36,6 @@ import { uploadPdfConfig } from "./config/upload.config";
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
 export class MateriaisController {
-  @ApiOperation({ summary: "Obter PDF do material para prévia" })
-  @ApiParam({ name: "id", required: true, description: "ID do material" })
-  @ApiResponse({ status: 200, description: "Retorna o PDF do material." })
-  @ApiResponse({ status: 404, description: "Material ou PDF não encontrado." })
-  @Get("pdf/:id")
-  async getPdfMaterialBinario(@Param("id") id: string, @Res() res: import('express').Response) {
-    const material = await this.materiaisService.buscarMaterialPorId(id);
-    if (!material || !material.caminhoArquivo) {
-      return res.status(404).json({ message: "Material ou PDF não encontrado." });
-    }
-    const fs = require('fs');
-    res.setHeader("Content-Type", "application/pdf");
-    const stream = fs.createReadStream(material.caminhoArquivo);
-    stream.on('error', () => {
-      return res.status(404).json({ message: "Arquivo PDF não encontrado no servidor." });
-    });
-    stream.pipe(res);
-  }
-  
   constructor(private readonly materiaisService: MateriaisService) {}
   @ApiOperation({ summary: "Listar materiais do usuário" })
   @ApiResponse({ status: 200, description: "Materiais encontrados com sucesso." })
@@ -302,7 +283,6 @@ export class MateriaisController {
       }
       dadosMaterial.caminhoArquivo = file.path;
       dadosMaterial.nomeArquivo = nomeArquivo;
-      dadosMaterial.pdfBinario = file.buffer;
     }
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
     let materialCriado;
