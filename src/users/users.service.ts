@@ -121,7 +121,15 @@ export class UsersService {
         where: { id: data.instituicaoId },
       });
       if (!instituicao) {
-        throw new BadRequestException("Instituição informada não existe.");
+        const nome = (data as any).instituicaoNome;
+        if (nome && typeof nome === 'string') {
+          const novaInstituicao = await this.prisma.instituicao.create({
+            data: { nome }
+          });
+          data.instituicaoId = novaInstituicao.id;
+        } else {
+          throw new BadRequestException("Instituição informada não existe e nenhum nome foi fornecido para criar.");
+        }
       }
     }
     return this.prisma.usuario.update({
