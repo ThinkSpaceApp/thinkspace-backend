@@ -93,13 +93,23 @@ export class MateriaisService {
       temperature: 0.5,
       thinking: false,
     });
-    const match = quizzesJson.match(/\[.*\]/s);
-    const jsonToParse = match ? match[0] : quizzesJson;
+    // Remove apenas as tags <think> e </think>, preservando o conteúdo
+    const quizzesJsonClean = quizzesJson.replace(/<think>|<\/think>/gi, "").trim();
+    // Tenta extrair o array JSON de dentro da resposta crua
+    const match = quizzesJsonClean.match(/\[.*\]/s);
+    const jsonToParse = match ? match[0] : quizzesJsonClean;
     let quizzes: any[] = [];
     try {
       quizzes = JSON.parse(jsonToParse);
     } catch {
-      quizzes = [];
+      // Se falhar, tenta encontrar todos objetos de questão e montar um array
+      const regex = /\{[^}]*\}/g;
+      const found = quizzesJsonClean.match(regex);
+      if (found) {
+        quizzes = found.map(q => { try { return JSON.parse(q); } catch { return null; } }).filter(Boolean);
+      } else {
+        quizzes = [];
+      }
     }
     if (!materiaId) throw new Error("O parâmetro materiaId é obrigatório.");
     const material = await this.prisma.materialEstudo.findUnique({ where: { id: materiaId } });
@@ -153,17 +163,21 @@ export class MateriaisService {
       thinking: false,
     });
     if (flashcardsJson) {
-      flashcardsJson = flashcardsJson.replace(/<think>[\s\S]*?<\/think>/gi, (match) => {
-        const jsonMatch = match.match(/\[.*\]/s);
-        return jsonMatch ? jsonMatch[0] : "";
-      });
       flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, "").trim();
     }
+    const match = flashcardsJson.match(/\[.*\]/s);
+    const jsonToParse = match ? match[0] : flashcardsJson;
     let flashcards: any[] = [];
     try {
-      flashcards = JSON.parse(flashcardsJson);
+      flashcards = JSON.parse(jsonToParse);
     } catch {
-      flashcards = [];
+      const regex = /\{[^}]*\}/g;
+      const found = flashcardsJson.match(regex);
+      if (found) {
+        flashcards = found.map(f => { try { return JSON.parse(f); } catch { return null; } }).filter(Boolean);
+      } else {
+        flashcards = [];
+      }
     }
     if (Array.isArray(flashcards) && typeof quantidade === "number" && quantidade > 0) {
       flashcards = flashcards.slice(0, quantidade);

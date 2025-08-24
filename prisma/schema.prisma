@@ -181,7 +181,7 @@ model MaterialEstudo {
 model ChatMensagem {
   id               String         @id @default(uuid())
   materialId       String
-  material         MaterialEstudo @relation(fields: [materialId], references: [id])
+  material         MaterialEstudo @relation(fields: [materialId], references: [id], onDelete: Cascade)
   autorId          String
   autor            Usuario        @relation(fields: [autorId], references: [id])
   mensagemUsuario  String         @db.Text
