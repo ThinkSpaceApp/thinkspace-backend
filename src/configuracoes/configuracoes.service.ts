@@ -19,7 +19,26 @@ export class ConfiguracoesService {
   }
 
   async alterarDataNascimento(userId: string, dataNascimento: string) {
-    return this.prisma.usuario.update({ where: { id: userId }, data: { dataNascimento } });
+    if (!dataNascimento || typeof dataNascimento !== 'string') {
+      throw new Error('Data de nascimento inválida.');
+    }
+    let dateObj: Date | null = null;
+    const normalized = dataNascimento.replace(/\//g, '-');
+    if (/^\d{2}-\d{2}-\d{4}$/.test(normalized)) {
+      const [day, month, year] = normalized.split('-').map(Number);
+      dateObj = new Date(year, month - 1, day);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+      dateObj = new Date(normalized);
+    } else {
+      const parsed = Date.parse(normalized);
+      if (!isNaN(parsed)) {
+        dateObj = new Date(parsed);
+      }
+    }
+    if (!dateObj || isNaN(dateObj.getTime())) {
+      throw new Error('Formato de data de nascimento inválido. Use yyyy-mm-dd ou dd-mm-yyyy.');
+    }
+    return this.prisma.usuario.update({ where: { id: userId }, data: { dataNascimento: dateObj } });
   }
 
   async alterarInstituicao(userId: string, instituicaoNome: string) {
