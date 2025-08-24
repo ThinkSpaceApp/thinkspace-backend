@@ -43,11 +43,16 @@ export class MateriaisController {
   @Get("pdf/:id")
   async getPdfMaterialBinario(@Param("id") id: string, @Res() res: import('express').Response) {
     const material = await this.materiaisService.buscarMaterialPorId(id);
-    if (!material || !material.pdfBinario) {
+    if (!material || !material.caminhoArquivo) {
       return res.status(404).json({ message: "Material ou PDF não encontrado." });
     }
+    const fs = require('fs');
     res.setHeader("Content-Type", "application/pdf");
-    res.send(Buffer.from(material.pdfBinario));
+    const stream = fs.createReadStream(material.caminhoArquivo);
+    stream.on('error', () => {
+      return res.status(404).json({ message: "Arquivo PDF não encontrado no servidor." });
+    });
+    stream.pipe(res);
   }
   
   constructor(private readonly materiaisService: MateriaisService) {}

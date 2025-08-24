@@ -11,19 +11,27 @@ export class PdfProcessorService {
 
   async extrairTextoDoPdf(caminhoArquivo: string): Promise<string> {
     try {
-      this.logger.log(`Iniciando extração de texto do PDF: ${caminhoArquivo}`);
-
-      const pdfBuffer = await fs.readFile(caminhoArquivo);
-      const pdfData = await pdfParse(pdfBuffer);
-
-      const texto = pdfData.text;
-
-      if (!texto || texto.trim().length === 0) {
-        throw new Error("PDF não contém texto extraível");
-      }
-
-      this.logger.log(`Texto extraído com sucesso. Tamanho: ${texto.length} caracteres`);
-      return texto;
+      this.logger.log(`Iniciando extração de texto do PDF (stream): ${caminhoArquivo}`);
+      const fsStream = require('fs').createReadStream(caminhoArquivo);
+      const chunks: Buffer[] = [];
+      return await new Promise((resolve, reject) => {
+        fsStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+        fsStream.on('end', async () => {
+          try {
+            const buffer = Buffer.concat(chunks);
+            const pdfData = await pdfParse(buffer);
+            const texto = pdfData.text;
+            if (!texto || texto.trim().length === 0) {
+              throw new Error("PDF não contém texto extraível");
+            }
+            this.logger.log(`Texto extraído com sucesso. Tamanho: ${texto.length} caracteres`);
+            resolve(texto);
+          } catch (err) {
+            reject(err);
+          }
+        });
+        fsStream.on('error', reject);
+      });
     } catch (error) {
       this.logger.error(
         `Erro ao extrair texto do PDF: ${error instanceof Error ? error.message : String(error)}`,
@@ -143,10 +151,21 @@ export class PdfProcessorService {
 
   async validarPdf(caminhoArquivo: string): Promise<boolean> {
     try {
-      const pdfBuffer = await fs.readFile(caminhoArquivo);
-      const pdfData = await pdfParse(pdfBuffer);
-
-      return Boolean(pdfData.text && pdfData.text.trim().length > 0);
+      const fsStream = require('fs').createReadStream(caminhoArquivo);
+      const chunks: Buffer[] = [];
+      return await new Promise((resolve, reject) => {
+        fsStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+        fsStream.on('end', async () => {
+          try {
+            const buffer = Buffer.concat(chunks);
+            const pdfData = await pdfParse(buffer);
+            resolve(Boolean(pdfData.text && pdfData.text.trim().length > 0));
+          } catch (err) {
+            reject(false);
+          }
+        });
+        fsStream.on('error', () => resolve(false));
+      });
     } catch (error) {
       this.logger.error(
         `Erro ao validar PDF: ${error instanceof Error ? error.message : String(error)}`,
