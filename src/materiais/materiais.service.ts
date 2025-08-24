@@ -88,7 +88,7 @@ export class MateriaisService {
     const quizzesJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
-      maxTokens: 50000,
+      maxTokens: 55000,
       temperature: 0.5,
       thinking: false,
     });
@@ -146,7 +146,7 @@ export class MateriaisService {
     let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: "",
-      maxTokens: 10000,
+      maxTokens: 55000,
       temperature: 0.5,
       thinking: false,
     });
@@ -656,7 +656,7 @@ export class MateriaisService {
     let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
-      maxTokens: 10000,
+      maxTokens: 55000,
       temperature: 0.5,
       thinking: false,
     });
@@ -708,7 +708,7 @@ export class MateriaisService {
     let quizzesJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
-      maxTokens: 20000,
+      maxTokens: 55000,
       temperature: 0.5,
       thinking: false,
     });
@@ -752,7 +752,7 @@ export class MateriaisService {
     let quizzesJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
-      maxTokens: 20000,
+      maxTokens: 55000,
       temperature: 0.5,
       thinking: false,
     });
@@ -881,7 +881,7 @@ ${topicosFormatados}
     let flashcardsJson = await this.glm45Service.gerarTextoEducativo({
       systemPrompt: prompt,
       userPrompt: textoBase,
-      maxTokens: 10000,
+      maxTokens: 55000,
       temperature: 0.5,
       thinking: false,
     });
