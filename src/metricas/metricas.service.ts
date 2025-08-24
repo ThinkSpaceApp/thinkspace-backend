@@ -131,7 +131,13 @@ export class MetricasService {
   acertos = atividadesQuiz.filter(a => a.acertou).length;
   erros = atividadesQuiz.filter(a => a.acertou === false).length;
   totalQuestoes = atividadesQuiz.length;
-    const questoesPorDia: Record<string, number> = {};
+      const questoesPorDia: Record<string, number> = {};    
+      for (const atividade of atividades) {
+        if (atividade.quantidade > 0) {
+          const dia = new Date(atividade.data).toISOString().slice(0, 10);
+          questoesPorDia[dia] = (questoesPorDia[dia] || 0) + 1;
+        }
+      }
     const xpPorMateria: Record<string, { nome: string; xp: number; cor: string; icone: string }> =
       {};
 

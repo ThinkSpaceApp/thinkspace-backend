@@ -20,6 +20,29 @@ export class MateriaisService {
     userId: string,
     respostasQuiz: Record<string | number, string>,
   ) {
+    const hoje = new Date();
+    const material = await this.prisma.materialEstudo.findUnique({ where: { id: materialId } });
+    let quizzes: any[] = [];
+    try {
+      quizzes = material?.quizzesJson ? JSON.parse(material.quizzesJson) : [];
+    } catch {}
+    for (const idx in respostasQuiz) {
+      const respostaUsuario = respostasQuiz[idx];
+      const quizIdx = Number(idx);
+      const quiz = quizzes[quizIdx];
+      let acertou = false;
+      if (quiz && respostaUsuario) {
+        acertou = respostaUsuario === quiz.correta;
+      }
+      await this.prisma.atividadeUsuario.create({
+        data: {
+          usuarioId: userId,
+          data: hoje,
+          quantidade: 1,
+          acertou: acertou
+        }
+      });
+    }
     return await this.prisma.materialEstudo.update({
       where: { id: materialId },
       data: {
