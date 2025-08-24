@@ -291,8 +291,12 @@ export class MateriaisController {
       quantidadeFlashcards: body.quantidadeFlashcards,
     };
     if (origem === "DOCUMENTO" && file) {
+      const nomeArquivo = file.originalname || '';
+      if (!nomeArquivo.toLowerCase().endsWith('.pdf')) {
+        throw new BadRequestException('O arquivo enviado deve ter extensão .pdf');
+      }
       dadosMaterial.caminhoArquivo = file.path;
-      dadosMaterial.nomeArquivo = file.originalname;
+      dadosMaterial.nomeArquivo = nomeArquivo;
       dadosMaterial.pdfBinario = file.buffer;
     }
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
