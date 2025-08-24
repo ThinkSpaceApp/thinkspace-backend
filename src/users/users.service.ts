@@ -128,9 +128,12 @@ export class UsersService {
           });
           data.instituicaoId = novaInstituicao.id;
         } else {
-          throw new BadRequestException("Instituição informada não existe e nenhum nome foi fornecido para criar.");
+          delete data.instituicaoId;
         }
       }
+    }
+    if (data.instituicaoId && typeof data.instituicaoId !== 'string') {
+      delete data.instituicaoId;
     }
     return this.prisma.usuario.update({
       where: { id: userId },
