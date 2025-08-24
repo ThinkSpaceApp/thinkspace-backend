@@ -131,21 +131,16 @@ export class MetricasService {
   acertos = atividadesQuiz.filter(a => a.acertou).length;
   erros = atividadesQuiz.filter(a => a.acertou === false).length;
   totalQuestoes = atividadesQuiz.length;
-      const questoesPorDia: Record<string, number> = {};    
-      // Garante que cada dia só contabilize as questões feitas naquele dia
-      for (const atividade of atividades) {
-        if (atividade.quantidade > 0) {
-          const dia = new Date(atividade.data).toISOString().slice(0, 10);
-          if (!questoesPorDia[dia]) {
-            questoesPorDia[dia] = 1;
-          } else {
-            questoesPorDia[dia]++;
-          }
-        }
-      }
-    const xpPorMateria: Record<string, { nome: string; xp: number; cor: string; icone: string }> =
-      {};
-
+  const questoesPorDia: Record<string, number> = {};
+  for (const atividade of atividadesQuiz) {
+    const dia = new Date(atividade.data).toISOString().slice(0, 10);
+    if (!questoesPorDia[dia]) {
+      questoesPorDia[dia] = 1;
+    } else {
+      questoesPorDia[dia]++;
+    }
+  }
+    const xpPorMateria: Record<string, { nome: string; xp: number; cor: string; icone: string }> = {};
     for (const material of materiais) {
       let quizzes: any[] = [];
       let respostas: Record<string | number, string> = {};
@@ -165,23 +160,17 @@ export class MetricasService {
           materialDate >= toZonedTime(inicioSemana, timeZone) &&
           materialDate <= toZonedTime(fimSemana, timeZone)
         ) {
-          let realizadasHoje = 0;
           let xpMateria = 0;
           quizzes.forEach((quiz, idx) => {
-            totalQuestoes++;
             const respostaUsuario = respostas[idx] || respostas[String(idx)];
             if (respostaUsuario) {
-              realizadasHoje++;
               if (respostaUsuario === quiz.correta) {
-                acertos++;
                 xpMateria += 5;
               } else {
-                erros++;
                 xpMateria -= 2;
               }
             }
           });
-          questoesPorDia[dateKey] = (questoesPorDia[dateKey] || 0) + realizadasHoje;
           if (material.materia && materiaIdsUsuario.includes(material.materia.id)) {
             const matId = material.materia.id;
             if (!xpPorMateria[matId]) {
