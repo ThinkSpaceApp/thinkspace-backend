@@ -31,22 +31,20 @@ export class MateriaisService {
         usuarioId: userId,
       },
     });
-    const limite = quizzes.length;
-    let atividadesRegistradas = atividadesExistentes.length;
     for (let quizIdx = 0; quizIdx < quizzes.length; quizIdx++) {
-      if (atividadesRegistradas >= limite) break;
       const quiz = quizzes[quizIdx];
-      const respostaUsuario = respostasQuiz[quizIdx];
-      const acertou = respostaUsuario === quiz?.correta;
-      await this.prisma.atividadeUsuario.create({
-        data: {
-          usuarioId: userId,
-          data: hoje,
-          quantidade: 1,
-          acertou: acertou
-        }
-      });
-      atividadesRegistradas++;
+      const respostaUsuario = respostasQuiz[quizIdx] ?? respostasQuiz[String(quizIdx)];
+      if (typeof respostaUsuario !== 'undefined' && respostaUsuario !== null) {
+        const acertou = String(respostaUsuario).trim() === String(quiz?.correta).trim();
+        await this.prisma.atividadeUsuario.create({
+          data: {
+            usuarioId: userId,
+            data: hoje,
+            quantidade: 1,
+            acertou: acertou
+          }
+        });
+      }
     }
     return await this.prisma.materialEstudo.update({
       where: { id: materialId },
