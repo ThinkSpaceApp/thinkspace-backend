@@ -22,8 +22,15 @@ export class ConfiguracoesService {
     return this.prisma.usuario.update({ where: { id: userId }, data: { dataNascimento } });
   }
 
-  async alterarInstituicao(userId: string, instituicaoId: string) {
-    return this.prisma.usuario.update({ where: { id: userId }, data: { instituicaoId } });
+  async alterarInstituicao(userId: string, instituicaoNome: string) {
+    if (!instituicaoNome || typeof instituicaoNome !== 'string') {
+      throw new Error('Nome da instituição inválido.');
+    }
+    let instituicao = await this.prisma.instituicao.findUnique({ where: { nome: instituicaoNome } });
+    if (!instituicao) {
+      instituicao = await this.prisma.instituicao.create({ data: { nome: instituicaoNome } });
+    }
+    return this.prisma.usuario.update({ where: { id: userId }, data: { instituicaoId: instituicao.id } });
   }
 
   async alterarNivelEscolaridade(userId: string, escolaridade: string) {
