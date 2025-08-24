@@ -26,7 +26,15 @@ export class MateriaisService {
     try {
       quizzes = material?.quizzesJson ? JSON.parse(material.quizzesJson) : [];
     } catch {}
+    const atividadesExistentes = await this.prisma.atividadeUsuario.findMany({
+      where: {
+        usuarioId: userId,
+      },
+    });
+    const limite = quizzes.length;
+    let atividadesRegistradas = atividadesExistentes.length;
     for (const idx in respostasQuiz) {
+      if (atividadesRegistradas >= limite) break;
       const respostaUsuario = respostasQuiz[idx];
       const quizIdx = Number(idx);
       const quiz = quizzes[quizIdx];
@@ -42,6 +50,7 @@ export class MateriaisService {
           acertou: acertou
         }
       });
+      atividadesRegistradas++;
     }
     return await this.prisma.materialEstudo.update({
       where: { id: materialId },
