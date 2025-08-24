@@ -293,6 +293,7 @@ export class MateriaisController {
     if (origem === "DOCUMENTO" && file) {
       dadosMaterial.caminhoArquivo = file.path;
       dadosMaterial.nomeArquivo = file.originalname;
+      dadosMaterial.pdfBinario = file.buffer;
     }
     await this.materiaisService.salvarProgressoMaterial(userId, dadosMaterial);
     let materialCriado;
