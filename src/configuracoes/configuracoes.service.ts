@@ -81,11 +81,12 @@ export class ConfiguracoesService {
   }
 
   async enviarCodigoTrocaEmail(userId: string) {
-    const email = this.emailTrocaMap.get(userId);
+    let email = this.emailTrocaMap.get(userId);
     if (!email) {
       return { success: false, message: 'Nenhum email registrado para troca de email.' };
     }
-    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+    this.emailTrocaMap.set(userId, email);
+    const codigo = Math.floor(1000 + Math.random() * 9000).toString();
     this.codigoVerificacaoMap.set(userId, codigo);
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY || 'YOUR_RESEND_API_KEY';
