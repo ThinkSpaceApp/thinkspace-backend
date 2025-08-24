@@ -33,7 +33,7 @@ export class Glm45Service {
         parameters.thinking = { type: "enabled" };
       }
       const resp = await this.client.chatCompletion({
-        model: "zai-org/GLM-4.5",
+        model: "openai/gpt-oss-120b",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
