@@ -96,24 +96,29 @@ export class MateriaisService {
       temperature: 0.5,
       thinking: false,
     });
-    // Remove apenas as tags <think> e </think>, preservando o conteúdo
+    console.log('Resposta crua da IA (quizzesJson):', quizzesJson);
     const quizzesJsonClean = quizzesJson.replace(/<think>|<\/think>/gi, "").trim();
-    // Tenta extrair o array JSON de dentro da resposta crua
+    console.log('Resposta limpa (quizzesJsonClean):', quizzesJsonClean);
     const match = quizzesJsonClean.match(/\[.*\]/s);
+    console.log('Match do array JSON:', match);
     const jsonToParse = match ? match[0] : quizzesJsonClean;
+    console.log('JSON a ser parseado (jsonToParse):', jsonToParse);
     let quizzes: any[] = [];
     try {
       quizzes = JSON.parse(jsonToParse);
-    } catch {
-      // Se falhar, tenta encontrar todos objetos de questão e montar um array
+      console.log('Resultado do parse quizzes:', quizzes);
+    } catch (err) {
+      console.log('Erro ao fazer parse do quizzes:', err);
       const regex = /\{[^}]*\}/g;
       const found = quizzesJsonClean.match(regex);
+      console.log('Match de objetos individuais:', found);
       if (found) {
-        quizzes = found.map(q => { try { return JSON.parse(q); } catch { return null; } }).filter(Boolean);
+        quizzes = found.map(q => { try { return JSON.parse(q); } catch (e) { console.log('Erro ao parsear objeto individual:', e, q); return null; } }).filter(Boolean);
       } else {
         quizzes = [];
       }
     }
+    console.log('Array final quizzes:', quizzes);
     if (!materiaId) throw new Error("O parâmetro materiaId é obrigatório.");
     const material = await this.prisma.materialEstudo.findUnique({ where: { id: materiaId } });
     if (!material) throw new Error("Material não encontrado para atualizar quizzes.");
@@ -166,22 +171,30 @@ export class MateriaisService {
       thinking: false,
     });
     if (flashcardsJson) {
+      console.log('Resposta crua da IA (flashcardsJson):', flashcardsJson);
       flashcardsJson = flashcardsJson.replace(/<think>|<\/think>/gi, "").trim();
+      console.log('Resposta limpa (flashcardsJsonClean):', flashcardsJson);
     }
     const match = flashcardsJson.match(/\[.*\]/s);
+    console.log('Match do array JSON:', match);
     const jsonToParse = match ? match[0] : flashcardsJson;
+    console.log('JSON a ser parseado (jsonToParse):', jsonToParse);
     let flashcards: any[] = [];
     try {
       flashcards = JSON.parse(jsonToParse);
-    } catch {
+      console.log('Resultado do parse flashcards:', flashcards);
+    } catch (err) {
+      console.log('Erro ao fazer parse do flashcards:', err);
       const regex = /\{[^}]*\}/g;
       const found = flashcardsJson.match(regex);
+      console.log('Match de objetos individuais:', found);
       if (found) {
-        flashcards = found.map(f => { try { return JSON.parse(f); } catch { return null; } }).filter(Boolean);
+        flashcards = found.map(f => { try { return JSON.parse(f); } catch (e) { console.log('Erro ao parsear objeto individual:', e, f); return null; } }).filter(Boolean);
       } else {
         flashcards = [];
       }
     }
+    console.log('Array final flashcards:', flashcards);
     if (Array.isArray(flashcards) && typeof quantidade === "number" && quantidade > 0) {
       flashcards = flashcards.slice(0, quantidade);
     }
