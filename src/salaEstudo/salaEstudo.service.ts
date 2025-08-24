@@ -64,7 +64,12 @@ export class salaEstudoService {
 
   async addUserToDefaultRoom(userId: string) {
     const defaultRoom = await this.prisma.salaEstudo.findFirst({
-      where: { nome: "thinkspace" },
+      where: {
+        nome: {
+          equals: "ThinkSpace",
+          mode: "insensitive"
+        }
+      }
     });
 
     if (!defaultRoom) {
