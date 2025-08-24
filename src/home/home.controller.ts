@@ -86,7 +86,7 @@ export class HomeController {
     await this.salaEstudoService.ensureAllUsersInDefaultRoom();
     const userJwt = req.user as { email: string };
       const salas = await this.usersService.getSalasEstudoByEmail(userJwt.email);
-      const palette = ["#7C3AED", "#a18ddfff", "#ee82a2ff", "#1a355fff"];
+      const palette = ["#7C3AED", "#a18ddfff", "#ee82a2ff", "#8e44ad"];
       let salasComCor;
       if (Array.isArray(salas)) {
         salasComCor = salas.map((sala: any, idx: number) => ({
@@ -118,7 +118,7 @@ export class HomeController {
         email: true,
       },
     });
-    const paletteBg = ["7C3AED", "A78BFA", "FBCFE8", "1E293B"];
+    const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
     const avatares = ultimosUsuarios.map((u, idx) => {
       if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
         return u.foto;
