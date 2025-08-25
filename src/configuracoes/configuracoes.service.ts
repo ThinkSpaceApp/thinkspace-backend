@@ -201,7 +201,7 @@ export class ConfiguracoesService {
     return { success: true, message: 'Código verificado com sucesso.' };
   }
 
-  async confirmarTrocaSenha(userId: string, novaSenha: string, codigo: string) {
+  async confirmarTrocaSenha(userId: string, novaSenha: string, confirmarSenha: string, codigo: string) {
     const codigoSalvo = this.codigoVerificacaoSenhaMap.get(userId);
     if (!codigoSalvo) {
       return { success: false, message: 'Nenhum código de verificação encontrado para este usuário.' };
@@ -210,6 +210,9 @@ export class ConfiguracoesService {
       return { success: false, message: 'Código de verificação inválido.' };
     }
     const errosSenha: string[] = [];
+    if (novaSenha !== confirmarSenha) {
+      errosSenha.push('A confirmação de senha não confere.');
+    }
     if (typeof novaSenha !== 'string' || novaSenha.length < 6) {
       errosSenha.push('A senha deve ter pelo menos 6 caracteres.');
     }

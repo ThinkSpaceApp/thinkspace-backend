@@ -214,13 +214,18 @@ export class ConfiguracoesController {
 
   @Patch('senha/confirmar')
   @ApiOperation({ summary: 'Confirmar troca de senha (passo 3)' })
-  @ApiBody({ schema: { type: 'object', properties: { novaSenha: { type: 'string', minLength: 6 }, codigo: { type: 'string' } }, required: ['novaSenha', 'codigo'] } })
+  @ApiBody({ schema: { type: 'object', properties: { novaSenha: { type: 'string', minLength: 6 }, confirmarSenha: { type: 'string', minLength: 6 }, codigo: { type: 'string' } }, required: ['novaSenha', 'confirmarSenha', 'codigo'] } })
   @ApiResponse({ status: 200, description: 'Senha alterada com sucesso.' })
-  async confirmarTrocaSenha(@Req() req: Request, @Body('novaSenha') novaSenha: string, @Body('codigo') codigo: string) {
+  async confirmarTrocaSenha(
+    @Req() req: Request,
+    @Body('novaSenha') novaSenha: string,
+    @Body('confirmarSenha') confirmarSenha: string,
+    @Body('codigo') codigo: string
+  ) {
     if (!req.user || !('userId' in req.user)) {
       throw new Error('Usuário não autenticado ou userId ausente.');
     }
-    return this.configuracoesService.confirmarTrocaSenha((req.user as any).userId, novaSenha, codigo);
+    return this.configuracoesService.confirmarTrocaSenha((req.user as any).userId, novaSenha, confirmarSenha, codigo);
   }
 }
 
