@@ -119,12 +119,23 @@ export class ConfiguracoesController {
 
   @Patch("suspender-conta")
   @ApiOperation({ summary: "Suspender a conta do usuário" })
+  @ApiBody({ schema: { type: "object", properties: { senhaAtual: { type: "string", minLength: 6 } }, required: ["senhaAtual"] } })
   @ApiResponse({ status: 200, description: "Conta suspensa com sucesso." })
-  async suspenderConta(@Req() req: Request) {
+  async suspenderConta(@Req() req: Request, @Body('senhaAtual') senhaAtual: string) {
     if (!req.user || !("userId" in req.user)) {
       throw new Error("Usuário não autenticado ou userId ausente.");
     }
-    return this.configuracoesService.suspenderConta((req.user as any).userId);
+    const userId = (req.user as any).userId;
+    const usuario = await this.configuracoesService.getUsuarioById(userId);
+    if (!usuario) {
+      throw new Error("Usuário não encontrado.");
+    }
+    const bcrypt = await import('bcrypt');
+    const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
+    if (!senhaValida) {
+      throw new Error("Senha atual incorreta.");
+    }
+    return this.configuracoesService.suspenderConta(userId);
   }
 
   @Delete("excluir-conta")
