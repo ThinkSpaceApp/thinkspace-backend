@@ -85,32 +85,45 @@ export class ConfiguracoesService {
     if (!email) {
       return { success: false, message: 'Nenhum email registrado para troca de email.' };
     }
+    if (typeof email !== 'string' || !email.includes('@') || email.length < 6) {
+      return { success: false, message: 'Email inválido. Verifique o endereço informado.' };
+    }
     this.emailTrocaMap.set(userId, email);
     const codigo = Math.floor(10000 + Math.random() * 90000).toString();
     this.codigoVerificacaoMap.set(userId, codigo);
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY || 'YOUR_RESEND_API_KEY';
-    const { Resend } = await import('resend');
-    const resend = new Resend(RESEND_API_KEY);
-    await resend.emails.send({
-      from: 'noreply@thinkspace.app.br',
-      to: email,
-      subject: '🔄Código de verificação para troca de email',
-      html: `
-        <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
-          <img src="https://i.imgur.com/4JBPx3E.png" alt="ThinkSpace Logo" style="height: full; width: full; margin-bottom: 20px;" />
-          <h1 style="color:rgb(146, 102, 204);">🔄 Troca de email no ThinkSpace</h1>
-          <p style="color:#333;">Você solicitou a troca do seu email na plataforma. Para confirmar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
-          <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
-            ${codigo}
+    if (!RESEND_API_KEY || RESEND_API_KEY === 'YOUR_RESEND_API_KEY') {
+      return { success: false, message: 'API key do serviço de email não configurada.' };
+    }
+    try {
+      const { Resend } = await import('resend');
+      const resend = new Resend(RESEND_API_KEY);
+      const result = await resend.emails.send({
+        from: 'noreply@thinkspace.app.br',
+        to: email,
+        subject: '🔄Código de verificação para troca de email',
+        html: `
+          <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
+            <img src="https://i.imgur.com/4JBPx3E.png" alt="ThinkSpace Logo" style="height: full; width: full; margin-bottom: 20px;" />
+            <h1 style="color:rgb(146, 102, 204);">🔄 Troca de email no ThinkSpace</h1>
+            <p style="color:#333;">Você solicitou a troca do seu email na plataforma. Para confirmar, utilize o código abaixo. Ele é válido por <strong>10 minutos</strong>:</p>
+            <div style="font-size: 24px; font-weight: bold; color:rgb(153, 98, 175); margin: 20px 0;">
+              ${codigo}
+            </div>
+            <p style="color:#333;">Se você não solicitou a troca, ignore este e-mail. Caso tenha dúvidas, entre em contato conosco.</p>
+            <p style="margin-top: 30px; color:#333;">💡 <strong>Equipe ThinkSpace</strong></p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+            <p style="font-size: 12px; color: #777;">Este é um e-mail automático. Por favor, não responda.</p>
           </div>
-          <p style="color:#333;">Se você não solicitou a troca, ignore este e-mail. Caso tenha dúvidas, entre em contato conosco.</p>
-          <p style="margin-top: 30px; color:#333;">💡 <strong>Equipe ThinkSpace</strong></p>
-          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
-          <p style="font-size: 12px; color: #777;">Este é um e-mail automático. Por favor, não responda.</p>
-        </div>
-      `,
-    });
+        `,
+      });
+      if (result.error) {
+        return { success: false, message: `Erro ao enviar email: ${result.error.message || result.error}` };
+      }
+    } catch (err: any) {
+      return { success: false, message: `Falha ao enviar email: ${err?.message || err}` };
+    }
     return { message: 'Código de verificação enviado para o email.' };
   }
 
