@@ -228,7 +228,9 @@ export class ConfiguracoesService {
     if (errosSenha.length > 0) {
       return { success: false, message: 'Senha inválida: ' + errosSenha.join(' ') };
     }
-    await this.prisma.usuario.update({ where: { id: userId }, data: { senha: novaSenha } });
+  const bcrypt = await import('bcrypt');
+  const hashedPassword = await bcrypt.hash(novaSenha, 10);
+  await this.prisma.usuario.update({ where: { id: userId }, data: { senha: hashedPassword } });
     this.codigoVerificacaoSenhaMap.delete(userId);
     this.senhaTrocaMap.delete(userId);
     return { success: true, message: 'Senha alterada com sucesso.' };
