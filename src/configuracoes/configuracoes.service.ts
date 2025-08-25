@@ -162,7 +162,7 @@ export class ConfiguracoesService {
     if (!email) {
       return { success: false, message: 'Nenhum email registrado para troca de senha.' };
     }
-    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+    const codigo = Math.floor(10000 + Math.random() * 90000).toString();
     this.codigoVerificacaoSenhaMap.set(userId, codigo);
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY || 'YOUR_RESEND_API_KEY';
@@ -208,6 +208,25 @@ export class ConfiguracoesService {
     }
     if (codigoSalvo !== codigo) {
       return { success: false, message: 'Código de verificação inválido.' };
+    }
+    const errosSenha: string[] = [];
+    if (typeof novaSenha !== 'string' || novaSenha.length < 6) {
+      errosSenha.push('A senha deve ter pelo menos 6 caracteres.');
+    }
+    if (!/[A-Z]/.test(novaSenha)) {
+      errosSenha.push('A senha deve conter pelo menos uma letra maiúscula.');
+    }
+    if (!/[a-z]/.test(novaSenha)) {
+      errosSenha.push('A senha deve conter pelo menos uma letra minúscula.');
+    }
+    if (!/\d/.test(novaSenha)) {
+      errosSenha.push('A senha deve conter pelo menos um número.');
+    }
+    if (!/[@$!%*?&]/.test(novaSenha)) {
+      errosSenha.push('A senha deve conter pelo menos um caractere especial (@$!%*?&).');
+    }
+    if (errosSenha.length > 0) {
+      return { success: false, message: 'Senha inválida: ' + errosSenha.join(' ') };
     }
     await this.prisma.usuario.update({ where: { id: userId }, data: { senha: novaSenha } });
     this.codigoVerificacaoSenhaMap.delete(userId);
