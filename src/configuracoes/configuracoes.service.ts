@@ -85,7 +85,7 @@ export class ConfiguracoesService {
     if (!email) {
       return { success: false, message: 'Nenhum email registrado para troca de email.' };
     }
-    if (typeof email !== 'string' || !email.includes('@') || email.length < 6) {
+    if (!email.includes('@') || email.length < 6) {
       return { success: false, message: 'Email inválido. Verifique o endereço informado.' };
     }
     this.emailTrocaMap.set(userId, email);
