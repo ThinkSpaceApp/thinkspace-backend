@@ -3,6 +3,9 @@ import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class ConfiguracoesService {
+  async getUsuarioById(userId: string) {
+    return this.prisma.usuario.findUnique({ where: { id: userId } });
+  }
   private emailTrocaMap = new Map<string, string>();
   private senhaTrocaMap = new Map<string, string>();
   private codigoVerificacaoMap = new Map<string, string>();

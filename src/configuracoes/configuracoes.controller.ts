@@ -129,12 +129,23 @@ export class ConfiguracoesController {
 
   @Delete("excluir-conta")
   @ApiOperation({ summary: "Excluir a conta do usuário" })
+  @ApiBody({ schema: { type: "object", properties: { senhaAtual: { type: "string", minLength: 6 } }, required: ["senhaAtual"] } })
   @ApiResponse({ status: 200, description: "Conta excluída com sucesso." })
-  async excluirConta(@Req() req: Request) {
+  async excluirConta(@Req() req: Request, @Body('senhaAtual') senhaAtual: string) {
     if (!req.user || !("userId" in req.user)) {
       throw new Error("Usuário não autenticado ou userId ausente.");
     }
-    return this.configuracoesService.excluirConta((req.user as any).userId);
+    const userId = (req.user as any).userId;
+  const usuario = await this.configuracoesService.getUsuarioById(userId);
+    if (!usuario) {
+      throw new Error("Usuário não encontrado.");
+    }
+    const bcrypt = await import('bcrypt');
+    const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
+    if (!senhaValida) {
+      throw new Error("Senha atual incorreta.");
+    }
+    return this.configuracoesService.excluirConta(userId);
   }
 
   @Post('email/solicitar')
