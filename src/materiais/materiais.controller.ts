@@ -36,6 +36,44 @@ import { uploadPdfConfig } from "./config/upload.config";
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
 export class MateriaisController {
+  @ApiOperation({ summary: "Concluir material e ganhar XP por participação" })
+  @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiResponse({ status: 200, description: "Material concluído e XP concedida." })
+  @Post("concluir/:id")
+  async concluirMaterial(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id || (req.user as any)?.userId;
+    const material = await this.materiaisService.obterPorId(id, userId);
+    if (!material || !material.quizzesJson) {
+      throw new NotFoundException("Material ou quizzes não encontrados.");
+    }
+    const quizzes = JSON.parse(material.quizzesJson);
+    const totalQuestoes = quizzes.length;
+    let respostasQuiz: Record<string, string> = {};
+    if (material.respostasQuizJson) {
+      try {
+        respostasQuiz = JSON.parse(material.respostasQuizJson);
+      } catch {
+        respostasQuiz = {};
+      }
+    }
+    const respondidas = Object.keys(respostasQuiz).length;
+    if (respondidas !== totalQuestoes || totalQuestoes === 0) {
+      throw new BadRequestException("Você precisa responder todas as questões do quiz para concluir o material.");
+    }
+    const { ExperienciaService } = await import("../experiencia/experiencia.service");
+    const prisma = this.materiaisService["prisma"];
+    const experienciaService = new ExperienciaService(prisma);
+    const experienciaAtual = await prisma.experienciaUsuario.findUnique({ where: { usuarioId: userId } });
+    let xpAnterior = experienciaAtual?.xp || 0;
+    let xpFinal = xpAnterior + 20;
+    await prisma.experienciaUsuario.update({ where: { usuarioId: userId }, data: { xp: xpFinal } });
+    return {
+      message: "Material concluído! Você ganhou +20 XP por participação.",
+      xpAnterior,
+      xpFinal,
+      xpGanho: 20,
+    };
+  }
   constructor(private readonly materiaisService: MateriaisService) {}
   @ApiOperation({ summary: "Listar materiais do usuário" })
   @ApiResponse({ status: 200, description: "Materiais encontrados com sucesso." })
