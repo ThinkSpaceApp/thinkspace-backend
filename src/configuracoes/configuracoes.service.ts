@@ -146,10 +146,10 @@ export class ConfiguracoesService {
     if (codigoSalvo !== codigo) {
       return { success: false, message: 'Código de verificação inválido.' };
     }
-    await this.prisma.usuario.update({ where: { id: userId }, data: { email: novoEmail } });
+  await this.prisma.usuario.update({ where: { id: userId }, data: { email: novoEmail } });
     this.codigoVerificacaoMap.delete(userId);
     this.emailTrocaMap.delete(userId);
-    return { success: true, message: 'Email alterado com sucesso.' };
+    return { success: true, message: 'Email alterado com sucesso e registros atualizados.' };
   }
 
   async solicitarTrocaSenha(userId: string, email: string) {
