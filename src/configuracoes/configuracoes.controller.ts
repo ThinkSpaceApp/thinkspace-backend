@@ -148,15 +148,17 @@ export class ConfiguracoesController {
     }
     const userId = (req.user as any).userId;
   const prisma = this.configuracoesService['prisma'];
-    const salasModeradas = await prisma.salaEstudo.findMany({ where: { moderadorId: userId } });
-    for (const sala of salasModeradas) {
-      await prisma.membroSala.deleteMany({ where: { salaId: sala.id } });
-      await prisma.atividade.deleteMany({ where: { salaId: sala.id } });
-      await prisma.salaEstudoMaterial.deleteMany({ where: { salaId: sala.id } });
-      await prisma.topicoComunidade.deleteMany({ where: { salaId: sala.id } });
-      await prisma.calendario.deleteMany({ where: { salaId: sala.id } });
-      await prisma.salaEstudo.delete({ where: { id: sala.id } });
-    }
+      const salasModeradas = await prisma.salaEstudo.findMany({ where: { moderadorId: userId } });
+      if (salasModeradas.length > 0) {
+        for (const sala of salasModeradas) {
+          await prisma.membroSala.deleteMany({ where: { salaId: sala.id } });
+          await prisma.atividade.deleteMany({ where: { salaId: sala.id } });
+          await prisma.salaEstudoMaterial.deleteMany({ where: { salaId: sala.id } });
+          await prisma.topicoComunidade.deleteMany({ where: { salaId: sala.id } });
+          await prisma.calendario.deleteMany({ where: { salaId: sala.id } });
+          await prisma.salaEstudo.delete({ where: { id: sala.id } });
+        }
+      }
   const usuario = await this.configuracoesService.getUsuarioById(userId);
     if (!usuario) {
       throw new Error("Usuário não encontrado.");
