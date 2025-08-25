@@ -7,6 +7,11 @@ import { salaEstudoService } from "../salaEstudo/salaEstudo.service";
 
 @Injectable()
 export class UsersService {
+  async findMateriaisByAutorId(userId: string) {
+    return this.prisma.materialEstudo.findMany({
+      where: { autorId: userId },
+    });
+  }
   async verificarAtividadeDoDia(userId: string, data: string): Promise<boolean> {
     const dataDia = new Date(data);
     const atividade = await this.prisma.atividadeUsuario.findFirst({

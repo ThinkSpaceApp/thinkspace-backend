@@ -83,19 +83,26 @@ export class MateriasController {
   @Get()
   async getMaterias(@Req() req: Request) {
     const materias = await this.usersService.getMateriasByUserId((req.user as any).userId);
-    const materiasComContador = materias.map(materia => ({
-      ...materia,
-      quantidadeMateriais: Array.isArray(materia.materiais) ? materia.materiais.length : 0
-    }));
+    const todosMateriais = await this.usersService.findMateriaisByAutorId((req.user as any).userId);
+    const materiasComMateriais = materias.map(materia => {
+      const materiaisDiretos = todosMateriais.filter(mat => mat.materiaId === materia.id);
+      const materiaisRelacionados = Array.isArray(materia.materiais) ? materia.materiais : [];
+      const materiaisUnicos = [...materiaisRelacionados, ...materiaisDiretos.filter(md => !materiaisRelacionados.some(mr => mr.id === md.id))];
+      return {
+        ...materia,
+        materiais: materiaisUnicos,
+        quantidadeMateriais: materiaisUnicos.length,
+      };
+    });
     if (
-      Array.isArray(materiasComContador) &&
-      materiasComContador.length &&
-      materiasComContador[0].materiais &&
-      Array.isArray(materiasComContador[0].materiais) &&
-      materiasComContador[0].materiais.length &&
-      materiasComContador[0].materiais[0].criadoEm
+      Array.isArray(materiasComMateriais) &&
+      materiasComMateriais.length &&
+      materiasComMateriais[0].materiais &&
+      Array.isArray(materiasComMateriais[0].materiais) &&
+      materiasComMateriais[0].materiais.length &&
+      materiasComMateriais[0].materiais[0].criadoEm
     ) {
-      return materiasComContador.sort((a, b) => {
+      return materiasComMateriais.sort((a, b) => {
         const criadoEmA = a.materiais[0]?.criadoEm
           ? new Date(a.materiais[0].criadoEm).getTime()
           : 0;
@@ -105,7 +112,7 @@ export class MateriasController {
         return criadoEmA - criadoEmB;
       });
     }
-    return materiasComContador;
+    return materiasComMateriais;
   }
 
   @ApiOperation({ summary: "Criar nova matéria" })
