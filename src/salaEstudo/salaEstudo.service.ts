@@ -73,7 +73,7 @@ export class salaEstudoService {
     });
 
     if (!defaultRoom) {
-      throw new Error("Sala padrão não encontrada. Execute o salaEstudo primeiro.");
+      return null;
     }
 
     const existingMember = await this.prisma.membroSala.findFirst({
@@ -102,7 +102,7 @@ export class salaEstudoService {
         where: { nome: "ThinkSpace" },
       });
       if (!defaultRoom) {
-        throw new Error("Sala padrão não encontrada. Execute o salaEstudo primeiro.");
+        return null;
       }
       const users = await this.prisma.usuario.findMany();
       const addedUsers = [];

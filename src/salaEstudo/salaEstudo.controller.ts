@@ -80,8 +80,8 @@ export class salaEstudoController {
       const result = await this.salaEstudoService.ensureAllUsersInDefaultRoom();
       return res.status(HttpStatus.OK).json({
         message: "Defaults ensured.",
-        addedUsers: result.addedUsers,
-        totalAdded: result.addedUsers.length,
+        addedUsers: result?.addedUsers ?? [],
+        totalAdded: result?.addedUsers ? result.addedUsers.length : 0,
       });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
