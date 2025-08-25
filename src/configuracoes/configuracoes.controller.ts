@@ -147,7 +147,7 @@ export class ConfiguracoesController {
       throw new Error("Usuário não autenticado ou userId ausente.");
     }
     const userId = (req.user as any).userId;
-  const usuario = await this.configuracoesService.getUsuarioById(userId);
+    const usuario = await this.configuracoesService.getUsuarioById(userId);
     if (!usuario) {
       throw new Error("Usuário não encontrado.");
     }
@@ -156,6 +156,22 @@ export class ConfiguracoesController {
     if (!senhaValida) {
       throw new Error("Senha atual incorreta.");
     }
+    const prisma = this.configuracoesService['prisma'];
+    await prisma.membroSala.deleteMany({ where: { usuarioId: userId } });
+    await prisma.materia.deleteMany({ where: { usuarioId: userId } });
+    await prisma.postagemComunidade.deleteMany({ where: { autorId: userId } });
+    await prisma.comentario.deleteMany({ where: { autorId: userId } });
+    await prisma.postagemSalva.deleteMany({ where: { usuarioId: userId } });
+    await prisma.denuncia.deleteMany({ where: { denuncianteId: userId } });
+    await prisma.revisao.deleteMany({ where: { usuarioId: userId } });
+    await prisma.calendario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.perfilUsuario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.experienciaUsuario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.atividadeUsuario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.notificacao.deleteMany({ where: { usuarioId: userId } });
+    await prisma.metricasUsuario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.verificacaoEmail.deleteMany({ where: { usuarioId: userId } });
+    await prisma.chatMensagem.deleteMany({ where: { autorId: userId } });
     return this.configuracoesService.excluirConta(userId);
   }
 
