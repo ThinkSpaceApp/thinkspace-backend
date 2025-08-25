@@ -111,8 +111,9 @@ export class MetricasService {
         .map((a) => new Date(a.data).toISOString().slice(0, 10)),
     ).size;
     const diasNaSemana = 7;
-    const rendimentoSemanal =
-      diasNaSemana > 0 ? Math.min((diasComAtividade / diasNaSemana) * 100, 100) : 0;
+    const frequencia = diasNaSemana > 0 ? (diasComAtividade / diasNaSemana) : 0;
+    const desempenho = totalQuestoes > 0 ? (acertos / totalQuestoes) : 0;
+    const rendimentoSemanal = ((frequencia + desempenho) / 2) * 100;
 
     const materiasUsuario = await this.prisma.materia.findMany({
       where: { usuarioId: userId },
