@@ -76,7 +76,7 @@ model Notificacao {
   lida       Boolean  @default(false)
   data       DateTime @default(now())
   usuarioId  String
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("Notificacoes")
 }
@@ -274,7 +274,7 @@ model PostagemComunidade {
   titulo   String
   conteudo String
   autorId  String
-  autor    Usuario          @relation(fields: [autorId], references: [id])
+  autor    Usuario          @relation(fields: [autorId], references: [id], onDelete: Cascade)
   topicoId String
   topico   TopicoComunidade @relation(fields: [topicoId], references: [id])
   curtidas Int              @default(0)
@@ -292,7 +292,7 @@ model Comentario {
   postagemId String
   postagem   PostagemComunidade @relation(fields: [postagemId], references: [id])
   autorId    String
-  autor      Usuario            @relation(fields: [autorId], references: [id])
+  autor      Usuario            @relation(fields: [autorId], references: [id], onDelete: Cascade)
   criadoEm   DateTime           @default(now())
 
   denuncias Denuncia[]
@@ -303,7 +303,7 @@ model Denuncia {
   motivo        String
   status        String              @default("PENDENTE")
   denuncianteId String
-  denunciante   Usuario             @relation(fields: [denuncianteId], references: [id])
+  denunciante   Usuario             @relation(fields: [denuncianteId], references: [id], onDelete: Cascade)
   postagemId    String?
   postagem      PostagemComunidade? @relation(fields: [postagemId], references: [id])
   comentarioId  String?
@@ -314,7 +314,7 @@ model Denuncia {
 model MetricasUsuario {
   id                    String    @id @default(uuid())
   usuarioId             String    @unique
-  usuario               Usuario   @relation(fields: [usuarioId], references: [id])
+  usuario               Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   metaSemanal           Int?
   horasEstudadas        Int       @default(0)
   conquistas            String[]
