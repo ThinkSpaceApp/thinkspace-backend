@@ -105,26 +105,13 @@ export class MetricasService {
         },
       },
     });
-    const diasComAtividade = new Set(
-      atividades
-        .filter((a) => a.quantidade > 0)
-        .map((a) => new Date(a.data).toISOString().slice(0, 10)),
-    ).size;
-    const diasNaSemana = 7;
-    const frequencia = diasNaSemana > 0 ? (diasComAtividade / diasNaSemana) : 0;
-    const desempenho = totalQuestoes > 0 ? (acertos / totalQuestoes) : 0;
-    const rendimentoSemanal = ((frequencia + desempenho) / 2) * 100;
+  const diasComAtividade = new Set(
+    atividades
+      .filter((a) => a.quantidade > 0)
+      .map((a) => new Date(a.data).toISOString().slice(0, 10)),
+  ).size;
+  const diasNaSemana = 7;
 
-    const materiasUsuario = await this.prisma.materia.findMany({
-      where: { usuarioId: userId },
-      select: { id: true },
-    });
-    const materiaIdsUsuario = materiasUsuario.map(m => m.id);
-    const materiais = await this.prisma.materialEstudo.findMany({
-      where: { autorId: userId },
-      include: { materia: true },
-      orderBy: { criadoEm: "asc" },
-    });
   let totalQuestoes = 0;
   let acertos = 0;
   let erros = 0;
@@ -132,6 +119,21 @@ export class MetricasService {
   acertos = atividadesQuiz.filter(a => a.acertou).length;
   erros = atividadesQuiz.filter(a => a.acertou === false).length;
   totalQuestoes = atividadesQuiz.length;
+
+  const desempenho = totalQuestoes > 0 ? (acertos / totalQuestoes) : 0;
+  const frequencia = diasNaSemana > 0 ? (diasComAtividade / diasNaSemana) : 0;
+  const rendimentoSemanal = ((frequencia + desempenho) / 2) * 100;
+
+  const materiasUsuario = await this.prisma.materia.findMany({
+    where: { usuarioId: userId },
+    select: { id: true },
+  });
+  const materiaIdsUsuario = materiasUsuario.map(m => m.id);
+  const materiais = await this.prisma.materialEstudo.findMany({
+    where: { autorId: userId },
+    include: { materia: true },
+    orderBy: { criadoEm: "asc" },
+  });
   const questoesPorDia: Record<string, number> = {};
   for (const atividade of atividadesQuiz) {
     const dia = new Date(atividade.data).toISOString().slice(0, 10);
