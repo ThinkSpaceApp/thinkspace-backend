@@ -351,6 +351,9 @@ export class MateriaisService {
           conteudo: data.descricao,
           quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
           quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
+          materias: {
+            connect: [{ id: data.materiaId }],
+          },
         },
       });
     } catch (error) {
@@ -396,6 +399,9 @@ export class MateriaisService {
         conteudo: data.descricao,
         quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
         quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
+        materias: {
+          connect: [{ id: data.materiaId }],
+        },
       },
     });
   }
@@ -435,6 +441,9 @@ export class MateriaisService {
         conteudo: data.assunto,
         quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
         quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
+        materias: {
+          connect: [{ id: data.materiaId }],
+        },
       },
     });
   }
