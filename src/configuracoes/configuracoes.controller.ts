@@ -188,7 +188,11 @@ export class ConfiguracoesController {
   await prisma.metricasUsuario.deleteMany({ where: { usuarioId: userId } });
   await prisma.verificacaoEmail.deleteMany({ where: { usuarioId: userId } });
   await prisma.chatMensagem.deleteMany({ where: { autorId: userId } });
-    return this.configuracoesService.excluirConta(userId);
+    await this.configuracoesService.excluirConta(userId);
+    return {
+      message: "Conta excluída com sucesso. Faça logout ou redirecione o usuário.",
+      status: 200
+    };
   }
 
   @Post('email/solicitar')
