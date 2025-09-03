@@ -73,7 +73,7 @@ export class MateriasController {
       cargo,
       xp: experiencia.xp ?? 0,
       progresso: experiencia.progresso ?? 0,
-      nivel: experiencia.nivel ?? "INICIANTE",
+      nivel: nivelInfo.nome,
       maxXp,
     };
   }
