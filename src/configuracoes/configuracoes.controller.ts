@@ -169,6 +169,10 @@ export class ConfiguracoesController {
       throw new Error("Senha atual incorreta.");
     }
   await prisma.membroSala.deleteMany({ where: { usuarioId: userId } });
+  const materiasDoUsuario = await prisma.materia.findMany({ where: { usuarioId: userId } });
+  for (const materia of materiasDoUsuario) {
+    await prisma.materialEstudo.deleteMany({ where: { materiaId: materia.id } });
+  }
   await prisma.materia.deleteMany({ where: { usuarioId: userId } });
   await prisma.postagemComunidade.deleteMany({ where: { autorId: userId } });
   await prisma.comentario.deleteMany({ where: { autorId: userId } });
