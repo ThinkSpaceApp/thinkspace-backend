@@ -112,13 +112,10 @@ export class MetricasService {
   ).size;
   const diasNaSemana = 7;
 
-  let totalQuestoes = 0;
-  let acertos = 0;
-  let erros = 0;
   const atividadesQuiz = atividades.filter(a => typeof a.acertou === 'boolean');
-  acertos = atividadesQuiz.filter(a => a.acertou).length;
-  erros = atividadesQuiz.filter(a => a.acertou === false).length;
-  totalQuestoes = atividadesQuiz.length;
+  const acertos = atividadesQuiz.filter(a => a.acertou).length;
+  const erros = atividadesQuiz.filter(a => a.acertou === false).length;
+  const totalQuestoes = atividadesQuiz.length;
 
   const desempenho = totalQuestoes > 0 ? (acertos / totalQuestoes) : 0;
   const frequencia = diasNaSemana > 0 ? (diasComAtividade / diasNaSemana) : 0;
@@ -192,12 +189,11 @@ export class MetricasService {
     const experiencia = await this.prisma.experienciaUsuario.findUnique({
       where: { usuarioId: userId },
     });
-    if (acertos < 0) acertos = 0;
-    if (erros < 0) erros = 0;
-    let percentualAcertos = totalQuestoes ? (acertos / totalQuestoes) * 100 : 0;
-    let percentualErros = totalQuestoes ? (erros / totalQuestoes) * 100 : 0;
-    percentualAcertos = Math.max(0, Math.min(percentualAcertos, 100));
-    percentualErros = Math.max(0, Math.min(percentualErros, 100));
+  // Não é necessário ajustar acertos/erros para >= 0 pois nunca serão negativos
+  let percentualAcertos = totalQuestoes ? (acertos / totalQuestoes) * 100 : 0;
+  let percentualErros = totalQuestoes ? (erros / totalQuestoes) * 100 : 0;
+  percentualAcertos = Math.max(0, Math.min(percentualAcertos, 100));
+  percentualErros = Math.max(0, Math.min(percentualErros, 100));
     const melhoresMaterias = Object.values(xpPorMateria)
       .sort((a, b) => b.xp - a.xp)
       .slice(0, 5);
