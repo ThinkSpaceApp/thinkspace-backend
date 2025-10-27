@@ -1,8 +1,7 @@
-
 import { Controller, Get, Post, Body, Query, Req, UseGuards, BadRequestException } from '@nestjs/common';
 import { CalendarioService } from './calendario.service';
 import { JwtAuthGuard } from '../auth/strategies/jwt-auth.guard';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('Calendário')
 @ApiBearerAuth()
@@ -64,32 +63,22 @@ export class CalendarioController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: 'Criar evento no calendário', description: 'Cria um novo evento/anotação no calendário do usuário.' })
-  @ApiResponse({
-    status: 201,
-    description: 'Evento criado com sucesso',
+  @ApiBody({
+    required: true,
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        titulo: { type: 'string' },
-        descricao: { type: 'string', nullable: true },
-        dataInicio: { type: 'string', format: 'date-time' },
-        dataFim: { type: 'string', format: 'date-time', nullable: true },
-        cor: { type: 'string', nullable: true },
-        materiaId: { type: 'string', nullable: true },
-        recorrente: { type: 'boolean' },
+        data: { type: 'string', format: 'date', example: '2025-10-27', description: 'Data do evento (obrigatório, formato YYYY-MM-DD ou ISO)' },
+        horario: { type: 'string', example: '14:30', description: 'Horário do evento (opcional, formato HH:mm)' },
+        materiaId: { type: 'string', example: 'clv1abc234', description: 'ID da matéria associada (opcional)' },
+        cor: { type: 'string', example: 'azulClaro', description: 'Cor principal do evento (obrigatório): vermelho, laranja, amarelo, verdeClaro, verdeEscuro, azulClaro, azulEscuro, lilas, rosa' },
+        recorrente: { type: 'boolean', example: false, description: 'Se o evento é recorrente (opcional)' },
+        duracaoRecorrencia: { type: 'number', example: 7, description: 'Duração da recorrência em dias (opcional, obrigatório se recorrente)' },
+        anotacao: { type: 'string', example: 'Estudar capítulo 5', description: 'Anotação ou descrição do evento (opcional)' },
       },
+      required: ['data', 'cor'],
     },
   })
-  @ApiResponse({ status: 400, description: 'Data e cor são obrigatórias.' })
-  @ApiResponse({ status: 401, description: 'Não autorizado.' })
-  @ApiResponse({ status: 500, description: 'Erro interno.' })
-  @ApiOperation({ summary: 'Criar evento no calendário' })
-  @ApiResponse({ status: 201, description: 'Evento criado com sucesso.' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos.' })
-  @ApiResponse({ status: 401, description: 'Não autorizado.' })
-  @ApiResponse({ status: 500, description: 'Erro interno.' })
-  @ApiOperation({ summary: 'Criar evento no calendário', description: 'Cria um novo evento/anotação no calendário do usuário.' })
   @ApiResponse({
     status: 201,
     description: 'Evento criado com sucesso',
