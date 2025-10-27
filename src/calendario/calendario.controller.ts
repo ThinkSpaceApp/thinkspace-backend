@@ -68,15 +68,17 @@ export class CalendarioController {
     schema: {
       type: 'object',
       properties: {
-        data: { type: 'string', format: 'date', example: '2025-10-27', description: 'Data do evento (obrigatório, formato YYYY-MM-DD ou ISO)' },
-        horario: { type: 'string', example: '14:30', description: 'Horário do evento (opcional, formato HH:mm)' },
-        materiaId: { type: 'string', example: 'clv1abc234', description: 'ID da matéria associada (opcional)' },
-        cor: { type: 'string', example: 'azulClaro', description: 'Cor principal do evento (obrigatório): vermelho, laranja, amarelo, verdeClaro, verdeEscuro, azulClaro, azulEscuro, lilas, rosa' },
-        recorrente: { type: 'boolean', example: false, description: 'Se o evento é recorrente (opcional)' },
-        duracaoRecorrencia: { type: 'number', example: 7, description: 'Duração da recorrência em dias (opcional, obrigatório se recorrente)' },
-        anotacao: { type: 'string', example: 'Estudar capítulo 5', description: 'Anotação ou descrição do evento (opcional)' },
+          data: { type: 'string', format: 'date', example: '2025-10-27', description: 'Data do evento (obrigatório, formato YYYY-MM-DD ou ISO)' },
+          horario: { type: 'string', example: '14:30', description: 'Horário do evento (opcional, formato HH:mm)' },
+          materiaId: { type: 'string', example: 'clv1abc234', description: 'ID da matéria associada (opcional)' },
+          cor: { type: 'string', example: 'azulClaro', description: 'Cor principal do evento (obrigatório): vermelho, laranja, amarelo, verdeClaro, verdeEscuro, azulClaro, azulEscuro, lilas, rosa' },
+          titulo: { type: 'string', example: 'Prova de Matemática', description: 'Título do evento (opcional)' },
+          subtitulo: { type: 'string', example: 'Capítulo 5 e 6', description: 'Subtítulo do evento (opcional)' },
+          recorrente: { type: 'boolean', example: false, description: 'Se o evento é recorrente (opcional)' },
+          duracaoRecorrencia: { type: 'number', example: 7, description: 'Duração da recorrência em dias (opcional, obrigatório se recorrente)' },
+          anotacao: { type: 'string', example: 'Estudar capítulo 5', description: 'Anotação ou descrição do evento (opcional)' },
       },
-      required: ['data', 'cor'],
+  required: ['data', 'cor'],
     },
   })
   @ApiResponse({
@@ -87,6 +89,7 @@ export class CalendarioController {
       properties: {
         id: { type: 'string' },
         titulo: { type: 'string' },
+        subtitulo: { type: 'string', nullable: true },
         descricao: { type: 'string', nullable: true },
         dataInicio: { type: 'string', format: 'date-time' },
         dataFim: { type: 'string', format: 'date-time', nullable: true },
