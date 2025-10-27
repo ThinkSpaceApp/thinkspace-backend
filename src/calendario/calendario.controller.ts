@@ -2,13 +2,56 @@
 import { Controller, Get, Post, Body, Query, Req, UseGuards, BadRequestException } from '@nestjs/common';
 import { CalendarioService } from './calendario.service';
 import { JwtAuthGuard } from '../auth/strategies/jwt-auth.guard';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
+@ApiTags('Calendário')
+@ApiBearerAuth()
 @Controller('calendario')
 export class CalendarioController {
   constructor(private readonly calendarioService: CalendarioService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get()
+  @ApiOperation({ summary: 'Obter calendário do mês', description: 'Retorna os dias do mês com anotações/eventos do usuário.' })
+  @ApiQuery({ name: 'mes', required: true, type: Number, description: 'Mês (1-12)' })
+  @ApiQuery({ name: 'ano', required: true, type: Number, description: 'Ano (ex: 2025)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Calendário do mês',
+    schema: {
+      type: 'object',
+      properties: {
+        mes: { type: 'number', example: 10 },
+        ano: { type: 'number', example: 2025 },
+        dias: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              dia: { type: 'number', example: 15 },
+              diaSemana: { type: 'number', example: 2, description: '0=domingo, 6=sábado' },
+              anotacoes: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    titulo: { type: 'string' },
+                    descricao: { type: 'string', nullable: true },
+                    dataInicio: { type: 'string', format: 'date-time' },
+                    dataFim: { type: 'string', format: 'date-time', nullable: true },
+                    cor: { type: 'string', nullable: true },
+                    materiaId: { type: 'string', nullable: true },
+                    recorrente: { type: 'boolean' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
   async getCalendario(
     @Query('mes') mes: number,
     @Query('ano') ano: number,
@@ -20,6 +63,53 @@ export class CalendarioController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
+  @ApiOperation({ summary: 'Criar evento no calendário', description: 'Cria um novo evento/anotação no calendário do usuário.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Evento criado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        titulo: { type: 'string' },
+        descricao: { type: 'string', nullable: true },
+        dataInicio: { type: 'string', format: 'date-time' },
+        dataFim: { type: 'string', format: 'date-time', nullable: true },
+        cor: { type: 'string', nullable: true },
+        materiaId: { type: 'string', nullable: true },
+        recorrente: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Data e cor são obrigatórias.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  @ApiResponse({ status: 500, description: 'Erro interno.' })
+  @ApiOperation({ summary: 'Criar evento no calendário' })
+  @ApiResponse({ status: 201, description: 'Evento criado com sucesso.' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  @ApiResponse({ status: 500, description: 'Erro interno.' })
+  @ApiOperation({ summary: 'Criar evento no calendário', description: 'Cria um novo evento/anotação no calendário do usuário.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Evento criado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        titulo: { type: 'string' },
+        descricao: { type: 'string', nullable: true },
+        dataInicio: { type: 'string', format: 'date-time' },
+        dataFim: { type: 'string', format: 'date-time', nullable: true },
+        cor: { type: 'string', nullable: true },
+        materiaId: { type: 'string', nullable: true },
+        recorrente: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Data e cor são obrigatórias.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  @ApiResponse({ status: 500, description: 'Erro interno.' })
   async criarEventoCalendario(
     @Req() req: any,
     @Body() body: {
