@@ -360,6 +360,7 @@ model Revisao {
 }
 
 model Calendario {
+
   id                     String        @id @default(uuid())
   titulo                 String
   descricao              String?
@@ -367,12 +368,14 @@ model Calendario {
   dataFim                DateTime?
   tipo                   TipoAtividade @default(OUTRO)
   recorrente             Boolean       @default(false)
-  intervaloDias          Int? // definir a frequência em dias
-  dataTerminoRecorrencia DateTime? // data final para eventos recorrentes
+  intervaloDias          Int? 
+  dataTerminoRecorrencia DateTime?
   usuarioId              String?
   usuario                Usuario?      @relation(fields: [usuarioId], references: [id])
-  salaId                 String? // extra
-  sala                   SalaEstudo?   @relation(fields: [salaId], references: [id]) // extra
+  salaId                 String? 
+  sala                   SalaEstudo?   @relation(fields: [salaId], references: [id]) 
+  materiaId              String? 
+  materia                Materia?      @relation(fields: [materiaId], references: [id])
   criadoEm               DateTime      @default(now())
 
   @@index([dataInicio])
@@ -391,6 +394,7 @@ model Materia {
 
   @@map("Materia")
   MaterialEstudo MaterialEstudo[]
+  calendario     Calendario[]
 }
 
 model PerfilUsuario {

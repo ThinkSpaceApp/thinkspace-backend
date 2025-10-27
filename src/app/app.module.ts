@@ -5,10 +5,12 @@ import { AuthModule } from "../auth/auth.module";
 import { MateriaisModule } from "../materiais/materiais.module";
 import { MateriasModule } from "../materias/materias.module";
 import { HomeModule } from "../home/home.module";
+
 import { AppController } from "./app.controller";
 import { salaEstudoModule } from "../salaEstudo/salaEstudo.module";
 import { MetricasModule } from "../metricas/metricas.module";
 import { ConfiguracoesModule } from "../configuracoes/configuracoes.module";
+import { CalendarioModule } from "../calendario/calendario.module";
 
 @Module({
   imports: [
@@ -23,7 +25,8 @@ import { ConfiguracoesModule } from "../configuracoes/configuracoes.module";
     HomeModule,
     salaEstudoModule,
     MetricasModule,
-    ConfiguracoesModule,
+  ConfiguracoesModule,
+  CalendarioModule,
   ],
   controllers: [AppController],
 })
