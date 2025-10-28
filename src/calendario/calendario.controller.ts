@@ -68,29 +68,30 @@ export class CalendarioController {
     schema: {
       type: 'object',
       properties: {
-          data: { type: 'string', format: 'date', example: '2025-10-27', description: 'Data do evento (obrigatório, formato YYYY-MM-DD ou ISO)' },
-          horario: { type: 'string', example: '14:30', description: 'Horário do evento (opcional, formato HH:mm)' },
-          materiaId: { type: 'string', example: 'clv1abc234', description: 'ID da matéria associada (opcional)' },
-          cor: { type: 'string', example: 'azulClaro', description: 'Cor principal do evento (obrigatório): vermelho, laranja, amarelo, verdeClaro, verdeEscuro, azulClaro, azulEscuro, lilas, rosa' },
-          titulo: { type: 'string', example: 'Prova de Matemática', description: 'Título do evento (opcional)' },
-          subtitulo: { type: 'string', example: 'Capítulo 5 e 6', description: 'Subtítulo do evento (opcional)' },
-          Duracaorecorrente: {
-            type: 'string',
-            example: 'sempre',
-            description: `Duração da recorrência:
-              - 'sempre' (repete para sempre)
-              - 'ate_data_marcada' (repete até a data marcada)`
-          },
-          recorrente: {
-            type: 'string',
-            example: 'diario',
-            description: `Tipo de recorrência do evento (opcional):
-              - 'nao_repetir' (não repete)
-              - 'diario' (a cada dia)
-              - 'semanal' (a cada semana)
-              - 'mensal' (a cada mês)`
-          },
-          anotacao: { type: 'string', example: 'Estudar capítulo 5', description: 'Anotação ou descrição do evento (opcional)' },
+        data: { type: 'string', format: 'date', example: '2025-10-27', description: 'Data do evento (obrigatório, formato YYYY-MM-DD ou ISO)' },
+        horario: { type: 'string', example: '14:30', description: 'Horário do evento (opcional, formato HH:mm)' },
+        materiaId: { type: 'string', example: 'clv1abc234', description: 'ID da matéria associada (opcional)' },
+        cor: { type: 'string', example: 'azulClaro', description: 'Cor principal do evento (obrigatório): vermelho, laranja, amarelo, verdeClaro, verdeEscuro, azulClaro, azulEscuro, lilas, rosa' },
+        titulo: { type: 'string', example: 'Prova de Matemática', description: 'Título do evento (opcional)' },
+        subtitulo: { type: 'string', example: 'Capítulo 5 e 6', description: 'Subtítulo do evento (opcional)' },
+        Duracaorecorrente: {
+          type: 'string',
+          example: 'sempre',
+          description: `Duração da recorrência:
+            - 'sempre' (repete para sempre)
+            - 'ate_data_marcada' (repete até a data marcada)`
+        },
+        recorrente: {
+          type: 'string',
+          example: 'diario',
+          description: `Tipo de recorrência do evento (opcional):
+            - 'nao_repetir' (não repete)
+            - 'diario' (a cada dia)
+            - 'semanal' (a cada semana)
+            - 'mensal' (a cada mês)`
+        },
+        anotacao: { type: 'string', example: 'Estudar capítulo 5', description: 'Anotação ou descrição do evento (opcional)' },
+        notificar: { type: 'boolean', example: true, description: 'Se o usuário deseja ser notificado pela plataforma (opcional, padrão: false)' },
       },
   required: ['data', 'cor'],
     },
@@ -128,6 +129,7 @@ export class CalendarioController {
       Duracaorecorrente?: 'sempre' | 'ate_data_marcada';
       recorrente?: 'diario' | 'nao_repetir' | 'semanal' | 'mensal';
       anotacao?: string;
+      notificar?: boolean;
     }
   ) {
     const usuarioId = req.user?.sub;

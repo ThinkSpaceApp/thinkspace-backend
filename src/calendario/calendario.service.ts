@@ -50,14 +50,23 @@ export class CalendarioService {
       Duracaorecorrente?: 'sempre' | 'ate_data_marcada';
       recorrente?: 'nao_repetir' | 'diario' | 'semanal' | 'mensal';
       anotacao?: string;
+      notificar?: boolean;
     }
   ) {
-    const coresPermitidas = [
-      'vermelho', 'laranja', 'amarelo', 'verdeClaro', 'verdeEscuro',
-      'azulClaro', 'azulEscuro', 'lilas', 'rosa'
-    ];
-    if (!coresPermitidas.includes(body.cor)) {
-      throw new Error('Cor não permitida.');
+    const mapaCores: Record<string, string> = {
+      VERMELHO: '#F92A46',
+      LARANJA: '#F6A423',
+      AMARELO: '#FDE561',
+      VERDECLARO: '#8AD273',
+      VERDEESCURO: '#6CA559',
+      AZULCLARO: '#86BEE1',
+      AZULESCURO: '#1B8BD1',
+      ROXO: '#8379E2',
+      ROSA: '#E572B1',
+    };
+    let corKey = body.cor?.toUpperCase().normalize('NFD').replace(/[^\w]/g, '');
+    if (!mapaCores[corKey]) {
+      throw new Error('Cor não permitida. Use: ' + Object.keys(mapaCores).join(', '));
     }
 
     let dataInicio = new Date(body.data);
@@ -96,9 +105,20 @@ export class CalendarioService {
         dataTerminoRecorrencia: dataFim,
         usuarioId,
         materiaId,
-        cor: body.cor,
+        cor: mapaCores[corKey],
+        notificar: body.notificar ?? false,
       },
     });
+
+    if (body.notificar && usuarioId) {
+      await this.prisma.notificacao.create({
+        data: {
+          mensagem: `Evento criado: ${evento.titulo}${evento.dataInicio ? ' em ' + evento.dataInicio.toLocaleString('pt-BR') : ''}`,
+          usuarioId,
+        },
+      });
+    }
+
     return {
       ...evento,
       subtitulo: body.subtitulo || null,

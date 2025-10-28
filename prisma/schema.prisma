@@ -371,6 +371,7 @@ model Calendario {
   recorrente             Boolean       @default(false)
   intervaloDias          Int? 
   dataTerminoRecorrencia DateTime?
+  notificar              Boolean       @default(false)
   usuarioId              String?
   usuario                Usuario?      @relation(fields: [usuarioId], references: [id])
   salaId                 String? 
