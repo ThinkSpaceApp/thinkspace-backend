@@ -39,7 +39,7 @@ export class salaEstudoService {
           topicos: ["Produtividade", "Comunidade"],
           banner: "https://i.imgur.com/p5ACfTO.png",
           moderador: {
-            connect: { id: "7c40658f-f4e5-44de-a5ec-b50d0805c313" },
+            connect: { id: "1bbaf1f7-746a-4574-b53c-038349d62a6e" },
           },
         },
       });
@@ -88,7 +88,7 @@ export class salaEstudoService {
         data: {
           usuarioId: userId,
           salaId: defaultRoom.id,
-          funcao: userId === "7c40658f-f4e5-44de-a5ec-b50d0805c313" ? "MODERADOR" : "MEMBRO",
+          funcao: userId === "1bbaf1f7-746a-4574-b53c-038349d62a6e" ? "MODERADOR" : "MEMBRO",
         },
       });
     }
@@ -119,7 +119,7 @@ export class salaEstudoService {
               data: {
                 usuarioId: user.id,
                 salaId: defaultRoom.id,
-                funcao: user.id === "7c40658f-f4e5-44de-a5ec-b50d0805c313" ? "MODERADOR" : "MEMBRO",
+                funcao: user.id === "1bbaf1f7-746a-4574-b53c-038349d62a6e" ? "MODERADOR" : "MEMBRO",
               },
             });
             addedUsers.push(user.id);
