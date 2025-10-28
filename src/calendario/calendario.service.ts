@@ -37,7 +37,7 @@ export class CalendarioService {
       dias,
     };
   }
-  
+
   async criarEventoCalendario(
     usuarioId: string,
     body: {
@@ -74,7 +74,6 @@ export class CalendarioService {
       const [h, m] = body.horario.split(':').map(Number);
       dataInicio.setHours(h, m, 0, 0);
     }
-
 
     let dataFim: Date | undefined = undefined;
     let intervaloDias: number | null = null;
@@ -123,5 +122,12 @@ export class CalendarioService {
       ...evento,
       subtitulo: body.subtitulo || null,
     };
+  }
+
+  async getEventosRecentes(usuarioId: string) {
+    return this.prisma.calendario.findMany({
+      where: { usuarioId },
+      orderBy: { dataInicio: 'desc' },
+    });
   }
 }
