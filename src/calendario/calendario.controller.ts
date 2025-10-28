@@ -74,8 +74,22 @@ export class CalendarioController {
           cor: { type: 'string', example: 'azulClaro', description: 'Cor principal do evento (obrigatório): vermelho, laranja, amarelo, verdeClaro, verdeEscuro, azulClaro, azulEscuro, lilas, rosa' },
           titulo: { type: 'string', example: 'Prova de Matemática', description: 'Título do evento (opcional)' },
           subtitulo: { type: 'string', example: 'Capítulo 5 e 6', description: 'Subtítulo do evento (opcional)' },
-          recorrente: { type: 'boolean', example: false, description: 'Se o evento é recorrente (opcional)' },
-          duracaoRecorrencia: { type: 'number', example: 7, description: 'Duração da recorrência em dias (opcional, obrigatório se recorrente)' },
+          Duracaorecorrente: {
+            type: 'string',
+            example: 'sempre',
+            description: `Duração da recorrência:
+              - 'sempre' (repete para sempre)
+              - 'ate_data_marcada' (repete até a data marcada)`
+          },
+          recorrente: {
+            type: 'string',
+            example: 'diario',
+            description: `Tipo de recorrência do evento (opcional):
+              - 'nao_repetir' (não repete)
+              - 'diario' (a cada dia)
+              - 'semanal' (a cada semana)
+              - 'mensal' (a cada mês)`
+          },
           anotacao: { type: 'string', example: 'Estudar capítulo 5', description: 'Anotação ou descrição do evento (opcional)' },
       },
   required: ['data', 'cor'],
@@ -105,12 +119,14 @@ export class CalendarioController {
   async criarEventoCalendario(
     @Req() req: any,
     @Body() body: {
-      data: string; 
-      horario?: string; 
-      materiaId?: string; 
-      cor: string; 
-      recorrente?: boolean;
-      duracaoRecorrencia?: number;
+      data: string;
+      horario?: string;
+      materiaId?: string;
+      cor: string;
+      titulo?: string;
+      subtitulo?: string;
+      Duracaorecorrente?: 'sempre' | 'ate_data_marcada';
+      recorrente?: 'diario' | 'nao_repetir' | 'semanal' | 'mensal';
       anotacao?: string;
     }
   ) {

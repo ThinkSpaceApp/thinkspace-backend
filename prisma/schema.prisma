@@ -364,6 +364,7 @@ model Calendario {
   id                     String        @id @default(uuid())
   titulo                 String
   descricao              String?
+  cor                    String?
   dataInicio             DateTime
   dataFim                DateTime?
   tipo                   TipoAtividade @default(OUTRO)

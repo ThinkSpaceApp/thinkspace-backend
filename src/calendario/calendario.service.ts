@@ -38,55 +38,70 @@ export class CalendarioService {
     };
   }
   
-    async criarEventoCalendario(
-      usuarioId: string,
-      body: {
-        data: string;
-        horario?: string;
-        materiaId?: string;
-        cor: string;
-        recorrente?: boolean;
-        duracaoRecorrencia?: number;
-        anotacao?: string;
-      }
-    ) {
-      const coresPermitidas = [
-        'vermelho', 'laranja', 'amarelo', 'verdeClaro', 'verdeEscuro',
-        'azulClaro', 'azulEscuro', 'lilas', 'rosa'
-      ];
-      if (!coresPermitidas.includes(body.cor)) {
-        throw new Error('Cor não permitida.');
-      }
-
-      let dataInicio = new Date(body.data);
-      if (body.horario) {
-        const [h, m] = body.horario.split(':').map(Number);
-        dataInicio.setHours(h, m, 0, 0);
-      }
-
-      let dataFim: Date | undefined = undefined;
-      if (body.recorrente && body.duracaoRecorrencia) {
-        dataFim = new Date(dataInicio);
-        dataFim.setDate(dataFim.getDate() + body.duracaoRecorrencia);
-      }
-
-      let materiaId = body.materiaId || null;
-
-      const evento = await this.prisma.calendario.create({
-        data: {
-          titulo: body.anotacao ? body.anotacao.substring(0, 50) : 'Evento',
-          descricao: body.anotacao,
-          dataInicio,
-          dataFim,
-          tipo: 'OUTRO',
-          recorrente: !!body.recorrente,
-          intervaloDias: body.recorrente ? 1 : null,
-          dataTerminoRecorrencia: dataFim,
-          usuarioId,
-          materiaId,
-          // cor: body.cor,
-        },
-      });
-      return evento;
+  async criarEventoCalendario(
+    usuarioId: string,
+    body: {
+      data: string;
+      horario?: string;
+      materiaId?: string;
+      cor: string;
+      titulo?: string;
+      subtitulo?: string;
+      Duracaorecorrente?: 'sempre' | 'ate_data_marcada';
+      recorrente?: 'nao_repetir' | 'diario' | 'semanal' | 'mensal';
+      anotacao?: string;
     }
+  ) {
+    const coresPermitidas = [
+      'vermelho', 'laranja', 'amarelo', 'verdeClaro', 'verdeEscuro',
+      'azulClaro', 'azulEscuro', 'lilas', 'rosa'
+    ];
+    if (!coresPermitidas.includes(body.cor)) {
+      throw new Error('Cor não permitida.');
+    }
+
+    let dataInicio = new Date(body.data);
+    if (body.horario) {
+      const [h, m] = body.horario.split(':').map(Number);
+      dataInicio.setHours(h, m, 0, 0);
+    }
+
+
+    let dataFim: Date | undefined = undefined;
+    let intervaloDias: number | null = null;
+    let tipoRecorrencia = body.recorrente || 'nao_repetir';
+    if (tipoRecorrencia === 'diario') intervaloDias = 1;
+    else if (tipoRecorrencia === 'semanal') intervaloDias = 7;
+    else if (tipoRecorrencia === 'mensal') intervaloDias = 30;
+
+    if (tipoRecorrencia !== 'nao_repetir') {
+      if (body.Duracaorecorrente === 'ate_data_marcada' && body.data) {
+        dataFim = new Date(body.data);
+      } else if (body.Duracaorecorrente === 'sempre') {
+        dataFim = undefined;
+      }
+    }
+
+    let materiaId = body.materiaId || null;
+
+    const evento = await this.prisma.calendario.create({
+      data: {
+        titulo: body.titulo || 'Evento',
+        descricao: body.anotacao,
+        dataInicio,
+        dataFim,
+        tipo: 'OUTRO',
+        recorrente: tipoRecorrencia !== 'nao_repetir',
+        intervaloDias,
+        dataTerminoRecorrencia: dataFim,
+        usuarioId,
+        materiaId,
+        cor: body.cor,
+      },
+    });
+    return {
+      ...evento,
+      subtitulo: body.subtitulo || null,
+    };
+  }
 }
