@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, Delete, Param, ParseUUIDPipe, Query, BadRequestException } from '@nestjs/common';
 import { CalendarioService } from './calendario.service';
 import { JwtAuthGuard } from '../auth/strategies/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -43,5 +43,26 @@ export class CalendarioRecentesController {
   async getEventosRecentes(@Req() req: any) {
     const usuarioId = req.user?.sub;
     return this.calendarioService.getEventosRecentes(usuarioId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  @ApiOperation({ summary: 'Deletar evento/anotação', description: 'Remove um evento/anotação do calendário pelo ID.' })
+  @ApiResponse({ status: 200, description: 'Evento/anotação deletado com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Evento/anotação não encontrado.' })
+  async deletarEvento(@Req() req: any, @Param('id', new ParseUUIDPipe()) id: string) {
+    const usuarioId = req.user?.sub;
+    return this.calendarioService.deletarEvento(usuarioId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('titulo')
+  @ApiOperation({ summary: 'Buscar evento/anotação por título', description: 'Retorna o ID do evento/anotação pelo título. O título deve ser único por usuário.' })
+  @ApiResponse({ status: 200, description: 'ID do evento/anotação encontrado.' })
+  @ApiResponse({ status: 404, description: 'Evento/anotação não encontrado.' })
+  async getEventoIdPorTitulo(@Req() req: any, @Query('titulo') titulo: string) {
+    const usuarioId = req.user?.sub;
+    if (!titulo) throw new BadRequestException('Título é obrigatório.');
+    return this.calendarioService.getEventoIdPorTitulo(usuarioId, titulo);
   }
 }

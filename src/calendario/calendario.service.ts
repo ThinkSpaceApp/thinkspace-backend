@@ -92,36 +92,43 @@ export class CalendarioService {
 
     let materiaId = body.materiaId || null;
 
-    const evento = await this.prisma.calendario.create({
-      data: {
-        titulo: body.titulo || 'Evento',
-        descricao: body.anotacao,
-        dataInicio,
-        dataFim,
-        tipo: 'OUTRO',
-        recorrente: tipoRecorrencia !== 'nao_repetir',
-        intervaloDias,
-        dataTerminoRecorrencia: dataFim,
-        usuarioId,
-        materiaId,
-        cor: mapaCores[corKey],
-        notificar: body.notificar ?? false,
-      },
-    });
-
-    if (body.notificar && usuarioId) {
-      await this.prisma.notificacao.create({
+    try {
+      const evento = await this.prisma.calendario.create({
         data: {
-          mensagem: `Evento criado: ${evento.titulo}${evento.dataInicio ? ' em ' + evento.dataInicio.toLocaleString('pt-BR') : ''}`,
+          titulo: body.titulo || 'Evento',
+          descricao: body.anotacao,
+          dataInicio,
+          dataFim,
+          tipo: 'OUTRO',
+          recorrente: tipoRecorrencia !== 'nao_repetir',
+          intervaloDias,
+          dataTerminoRecorrencia: dataFim,
           usuarioId,
+          materiaId,
+          cor: mapaCores[corKey],
+          notificar: body.notificar ?? false,
         },
       });
-    }
 
-    return {
-      ...evento,
-      subtitulo: body.subtitulo || null,
-    };
+      if (body.notificar && usuarioId) {
+        await this.prisma.notificacao.create({
+          data: {
+            mensagem: `Evento criado: ${evento.titulo}${evento.dataInicio ? ' em ' + evento.dataInicio.toLocaleString('pt-BR') : ''}`,
+            usuarioId,
+          },
+        });
+      }
+
+      return {
+        ...evento,
+        subtitulo: body.subtitulo || null,
+      };
+    } catch (error: any) {
+      if (error.code === 'P2002' && error.meta?.target?.includes('usuarioId_titulo')) {
+        throw new Error('Já existe um evento/anotação com esse nome. Escolha um título diferente.');
+      }
+      throw error;
+    }
   }
 
   async getEventosRecentes(usuarioId: string) {
@@ -129,5 +136,25 @@ export class CalendarioService {
       where: { usuarioId },
       orderBy: { dataInicio: 'desc' },
     });
+  }
+
+  async deletarEvento(usuarioId: string, id: string) {
+    const evento = await this.prisma.calendario.findUnique({ where: { id } });
+    if (!evento || evento.usuarioId !== usuarioId) {
+      throw new Error('Evento/anotação não encontrado.');
+    }
+    await this.prisma.calendario.delete({ where: { id } });
+    return { message: 'Evento/anotação deletado com sucesso.' };
+  }
+
+  async getEventoIdPorTitulo(usuarioId: string, titulo: string) {
+    const evento = await this.prisma.calendario.findMany({ where: { usuarioId, titulo } });
+    if (evento.length === 0) {
+      throw new Error('Evento/anotação não encontrado.');
+    }
+    if (evento.length > 1) {
+      throw new Error('Mais de um evento/anotação com esse título. O título deve ser único por usuário.');
+    }
+    return { id: evento[0].id };
   }
 }

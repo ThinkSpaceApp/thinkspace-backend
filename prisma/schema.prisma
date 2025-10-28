@@ -381,6 +381,7 @@ model Calendario {
   criadoEm               DateTime      @default(now())
 
   @@index([dataInicio])
+  @@unique([usuarioId, titulo])
 }
 
 model Materia {
