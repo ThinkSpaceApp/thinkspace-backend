@@ -14,6 +14,7 @@ export class CalendarioController {
   @ApiOperation({ summary: 'Obter calendário do mês', description: 'Retorna os dias do mês com anotações/eventos do usuário.' })
   @ApiQuery({ name: 'mes', required: true, type: Number, description: 'Mês (1-12)' })
   @ApiQuery({ name: 'ano', required: true, type: Number, description: 'Ano (ex: 2025)' })
+  @ApiQuery({ name: 'usuarioId', required: true, type: String, description: 'ID do usuário' })
   @ApiResponse({
     status: 200,
     description: 'Calendário do mês',
@@ -54,9 +55,9 @@ export class CalendarioController {
   async getCalendario(
     @Query('mes') mes: number,
     @Query('ano') ano: number,
-    @Req() req: any
+    @Query('usuarioId') usuarioId: string
   ) {
-    const usuarioId = req.user?.sub;
+    if (!usuarioId) throw new BadRequestException('usuarioId é obrigatório');
     return this.calendarioService.getCalendarioMes(usuarioId, mes, ano);
   }
 
@@ -92,8 +93,9 @@ export class CalendarioController {
         },
         anotacao: { type: 'string', example: 'Estudar capítulo 5', description: 'Anotação ou descrição do evento (opcional)' },
         notificar: { type: 'boolean', example: true, description: 'Se o usuário deseja ser notificado pela plataforma (opcional, padrão: false)' },
+        usuarioId: { type: 'string', example: 'clv1abc234', description: 'ID do usuário (obrigatório)' },
       },
-  required: ['data', 'cor'],
+      required: ['data', 'cor', 'usuarioId'],
     },
   })
   @ApiResponse({
@@ -114,11 +116,10 @@ export class CalendarioController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Data e cor são obrigatórias.' })
+  @ApiResponse({ status: 400, description: 'Data, cor e usuarioId são obrigatórios.' })
   @ApiResponse({ status: 401, description: 'Não autorizado.' })
   @ApiResponse({ status: 500, description: 'Erro interno.' })
   async criarEventoCalendario(
-    @Req() req: any,
     @Body() body: {
       data: string;
       horario?: string;
@@ -130,12 +131,12 @@ export class CalendarioController {
       recorrente?: 'diario' | 'nao_repetir' | 'semanal' | 'mensal';
       anotacao?: string;
       notificar?: boolean;
+      usuarioId: string;
     }
   ) {
-    const usuarioId = req.user?.sub;
-    if (!body.data || !body.cor) {
-      throw new BadRequestException('Data e cor são obrigatórias.');
+    if (!body.data || !body.cor || !body.usuarioId) {
+      throw new BadRequestException('Data, cor e usuarioId são obrigatórios.');
     }
-    return this.calendarioService.criarEventoCalendario(usuarioId, body);
+    return this.calendarioService.criarEventoCalendario(body.usuarioId, body);
   }
 }

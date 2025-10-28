@@ -40,8 +40,8 @@ export class CalendarioRecentesController {
       },
     },
   })
-  async getEventosRecentes(@Req() req: any) {
-    const usuarioId = req.user?.sub;
+  async getEventosRecentes(@Query('usuarioId') usuarioId: string) {
+    if (!usuarioId) throw new BadRequestException('usuarioId é obrigatório');
     return this.calendarioService.getEventosRecentes(usuarioId);
   }
 
