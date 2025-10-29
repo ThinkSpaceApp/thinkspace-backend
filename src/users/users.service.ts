@@ -320,8 +320,15 @@ export class UsersService {
   }
 
   async getNotificacoesByUserId(userId: string) {
+    const now = new Date();
     const notificacoes = await this.prisma.notificacao.findMany({
-      where: { usuarioId: userId },
+      where: {
+        usuarioId: userId,
+        OR: [
+          { dataAnotacao: { lte: now } },
+          { dataAnotacao: null },
+        ],
+      },
       orderBy: { data: "desc" },
       select: {
         id: true,
