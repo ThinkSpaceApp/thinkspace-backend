@@ -323,6 +323,16 @@ export class UsersService {
     const notificacoes = await this.prisma.notificacao.findMany({
       where: { usuarioId: userId },
       orderBy: { data: "desc" },
+      select: {
+        id: true,
+        cor: true,
+        dataAnotacao: true,
+        titulo: true,
+        subtitulo: true,
+        mensagem: true,
+        lida: true,
+        data: true,
+      },
     });
     return notificacoes;
   }

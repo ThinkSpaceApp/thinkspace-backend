@@ -132,8 +132,12 @@ export class CalendarioService {
       if (body.notificar && usuarioId) {
         await this.prisma.notificacao.create({
           data: {
-            mensagem: `Evento criado: ${evento.titulo}${evento.dataInicio ? ' em ' + evento.dataInicio.toLocaleString('pt-BR') : ''}`,
             usuarioId,
+            cor: evento.cor,
+            dataAnotacao: evento.dataInicio,
+            titulo: 'Evento do calendário',
+            subtitulo: evento.subtitulo || null,
+            mensagem: evento.titulo,
           },
         });
       }

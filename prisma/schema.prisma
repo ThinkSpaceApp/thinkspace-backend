@@ -77,6 +77,10 @@ model Notificacao {
   data       DateTime @default(now())
   usuarioId  String
   usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  titulo      String?
+  subtitulo   String?
+  dataAnotacao DateTime?
+  cor         String?
 
   @@map("Notificacoes")
 }
