@@ -37,6 +37,7 @@ export class CalendarioController {
                   properties: {
                     id: { type: 'string' },
                     titulo: { type: 'string' },
+                    subtitulo: { type: 'string', nullable: true },
                     descricao: { type: 'string', nullable: true },
                     dataInicio: { type: 'string', format: 'date-time' },
                     dataFim: { type: 'string', format: 'date-time', nullable: true },

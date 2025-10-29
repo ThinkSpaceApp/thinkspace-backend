@@ -17,6 +17,24 @@ export class CalendarioService {
         },
       },
       orderBy: { dataInicio: 'asc' },
+      select: {
+        id: true,
+        titulo: true,
+        subtitulo: true,
+        descricao: true,
+        dataInicio: true,
+        dataFim: true,
+        cor: true,
+        materiaId: true,
+        recorrente: true,
+        intervaloDias: true,
+        dataTerminoRecorrencia: true,
+        notificar: true,
+        usuarioId: true,
+        salaId: true,
+        tipo: true,
+        criadoEm: true,
+      },
     });
 
     const diasNoMes = new Date(ano, mes, 0).getDate();
@@ -96,6 +114,7 @@ export class CalendarioService {
       const evento = await this.prisma.calendario.create({
         data: {
           titulo: body.titulo || 'Evento',
+          subtitulo: body.subtitulo || null,
           descricao: body.anotacao,
           dataInicio,
           dataFim,
@@ -135,6 +154,24 @@ export class CalendarioService {
     return this.prisma.calendario.findMany({
       where: { usuarioId },
       orderBy: { dataInicio: 'desc' },
+      select: {
+        id: true,
+        titulo: true,
+        subtitulo: true,
+        descricao: true,
+        cor: true,
+        dataInicio: true,
+        dataFim: true,
+        tipo: true,
+        recorrente: true,
+        intervaloDias: true,
+        dataTerminoRecorrencia: true,
+        notificar: true,
+        usuarioId: true,
+        salaId: true,
+        materiaId: true,
+        criadoEm: true,
+      },
     });
   }
 
