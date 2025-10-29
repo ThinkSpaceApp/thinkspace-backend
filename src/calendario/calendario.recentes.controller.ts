@@ -51,8 +51,8 @@ export class CalendarioRecentesController {
   @ApiResponse({ status: 200, description: 'Evento/anotação deletado com sucesso.' })
   @ApiResponse({ status: 404, description: 'Evento/anotação não encontrado.' })
   async deletarEvento(@Req() req: any, @Param('id', new ParseUUIDPipe()) id: string) {
-    const usuarioId = req.user?.sub;
-    return this.calendarioService.deletarEvento(usuarioId, id);
+  const usuarioId = req.user?.userId || req.user?.sub;
+  return this.calendarioService.deletarEvento(usuarioId, id);
   }
 
   @UseGuards(JwtAuthGuard)
