@@ -177,6 +177,7 @@ model MaterialEstudo {
   @@map("MaterialEstudo")
   ChatMensagem ChatMensagem[]
   atividadesUsuario AtividadeUsuario[]
+  @@unique([autorId, titulo])
 }
 
 model ChatMensagem {

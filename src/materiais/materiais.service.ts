@@ -359,6 +359,12 @@ export class MateriaisService {
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new BadRequestException("Já existe um material com esse nome para este usuário.");
+      }
+      if (
+        error instanceof PrismaClientKnownRequestError &&
         error.code === "P2003" &&
         typeof error.meta?.field_name === "string" &&
         error.meta.field_name.includes("materiaId")
@@ -386,24 +392,42 @@ export class MateriaisService {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por documento.");
     }
    
-    return this.prisma.materialEstudo.create({
-      data: {
-        titulo: data.nomeDesignado,
-        nomeDesignado: data.nomeDesignado,
-        materiaId: data.materiaId,
-        topicos: data.topicos,
-        origem: "DOCUMENTO",
-        caminhoArquivo: data.caminhoArquivo,
-        autorId: userId,
-        tipoMaterial: data.tipoMaterial as any,
-        conteudo: data.descricao,
-        quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
-        quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
-        materias: {
-          connect: [{ id: data.materiaId }],
+    try {
+      return await this.prisma.materialEstudo.create({
+        data: {
+          titulo: data.nomeDesignado,
+          nomeDesignado: data.nomeDesignado,
+          materiaId: data.materiaId,
+          topicos: data.topicos,
+          origem: "DOCUMENTO",
+          caminhoArquivo: data.caminhoArquivo,
+          autorId: userId,
+          tipoMaterial: data.tipoMaterial as any,
+          conteudo: data.descricao,
+          quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
+          quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
+          materias: {
+            connect: [{ id: data.materiaId }],
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new BadRequestException("Já existe um material com esse nome para este usuário.");
+      }
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === "P2003" &&
+        typeof error.meta?.field_name === "string" &&
+        error.meta.field_name.includes("materiaId")
+      ) {
+        throw new BadRequestException("Matéria informada não existe.");
+      }
+      throw error;
+    }
   }
 
   async criarPorAssunto(
@@ -428,24 +452,42 @@ export class MateriaisService {
     ) {
       throw new BadRequestException("Campos obrigatórios ausentes para criação por assunto.");
     }
-    return this.prisma.materialEstudo.create({
-      data: {
-        titulo: data.nomeDesignado,
-        nomeDesignado: data.nomeDesignado,
-        materiaId: data.materiaId,
-        topicos: data.topicos,
-        origem: "ASSUNTO",
-        assunto: data.assunto,
-        autorId: userId,
-        tipoMaterial: data.tipoMaterial as any,
-        conteudo: data.assunto,
-        quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
-        quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
-        materias: {
-          connect: [{ id: data.materiaId }],
+    try {
+      return await this.prisma.materialEstudo.create({
+        data: {
+          titulo: data.nomeDesignado,
+          nomeDesignado: data.nomeDesignado,
+          materiaId: data.materiaId,
+          topicos: data.topicos,
+          origem: "ASSUNTO",
+          assunto: data.assunto,
+          autorId: userId,
+          tipoMaterial: data.tipoMaterial as any,
+          conteudo: data.assunto,
+          quantidadeQuestoes: typeof data.quantidadeQuestoes === "string" ? Number(data.quantidadeQuestoes) : data.quantidadeQuestoes,
+          quantidadeFlashcards: typeof data.quantidadeFlashcards === "string" ? Number(data.quantidadeFlashcards) : data.quantidadeFlashcards,
+          materias: {
+            connect: [{ id: data.materiaId }],
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new BadRequestException("Já existe um material com esse nome para este usuário.");
+      }
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === "P2003" &&
+        typeof error.meta?.field_name === "string" &&
+        error.meta.field_name.includes("materiaId")
+      ) {
+        throw new BadRequestException("Matéria informada não existe.");
+      }
+      throw error;
+    }
   }
 
   async editar(
