@@ -321,11 +321,12 @@ export class UsersService {
 
   async getNotificacoesByUserId(userId: string) {
     const now = new Date();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     const notificacoes = await this.prisma.notificacao.findMany({
       where: {
         usuarioId: userId,
         OR: [
-          { dataAnotacao: { lte: now } },
+          { dataAnotacao: { lte: endOfToday } },
           { dataAnotacao: null },
         ],
       },
@@ -339,6 +340,7 @@ export class UsersService {
         mensagem: true,
         lida: true,
         data: true,
+        descricao: true,
       },
     });
     return notificacoes;

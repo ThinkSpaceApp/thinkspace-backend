@@ -184,8 +184,15 @@ export class CalendarioService {
     if (!evento || evento.usuarioId !== usuarioId) {
       throw new Error('Evento/anotação não encontrado.');
     }
+    await this.prisma.notificacao.deleteMany({
+      where: {
+        usuarioId: usuarioId,
+        mensagem: evento.titulo,
+        dataAnotacao: evento.dataInicio,
+      },
+    });
     await this.prisma.calendario.delete({ where: { id } });
-    return { message: 'Evento/anotação deletado com sucesso.' };
+    return { message: 'Evento/anotação e notificações relacionadas deletados com sucesso.' };
   }
 
   async getEventoIdPorTitulo(usuarioId: string, titulo: string) {
