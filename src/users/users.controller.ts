@@ -1,3 +1,4 @@
+
 import {
   Controller,
   Post,
@@ -23,6 +24,18 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from "@nes
 @UseGuards(AuthGuard("jwt"))
 @Controller("users")
 export class UsersController {
+
+  @ApiOperation({ summary: "Marcar notificação como lida" })
+  @ApiResponse({ status: 200, description: "Notificação marcada como lida." })
+  @Post("notificacoes/:id")
+  async marcarNotificacaoComoLida(@Param("id") id: string, @Req() req: any) {
+    const userId = req.user.userId;
+    const notificacao = await this.usersService.marcarNotificacaoComoLida(id, userId);
+    if (!notificacao) {
+      throw new BadRequestException("Notificação não encontrada ou não pertence ao usuário.");
+    }
+    return { message: "Notificação marcada como lida.", notificacao };
+  }
   constructor(private readonly usersService: UsersService) {}
 
   @Get("/id")

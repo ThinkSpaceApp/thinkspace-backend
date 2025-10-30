@@ -1,3 +1,4 @@
+
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { NivelEscolaridade, ObjetivoPlataforma, Usuario } from "@prisma/client";
@@ -7,6 +8,17 @@ import { salaEstudoService } from "../salaEstudo/salaEstudo.service";
 
 @Injectable()
 export class UsersService {
+
+  async marcarNotificacaoComoLida(id: string, userId: string) {
+    const notificacao = await this.prisma.notificacao.findUnique({ where: { id } });
+    if (!notificacao || notificacao.usuarioId !== userId) {
+      return null;
+    }
+    return this.prisma.notificacao.update({
+      where: { id },
+      data: { lida: true },
+    });
+  }
   async findMateriaisByAutorId(userId: string) {
     return this.prisma.materialEstudo.findMany({
       where: { autorId: userId },
