@@ -209,17 +209,58 @@ export class salaEstudoController {
   @Get(":salaId/posts")
   async getPostsBySala(@Param("salaId") salaId: string, @Res() res: Response) {
     try {
-      const posts = await this.prisma.post.findMany({ where: { salaId } });
+      const posts = await this.prisma.post.findMany({
+        where: { salaId },
+        select: {
+          id: true,
+          conteudo: true,
+          criadoEm: true,
+          curtidas: true,
+          autor: {
+            select: {
+              id: true,
+              nomeCompleto: true,
+              primeiroNome: true,
+              sobrenome: true,
+              foto: true,
+            }
+          },
+          comentarios: {
+            select: {
+              id: true,
+              conteudo: true,
+              criadoEm: true,
+              autorId: true,
+            }
+          },
+        },
+        orderBy: { criadoEm: 'desc' }
+      });
       const postsComStatus = await Promise.all(posts.map(async (post: any) => {
         const denunciasCount = await this.prisma.denuncia.count({ where: { postId: post.id } });
+        const autorNome = post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim();
         if (denunciasCount >= 5) {
           return {
             ...post,
             conteudo: undefined,
-            status: "CONTEÚDO EM ANÁLISE E PODE SER OFENSIVO"
+            status: "CONTEÚDO EM ANÁLISE E PODE SER OFENSIVO",
+            autor: {
+              id: post.autor.id,
+              nome: autorNome,
+              foto: post.autor.foto,
+            },
+            quantidadeComentarios: post.comentarios.length,
           };
         }
-        return post;
+        return {
+          ...post,
+          autor: {
+            id: post.autor.id,
+            nome: autorNome,
+            foto: post.autor.foto,
+          },
+          quantidadeComentarios: post.comentarios.length,
+        };
       }));
       return res.status(HttpStatus.OK).json(postsComStatus);
     } catch (error) {
@@ -275,7 +316,6 @@ export class salaEstudoController {
           conteudo: body.conteudo,
         },
       });
-      return res.status(HttpStatus.CREATED).json(post);
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar post.', details: error });
     }
