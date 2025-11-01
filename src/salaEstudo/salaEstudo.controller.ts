@@ -119,20 +119,6 @@ export class salaEstudoController {
         }
       });
 
-      const palette = ["#7C3AED", "#a18ddfff", "#ee82a2ff", "#8e44ad"];
-      const salasComCor = await Promise.all(salas.map(async (sala: any, idx: number) => {
-        const quantidadeEstudantes = await this.prisma.membroSala.count({
-          where: {
-            salaId: sala.id,
-            usuario: { funcao: "ESTUDANTE" },
-          },
-        });
-        return {
-          ...sala,
-          quantidadeEstudantes,
-        };
-      }));
-
       const ultimosUsuarios = await this.prisma.usuario.findMany({
         where: { funcao: "ESTUDANTE" },
         orderBy: { ultimoLogin: "desc" },
@@ -146,34 +132,48 @@ export class salaEstudoController {
           email: true,
         },
       });
+      const palette = ["#7C3AED", "#a18ddfff", "#ee82a2ff", "#8e44ad"];
       const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
-      const avatares = ultimosUsuarios.map((u, idx) => {
-        if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
-          return u.foto;
-        }
-        let iniciais = "";
-        const nome = u.primeiroNome?.trim() || "";
-        const sobrenome = u.sobrenome?.trim() || "";
-        if (nome || sobrenome) {
-          iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
-        } else if (u.nomeCompleto) {
-          const partes = u.nomeCompleto.trim().split(" ");
-          iniciais =
-            partes.length > 1
-              ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
-              : `${partes[0][0]}`.toUpperCase();
-        } else if (u.email) {
-          iniciais = u.email.charAt(0).toUpperCase();
-        } else {
-          iniciais = "U";
-        }
-        const corBg = paletteBg[idx % paletteBg.length];
-        return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
-      });
+
+      const salasComInfo = await Promise.all(salas.map(async (sala: any, idx: number) => {
+        const quantidadeEstudantes = await this.prisma.membroSala.count({
+          where: {
+            salaId: sala.id,
+            usuario: { funcao: "ESTUDANTE" },
+          },
+        });
+        const avatares = ultimosUsuarios.map((u, uidx) => {
+          if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
+            return u.foto;
+          }
+          let iniciais = "";
+          const nome = u.primeiroNome?.trim() || "";
+          const sobrenome = u.sobrenome?.trim() || "";
+          if (nome || sobrenome) {
+            iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+          } else if (u.nomeCompleto) {
+            const partes = u.nomeCompleto.trim().split(" ");
+            iniciais =
+              partes.length > 1
+                ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+                : `${partes[0][0]}`.toUpperCase();
+          } else if (u.email) {
+            iniciais = u.email.charAt(0).toUpperCase();
+          } else {
+            iniciais = "U";
+          }
+          const corBg = paletteBg[uidx % paletteBg.length];
+          return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
+        });
+        return {
+          ...sala,
+          quantidadeEstudantes,
+          avataresUltimosUsuarios: avatares,
+        };
+      }));
 
       return res.status(HttpStatus.OK).json({
-        salas: salasComCor,
-        avataresUltimosUsuarios: avatares,
+        salas: salasComInfo
       });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao buscar salas.", details: error });
@@ -395,6 +395,46 @@ export class salaEstudoController {
       });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar post.', details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Curtir um post" })
+  @ApiResponse({ status: 201, description: "Post curtido com sucesso." })
+  @Post('post/:postId/curtir/:usuarioId')
+  async curtirPost(@Param('postId') postId: string, @Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      // Prisma schema does not include a postCurtido model in this project; only update the post's curtidas counter
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { curtidas: { increment: 1 } },
+      });
+      return res.status(HttpStatus.CREATED).json({ message: 'Post curtido com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao curtir post.', details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Remover curtida de um post" })
+  @ApiResponse({ status: 200, description: "Curtida removida com sucesso." })
+  @Post('post/:postId/descurtir/:usuarioId')
+  async descurtirPost(@Param('postId') postId: string, @Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      const post = await this.prisma.post.findUnique({
+        where: { id: postId },
+        select: { curtidas: true },
+      });
+      if (!post) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Post não encontrado.' });
+      }
+      const atual = post.curtidas ?? 0;
+      const novoValor = atual > 0 ? atual - 1 : 0;
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { curtidas: novoValor },
+      });
+      return res.status(HttpStatus.OK).json({ message: 'Curtida removida com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao remover curtida.', details: error });
     }
   }
 }
