@@ -147,19 +147,19 @@ export class ConfiguracoesController {
       throw new Error("Usuário não autenticado ou userId ausente.");
     }
     const userId = (req.user as any).userId;
-  const prisma = this.configuracoesService['prisma'];
-      const salasModeradas = await prisma.salaEstudo.findMany({ where: { moderadorId: userId } });
-      if (salasModeradas.length > 0) {
-        for (const sala of salasModeradas) {
-          await prisma.membroSala.deleteMany({ where: { salaId: sala.id } });
-          await prisma.atividade.deleteMany({ where: { salaId: sala.id } });
-          await prisma.salaEstudoMaterial.deleteMany({ where: { salaId: sala.id } });
-          await prisma.topicoComunidade.deleteMany({ where: { salaId: sala.id } });
-          await prisma.calendario.deleteMany({ where: { salaId: sala.id } });
-          await prisma.salaEstudo.delete({ where: { id: sala.id } });
-        }
+    const prisma = this.configuracoesService['prisma'];
+    const salasModeradas = await prisma.salaEstudo.findMany({ where: { moderadorId: userId } });
+    if (salasModeradas.length > 0) {
+      for (const sala of salasModeradas) {
+        await prisma.membroSala.deleteMany({ where: { salaId: sala.id } });
+        await prisma.atividade.deleteMany({ where: { salaId: sala.id } });
+        await prisma.salaEstudoMaterial.deleteMany({ where: { salaId: sala.id } });
+        // await prisma.topicoComunidade.deleteMany({ where: { salaId: sala.id } }); 
+        await prisma.calendario.deleteMany({ where: { salaId: sala.id } });
+        await prisma.salaEstudo.delete({ where: { id: sala.id } });
       }
-  const usuario = await this.configuracoesService.getUsuarioById(userId);
+    }
+    const usuario = await this.configuracoesService.getUsuarioById(userId);
     if (!usuario) {
       throw new Error("Usuário não encontrado.");
     }
@@ -168,26 +168,26 @@ export class ConfiguracoesController {
     if (!senhaValida) {
       throw new Error("Senha atual incorreta.");
     }
-  await prisma.membroSala.deleteMany({ where: { usuarioId: userId } });
-  await prisma.materialEstudo.deleteMany({ where: { autorId: userId } });
-  const materiasDoUsuario = await prisma.materia.findMany({ where: { usuarioId: userId } });
-  for (const materia of materiasDoUsuario) {
-    await prisma.materialEstudo.deleteMany({ where: { materiaId: materia.id } });
-  }
-  await prisma.materia.deleteMany({ where: { usuarioId: userId } });
-  await prisma.postagemComunidade.deleteMany({ where: { autorId: userId } });
-  await prisma.comentario.deleteMany({ where: { autorId: userId } });
-  await prisma.postagemSalva.deleteMany({ where: { usuarioId: userId } });
-  await prisma.denuncia.deleteMany({ where: { denuncianteId: userId } });
-  await prisma.revisao.deleteMany({ where: { usuarioId: userId } });
-  await prisma.calendario.deleteMany({ where: { usuarioId: userId } });
-  await prisma.perfilUsuario.deleteMany({ where: { usuarioId: userId } });
-  await prisma.experienciaUsuario.deleteMany({ where: { usuarioId: userId } });
-  await prisma.atividadeUsuario.deleteMany({ where: { usuarioId: userId } });
-  await prisma.notificacao.deleteMany({ where: { usuarioId: userId } });
-  await prisma.metricasUsuario.deleteMany({ where: { usuarioId: userId } });
-  await prisma.verificacaoEmail.deleteMany({ where: { usuarioId: userId } });
-  await prisma.chatMensagem.deleteMany({ where: { autorId: userId } });
+    await prisma.membroSala.deleteMany({ where: { usuarioId: userId } });
+    await prisma.materialEstudo.deleteMany({ where: { autorId: userId } });
+    const materiasDoUsuario = await prisma.materia.findMany({ where: { usuarioId: userId } });
+    for (const materia of materiasDoUsuario) {
+      await prisma.materialEstudo.deleteMany({ where: { materiaId: materia.id } });
+    }
+    await prisma.materia.deleteMany({ where: { usuarioId: userId } });
+    // await prisma.postagemComunidade.deleteMany({ where: { autorId: userId } }); 
+    await prisma.comentario.deleteMany({ where: { autorId: userId } });
+    // await prisma.postagemSalva.deleteMany({ where: { usuarioId: userId } });
+    await prisma.denuncia.deleteMany({ where: { denuncianteId: userId } });
+    await prisma.revisao.deleteMany({ where: { usuarioId: userId } });
+    await prisma.calendario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.perfilUsuario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.experienciaUsuario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.atividadeUsuario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.notificacao.deleteMany({ where: { usuarioId: userId } });
+    await prisma.metricasUsuario.deleteMany({ where: { usuarioId: userId } });
+    await prisma.verificacaoEmail.deleteMany({ where: { usuarioId: userId } });
+    await prisma.chatMensagem.deleteMany({ where: { autorId: userId } });
     await this.configuracoesService.excluirConta(userId);
     return {
       message: "Conta excluída com sucesso. Faça logout ou redirecione o usuário.",
