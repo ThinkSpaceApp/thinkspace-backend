@@ -39,6 +39,12 @@ export class salaEstudoController {
           conteudo: true,
           criadoEm: true,
           curtidas: true,
+          sala: {
+            select: {
+              id: true,
+              nome: true,
+            }
+          },
           autor: {
             select: {
               id: true,
@@ -74,13 +80,16 @@ export class salaEstudoController {
         conteudo: post.conteudo,
         criadoEm: post.criadoEm,
         curtidas: post.curtidas,
+        sala: {
+          id: post.sala?.id,
+          nome: post.sala?.nome,
+        },
         autor: {
           id: post.autor.id,
           nome: post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim(),
           foto: post.autor.foto,
           perfil: post.autor.PerfilUsuario?.[0] || null,
         },
-        quantidadeCurtidas: post.curtidas,
         comentarios: post.comentarios,
         quantidadeComentarios: post.comentarios.length,
       }));
