@@ -1,3 +1,7 @@
+enum TipoSalaEstudo {
+  PUBLICA
+  PRIVADA
+}
 model PostSalvo {
   id        String   @id @default(uuid())
   usuarioId String
@@ -135,6 +139,7 @@ model Usuario {
   Revisao         Revisao[]
   Calendario      Calendario[]
 
+  ultimasSalasAcessadas String[]
   Instituicao Instituicao? @relation(fields: [instituicaoId], references: [id])
 
   @@map("Usuario")
@@ -237,6 +242,7 @@ model SalaEstudo {
   moderador   Usuario  @relation(fields: [moderadorId], references: [id], name: "SalaEstudoModerador")
   assunto     String?
   criadoEm    DateTime @default(now())
+  tipo        TipoSalaEstudo @default(PUBLICA)
 
   membros    MembroSala[]
   atividades Atividade[]
@@ -280,7 +286,6 @@ model Atividade {
 model Post {
   postSalvos     PostSalvo[]
   id        String     @id @default(uuid())
-  titulo    String
   conteudo  String
   autorId   String
   autor     Usuario    @relation(fields: [autorId], references: [id], onDelete: Cascade)

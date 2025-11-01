@@ -4,6 +4,20 @@ import { Response } from "express";
 import { salaEstudoService } from "./salaEstudo.service";
 import { PrismaService } from "../prisma/prisma.service";
 
+export class CriarSalaEstudoDto {
+  nome!: string;
+  descricao?: string;
+  tipo!: 'PUBLICA' | 'PRIVADA';
+  tags!: string[];
+  autorId!: string;
+}
+  export class CriarPostDto {
+  salaId!: string;
+  autorId!: string;
+  titulo!: string;
+  conteudo!: string;
+}
+
 @ApiTags("Sala de Estudo")
 @Controller("sala-estudo")
 export class salaEstudoController {
@@ -11,6 +25,30 @@ export class salaEstudoController {
     private readonly salaEstudoService: salaEstudoService,
     private readonly prisma: PrismaService,
   ) {}
+
+  @ApiOperation({ summary: "Criar uma nova sala de estudo", description: "O moderador será sempre o usuário criador (autorId). Não é necessário informar moderadorId." })
+  @ApiResponse({ status: 201, description: "Sala de estudo criada com sucesso. O moderador é definido automaticamente." })
+  @Post()
+  async criarSalaEstudo(@Body() body: CriarSalaEstudoDto, @Res() res: Response) {
+    try {
+      const data: any = {
+        nome: body.nome,
+        descricao: body.descricao,
+        topicos: body.tags,
+        banner: null,
+        moderadorId: body.autorId, 
+        criadoEm: new Date(),
+        assunto: null,
+      };
+      if (body.tipo) {
+        data.tipo = body.tipo;
+      }
+      const sala = await this.prisma.salaEstudo.create({ data });
+      return res.status(HttpStatus.CREATED).json(sala);
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao criar sala de estudo.", details: error });
+    }
+  }
 
   // @ApiOperation({ summary: "Atualizar todas as informações de uma sala de estudo pelo id" })
   // @ApiResponse({ status: 200, description: "Sala de estudo atualizada com sucesso." })
@@ -314,6 +352,46 @@ export class salaEstudoController {
       return res.status(HttpStatus.OK).json(postsComStatus);
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao buscar posts.", details: error });
+    }
+  }
+  @ApiOperation({ summary: "Obter últimas salas de estudo acessadas pelo usuário" })
+  @ApiResponse({ status: 200, description: "Lista das últimas salas acessadas." })
+  @Get('usuario/:usuarioId/salas-recentes')
+  async getUltimasSalasAcessadas(@Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+      if (!usuario) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Usuário não encontrado.' });
+      }
+      if (!usuario.ultimasSalasAcessadas || usuario.ultimasSalasAcessadas.length === 0) {
+        return res.status(HttpStatus.OK).json([]);
+      }
+      const salas = await this.prisma.salaEstudo.findMany({
+        where: { id: { in: usuario.ultimasSalasAcessadas } },
+      });
+      const salasOrdenadas = usuario.ultimasSalasAcessadas
+        .map((id) => salas.find((s) => s.id === id))
+        .filter(Boolean);
+      return res.status(HttpStatus.OK).json(salasOrdenadas);
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar salas recentes.', details: error });
+    }
+  }
+  @ApiOperation({ summary: "Criar uma nova postagem em uma sala de estudo" })
+  @ApiResponse({ status: 201, description: "Post criado com sucesso." })
+  @Post('post')
+  async criarPost(@Body() body: CriarPostDto, @Res() res: Response) {
+    try {
+      const post = await this.prisma.post.create({
+        data: {
+          salaId: body.salaId,
+          autorId: body.autorId,
+          conteudo: body.conteudo,
+        },
+      });
+      return res.status(HttpStatus.CREATED).json(post);
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar post.', details: error });
     }
   }
 }
