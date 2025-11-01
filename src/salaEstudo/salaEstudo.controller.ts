@@ -1,6 +1,6 @@
 
 import { Controller, Get, Res, HttpStatus, Post, Put, Param, Body } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 import { Response } from "express";
 import { salaEstudoService } from "./salaEstudo.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -251,6 +251,20 @@ export class salaEstudoController {
   }
   @ApiOperation({ summary: "Criar uma nova postagem em uma sala de estudo" })
   @ApiResponse({ status: 201, description: "Post criado com sucesso." })
+  @ApiBody({
+    description: 'Campos obrigatórios para criar uma postagem',
+    type: CriarPostDto,
+    examples: {
+      exemplo: {
+        summary: 'Exemplo de criação de post',
+        value: {
+          salaId: 'uuid-da-sala',
+          autorId: 'uuid-do-autor',
+          conteudo: 'Conteúdo da postagem'
+        }
+      }
+    }
+  })
   @Post('post')
   async criarPost(@Body() body: CriarPostDto, @Res() res: Response) {
     try {
