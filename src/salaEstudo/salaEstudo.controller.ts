@@ -105,8 +105,76 @@ export class salaEstudoController {
   @Get()
   async getAllSalasEstudo(@Res() res: Response) {
     try {
-      const salas = await this.prisma.salaEstudo.findMany();
-      return res.status(HttpStatus.OK).json(salas);
+      const salas = await this.prisma.salaEstudo.findMany({
+        select: {
+          id: true,
+          nome: true,
+          descricao: true,
+          tipo: true,
+          banner: true,
+          moderadorId: true,
+          assunto: true,
+          criadoEm: true,
+          topicos: true,
+        }
+      });
+
+      const palette = ["#7C3AED", "#a18ddfff", "#ee82a2ff", "#8e44ad"];
+      const salasComCor = await Promise.all(salas.map(async (sala: any, idx: number) => {
+        const quantidadeEstudantes = await this.prisma.membroSala.count({
+          where: {
+            salaId: sala.id,
+            usuario: { funcao: "ESTUDANTE" },
+          },
+        });
+        return {
+          ...sala,
+          quantidadeEstudantes,
+        };
+      }));
+
+      const ultimosUsuarios = await this.prisma.usuario.findMany({
+        where: { funcao: "ESTUDANTE" },
+        orderBy: { ultimoLogin: "desc" },
+        take: 4,
+        select: {
+          primeiroNome: true,
+          sobrenome: true,
+          foto: true,
+          id: true,
+          nomeCompleto: true,
+          email: true,
+        },
+      });
+      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
+      const avatares = ultimosUsuarios.map((u, idx) => {
+        if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
+          return u.foto;
+        }
+        let iniciais = "";
+        const nome = u.primeiroNome?.trim() || "";
+        const sobrenome = u.sobrenome?.trim() || "";
+        if (nome || sobrenome) {
+          iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+        } else if (u.nomeCompleto) {
+          const partes = u.nomeCompleto.trim().split(" ");
+          iniciais =
+            partes.length > 1
+              ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+              : `${partes[0][0]}`.toUpperCase();
+        } else if (u.email) {
+          iniciais = u.email.charAt(0).toUpperCase();
+        } else {
+          iniciais = "U";
+        }
+        const corBg = paletteBg[idx % paletteBg.length];
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
+      });
+
+      return res.status(HttpStatus.OK).json({
+        salas: salasComCor,
+        avataresUltimosUsuarios: avatares,
+      });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao buscar salas.", details: error });
     }
