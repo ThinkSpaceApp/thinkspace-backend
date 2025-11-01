@@ -1,3 +1,14 @@
+model PostSalvo {
+  id        String   @id @default(uuid())
+  usuarioId String
+  postId    String
+  criadoEm  DateTime @default(now())
+
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, postId])
+}
 enum TipoMaterialEstudo {
   QUIZZ
   FLASHCARD
@@ -87,6 +98,7 @@ model Notificacao {
 }
 
 model Usuario {
+  postSalvos     PostSalvo[]
   id                   String              @id @default(uuid())
   email                String              @unique
   dataNascimento       DateTime
@@ -117,9 +129,8 @@ model Usuario {
   materiais       MaterialEstudo[]
   salasModeradas  SalaEstudo[]         @relation("SalaEstudoModerador")
   membroSalas     MembroSala[]
-  postagens       PostagemComunidade[]
+  posts           Post[]
   comentarios     Comentario[]
-  postagensSalvas PostagemSalva[]
   denuncias       Denuncia[]
   Revisao         Revisao[]
   Calendario      Calendario[]
@@ -232,7 +243,7 @@ model SalaEstudo {
   materiais  SalaEstudoMaterial[]
   Calendario Calendario[]
 
-  TopicoComunidade TopicoComunidade[]
+  posts      Post[]
 }
 
 model MembroSala {
@@ -265,56 +276,47 @@ model Atividade {
   criadoEm    DateTime      @default(now())
 }
 
-model TopicoComunidade {
-  id       String     @id @default(uuid())
-  nome     String
-  salaId   String
-  sala     SalaEstudo @relation(fields: [salaId], references: [id])
-  criadoEm DateTime   @default(now())
 
-  postagens PostagemComunidade[]
-}
-
-model PostagemComunidade {
-  id       String           @id @default(uuid())
-  titulo   String
-  conteudo String
-  autorId  String
-  autor    Usuario          @relation(fields: [autorId], references: [id], onDelete: Cascade)
-  topicoId String
-  topico   TopicoComunidade @relation(fields: [topicoId], references: [id])
-  curtidas Int              @default(0)
-  tags     String[]
-  criadoEm DateTime         @default(now())
+model Post {
+  postSalvos     PostSalvo[]
+  id        String     @id @default(uuid())
+  titulo    String
+  conteudo  String
+  autorId   String
+  autor     Usuario    @relation(fields: [autorId], references: [id], onDelete: Cascade)
+  salaId    String
+  sala      SalaEstudo @relation(fields: [salaId], references: [id])
+  curtidas  Int        @default(0)
+  tags      String[]
+  criadoEm  DateTime   @default(now())
 
   comentarios Comentario[]
-  salvamentos PostagemSalva[]
   denuncias   Denuncia[]
 }
 
 model Comentario {
-  id         String             @id @default(uuid())
-  conteudo   String
-  postagemId String
-  postagem   PostagemComunidade @relation(fields: [postagemId], references: [id])
-  autorId    String
-  autor      Usuario            @relation(fields: [autorId], references: [id], onDelete: Cascade)
-  criadoEm   DateTime           @default(now())
+  id        String   @id @default(uuid())
+  conteudo  String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  autorId   String
+  autor     Usuario  @relation(fields: [autorId], references: [id], onDelete: Cascade)
+  criadoEm  DateTime @default(now())
 
   denuncias Denuncia[]
 }
 
 model Denuncia {
-  id            String              @id @default(uuid())
+  id            String     @id @default(uuid())
   motivo        String
-  status        String              @default("PENDENTE")
+  status        String    @default("PENDENTE")
   denuncianteId String
-  denunciante   Usuario             @relation(fields: [denuncianteId], references: [id], onDelete: Cascade)
-  postagemId    String?
-  postagem      PostagemComunidade? @relation(fields: [postagemId], references: [id])
+  denunciante   Usuario   @relation(fields: [denuncianteId], references: [id], onDelete: Cascade)
+  postId        String?
+  post          Post?     @relation(fields: [postId], references: [id])
   comentarioId  String?
-  comentario    Comentario?         @relation(fields: [comentarioId], references: [id])
-  criadoEm      DateTime            @default(now())
+  comentario    Comentario? @relation(fields: [comentarioId], references: [id])
+  criadoEm      DateTime  @default(now())
 }
 
 model MetricasUsuario {
@@ -344,15 +346,6 @@ model SalaEstudoMaterial {
   @@id([materialId, salaId])
 }
 
-model PostagemSalva {
-  usuarioId  String
-  usuario    Usuario            @relation(fields: [usuarioId], references: [id])
-  postagemId String
-  postagem   PostagemComunidade @relation(fields: [postagemId], references: [id])
-  salvoEm    DateTime           @default(now())
-
-  @@id([usuarioId, postagemId])
-}
 
 model Revisao {
   id          String         @id @default(uuid())

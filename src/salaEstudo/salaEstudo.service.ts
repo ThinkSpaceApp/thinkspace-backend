@@ -35,8 +35,8 @@ export class salaEstudoService {
         data: {
           nome: "ThinkSpace",
           descricao:
-            "Um espaço criado para impulsionar sua produtividade e estimular a troca de ideias. Aqui você pode estudar com foco, compartilhar experiências e aprender em comunidade.",
-          topicos: ["Produtividade", "Comunidade"],
+            "Um espaço criado para impulsionar sua produtividade e estimular a troca de ideias. Aqui você pode estudar com foco, compartilhar experiências e aprender em grupo.",
+          topicos: ["Produtividade", "Colaboração"],
           banner: "https://i.imgur.com/p5ACfTO.png",
           moderador: {
             connect: { id: "1bbaf1f7-746a-4574-b53c-038349d62a6e" },
@@ -45,21 +45,7 @@ export class salaEstudoService {
       });
     }
 
-    let defaultCommunity = await this.prisma.topicoComunidade.findUnique({
-      where: { id: "thinkspace-comunidade-id" },
-    });
-    if (!defaultCommunity) {
-      defaultCommunity = await this.prisma.topicoComunidade.create({
-        data: {
-          id: "thinkspace-comunidade-id",
-          nome: "thinkspace-comunidade",
-          salaId: defaultRoom.id,
-        },
-      });
-      return { sala: defaultRoom, topico: defaultCommunity };
-    } else {
-      return { sala: defaultRoom, topico: null };
-    }
+    return { sala: defaultRoom };
   }
 
   async addUserToDefaultRoom(userId: string) {
