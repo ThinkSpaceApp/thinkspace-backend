@@ -345,11 +345,15 @@ model MetricasUsuario {
 }
 
 model SalaEstudoMaterial {
-  materialId  String
-  material    MaterialEstudo @relation(fields: [materialId], references: [id])
-  salaId      String
-  sala        SalaEstudo     @relation(fields: [salaId], references: [id])
-  atribuidoEm DateTime       @default(now())
+  materialId    String
+  material      MaterialEstudo @relation(fields: [materialId], references: [id])
+  salaId        String
+  sala          SalaEstudo     @relation(fields: [salaId], references: [id])
+  atribuidoEm   DateTime       @default(now())
+  autorId       String
+  avatarAutor   String?
+  materiaId     String
+  tags          String[]
 
   @@id([materialId, salaId])
 }

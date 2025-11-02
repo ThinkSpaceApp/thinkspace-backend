@@ -12,6 +12,7 @@ export class CriarSalaEstudoDto {
   autorId!: string;
   // banner removido da doc: valor sempre fixo pelo backend
 }
+
   export class CriarPostDto {
   salaId!: string;
   autorId!: string;
@@ -840,4 +841,172 @@ export class salaEstudoController {
     }
   }
   
+  @ApiOperation({ summary: "Publicar material de estudo em uma sala" })
+  @ApiResponse({ status: 201, description: "Material publicado na sala com sucesso." })
+  @ApiBody({
+    description: 'Campos obrigatórios para publicar material na sala',
+    schema: {
+      type: 'object',
+      properties: {
+        salaId: { type: 'string', example: 'uuid-da-sala' },
+        materialId: { type: 'string', example: 'uuid-do-material' },
+        materiaId: { type: 'string', example: 'uuid-da-materia' },
+        autorId: { type: 'string', example: 'uuid-do-autor' },
+        tags: { type: 'array', items: { type: 'string' }, example: ['tag1', 'tag2'] }
+      },
+      required: ['salaId', 'materialId', 'materiaId', 'autorId', 'tags']
+    }
+  })
+  @Post('sala/:salaId/publicar-material')
+  async publicarMaterialSala(
+    @Param('salaId') salaId: string,
+    @Body() body: { materialId: string; materiaId: string; autorId: string; tags: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      if (!body.materialId || !body.materiaId || !body.autorId || !Array.isArray(body.tags) || body.tags.length !== 2) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Todos os campos são obrigatórios e deve haver exatamente 2 tags.' });
+      }
+      const autor = await this.prisma.usuario.findUnique({ where: { id: body.autorId }, select: { foto: true } });
+      if (!autor) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Autor não encontrado.' });
+      }
+      const material = await this.prisma.materialEstudo.findUnique({ where: { id: body.materialId } });
+      if (!material) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Material de estudo não encontrado.' });
+      }
+      const sala = await this.prisma.salaEstudo.findUnique({ where: { id: salaId } });
+      if (!sala) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Sala de estudo não encontrada.' });
+      }
+      const publicado = await this.prisma.salaEstudoMaterial.create({
+        data: {
+          materialId: body.materialId,
+          salaId: salaId,
+          materiaId: body.materiaId,
+          autorId: body.autorId,
+          avatarAutor: autor.foto,
+          tags: body.tags,
+        }
+      });
+      return res.status(HttpStatus.CREATED).json({ publicado, message: 'Material publicado na sala com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao publicar material na sala.', details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Adicionar material de estudo ao acervo do usuário" })
+  @ApiResponse({ status: 201, description: "Material adicionado ao acervo do usuário com sucesso." })
+  @ApiBody({
+    description: 'Campos obrigatórios para adicionar material ao usuário',
+    schema: {
+      type: 'object',
+      properties: {
+        materialId: { type: 'string', example: 'uuid-do-material' },
+        materiaId: { type: 'string', example: 'uuid-da-materia-do-usuario' }
+      },
+      required: ['materialId', 'materiaId']
+    }
+  })
+  @Post('usuario/:usuarioId/adicionar-material')
+  async adicionarMaterialAoUsuario(
+    @Param('usuarioId') usuarioId: string,
+    @Body() body: { materialId: string; materiaId: string },
+    @Res() res: Response
+  ) {
+    try {
+      const materialOriginal = await this.prisma.materialEstudo.findUnique({
+        where: { id: body.materialId },
+        include: { materia: true }
+      });
+      if (!materialOriginal) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Material de estudo não encontrado.' });
+      }
+      const materia = await this.prisma.materia.findFirst({
+        where: {
+          id: body.materiaId,
+          usuarioId: usuarioId
+        }
+      });
+      if (!materia) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Matéria não encontrada para este usuário.' });
+      }
+      const novoMaterial = await this.prisma.materialEstudo.create({
+        data: {
+          titulo: materialOriginal.titulo,
+          origem: materialOriginal.origem,
+          tipoMaterial: materialOriginal.tipoMaterial,
+          nomeDesignado: materialOriginal.nomeDesignado,
+          materiaId: materia.id,
+          topicos: materialOriginal.topicos,
+          caminhoArquivo: materialOriginal.caminhoArquivo,
+          pdfBinario: materialOriginal.pdfBinario,
+          conteudo: materialOriginal.conteudo,
+          assunto: materialOriginal.assunto,
+          autorId: usuarioId,
+          resumoIA: materialOriginal.resumoIA,
+          flashcardsJson: materialOriginal.flashcardsJson,
+          quizzesJson: materialOriginal.quizzesJson,
+          respostasQuizJson: materialOriginal.respostasQuizJson,
+          chatHistoryJson: materialOriginal.chatHistoryJson as any,
+          quantidadeQuestoes: materialOriginal.quantidadeQuestoes,
+          quantidadeFlashcards: materialOriginal.quantidadeFlashcards
+        }
+      });
+      return res.status(HttpStatus.CREATED).json({ material: novoMaterial, message: 'Material adicionado ao acervo do usuário com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao adicionar material ao usuário.', details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Obter detalhes de um material publicado em uma sala" })
+  @ApiResponse({ status: 200, description: "Detalhes do material publicado na sala." })
+  @ApiResponse({ status: 404, description: "Material publicado na sala não encontrado." })
+  @Get('sala/:salaId/material/:materialId')
+  async getMaterialSalaDetalhes(
+    @Param('salaId') salaId: string,
+    @Param('materialId') materialId: string,
+    @Res() res: Response
+  ) {
+    try {
+      const materialSala = await this.prisma.salaEstudoMaterial.findUnique({
+        where: {
+          materialId_salaId: {
+            materialId,
+            salaId
+          }
+        },
+        include: {
+          material: true,
+          sala: true
+        }
+      });
+      if (!materialSala) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Material publicado na sala não encontrado.' });
+      }
+      const autor = await this.prisma.usuario.findUnique({
+        where: { id: materialSala.autorId },
+        select: { nomeCompleto: true, primeiroNome: true, sobrenome: true, foto: true }
+      });
+      const materia = await this.prisma.materia.findUnique({
+        where: { id: materialSala.materiaId },
+        select: { nome: true, cor: true, icone: true }
+      });
+      return res.status(HttpStatus.OK).json({
+        id: materialSala.materialId,
+        salaId: materialSala.salaId,
+        atribuidoEm: materialSala.atribuidoEm,
+        tags: materialSala.tags,
+        autor: {
+          id: materialSala.autorId,
+          nome: autor?.nomeCompleto || `${autor?.primeiroNome || ''} ${autor?.sobrenome || ''}`.trim(),
+          foto: autor?.foto || materialSala.avatarAutor || null
+        },
+        materia,
+        material: materialSala.material
+      });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar detalhes do material publicado na sala.', details: error });
+    }
+  }
 }
