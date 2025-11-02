@@ -403,7 +403,6 @@ export class salaEstudoController {
   @Post('post/:postId/curtir/:usuarioId')
   async curtirPost(@Param('postId') postId: string, @Param('usuarioId') usuarioId: string, @Res() res: Response) {
     try {
-      // Prisma schema does not include a postCurtido model in this project; only update the post's curtidas counter
       await this.prisma.post.update({
         where: { id: postId },
         data: { curtidas: { increment: 1 } },
@@ -435,6 +434,84 @@ export class salaEstudoController {
       return res.status(HttpStatus.OK).json({ message: 'Curtida removida com sucesso.' });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao remover curtida.', details: error });
+    }
+  }
+  
+  @ApiOperation({ summary: "Obter detalhes de um post pelo id" })
+  @ApiResponse({ status: 200, description: "Detalhes do post encontrado." })
+  @ApiResponse({ status: 404, description: "Post não encontrado." })
+  @Get('post/:postId')
+  async getPostById(@Param('postId') postId: string, @Res() res: Response) {
+    try {
+      const post = await this.prisma.post.findUnique({
+        where: { id: postId },
+        select: {
+          id: true,
+          conteudo: true,
+          criadoEm: true,
+          curtidas: true,
+          sala: {
+            select: {
+              id: true,
+              nome: true,
+              descricao: true,
+              banner: true,
+              tipo: true,
+              moderadorId: true,
+              assunto: true,
+              criadoEm: true,
+              topicos: true,
+            }
+          },
+          autor: {
+            select: {
+              id: true,
+              primeiroNome: true,
+              sobrenome: true,
+              nomeCompleto: true,
+              foto: true,
+              email: true,
+              PerfilUsuario: {
+                select: {
+                  avatar: true,
+                  nivel: true,
+                  xp: true,
+                }
+              }
+            }
+          },
+          comentarios: {
+            select: {
+              id: true,
+              conteudo: true,
+              criadoEm: true,
+              autorId: true,
+            }
+          },
+        },
+      });
+      if (!post) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Post não encontrado.' });
+      }
+      const result = {
+        id: post.id,
+        conteudo: post.conteudo,
+        criadoEm: post.criadoEm,
+        curtidas: post.curtidas,
+        sala: post.sala,
+        autor: {
+          id: post.autor.id,
+          nome: post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim(),
+          foto: post.autor.foto,
+          email: post.autor.email,
+          perfil: post.autor.PerfilUsuario?.[0] || null,
+        },
+        comentarios: post.comentarios,
+        quantidadeComentarios: post.comentarios.length,
+      };
+      return res.status(HttpStatus.OK).json(result);
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar post.', details: error });
     }
   }
 }
