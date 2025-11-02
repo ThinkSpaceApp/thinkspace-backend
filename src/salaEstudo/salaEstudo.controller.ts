@@ -252,35 +252,21 @@ export class salaEstudoController {
     }
   }
 
-  @ApiOperation({ summary: "Salvar um post" })
-  @ApiResponse({ status: 201, description: "Post salvo com sucesso." })
-  @Post("post/:postId/salvar/:usuarioId")
-  async salvarPost(@Param("postId") postId: string, @Param("usuarioId") usuarioId: string, @Res() res: Response) {
+  @ApiOperation({ summary: "Salvar ou remover salvamento de um post" })
+  @ApiResponse({ status: 200, description: "Status atualizado do salvamento do post." })
+  @Post("post/:postId/toggle-salvar/:usuarioId")
+  async toggleSalvarPost(@Param("postId") postId: string, @Param("usuarioId") usuarioId: string, @Res() res: Response) {
     try {
-      await this.prisma.postSalvo.create({ data: { postId, usuarioId } });
-      return res.status(HttpStatus.CREATED).json({ message: "Post salvo com sucesso." });
-    } catch (error) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        (error as any).code === "P2002"
-      ) {
-        return res.status(HttpStatus.OK).json({ message: "Post já estava salvo." });
+      const salvo = await this.prisma.postSalvo.findUnique({ where: { usuarioId_postId: { usuarioId, postId } } });
+      if (salvo) {
+        await this.prisma.postSalvo.delete({ where: { usuarioId_postId: { usuarioId, postId } } });
+        return res.status(HttpStatus.OK).json({ salvo: false, message: "Salvamento removido com sucesso." });
+      } else {
+        await this.prisma.postSalvo.create({ data: { postId, usuarioId } });
+        return res.status(HttpStatus.CREATED).json({ salvo: true, message: "Post salvo com sucesso." });
       }
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao salvar post.", details: error });
-    }
-  }
-
-  @ApiOperation({ summary: "Remover salvamento de um post" })
-  @ApiResponse({ status: 200, description: "Salvamento removido com sucesso." })
-  @Post("post/:postId/desfazer-salvar/:usuarioId")
-  async desfazerSalvarPost(@Param("postId") postId: string, @Param("usuarioId") usuarioId: string, @Res() res: Response) {
-    try {
-      await this.prisma.postSalvo.delete({ where: { usuarioId_postId: { usuarioId, postId } } });
-      return res.status(HttpStatus.OK).json({ message: "Salvamento removido com sucesso." });
     } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao remover salvamento.", details: error });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao atualizar salvamento.", details: error });
     }
   }
   @ApiOperation({ summary: "Listar todos os posts de uma sala de estudo" })
