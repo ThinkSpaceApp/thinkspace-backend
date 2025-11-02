@@ -282,9 +282,16 @@ export class salaEstudoController {
   }
   @ApiOperation({ summary: "Listar todos os posts de uma sala de estudo" })
   @ApiResponse({ status: 200, description: "Lista de posts da sala." })
+  @ApiQuery({
+    name: 'usuarioId',
+    required: false,
+    description: 'ID do usuário logado para saber se curtiu cada post',
+    type: String
+  })
   @Get(":salaId/posts")
   async getPostsBySala(@Param("salaId") salaId: string, @Res() res: Response) {
     try {
+      const usuarioId = res.req.query.usuarioId as string | undefined;
       const posts = await this.prisma.post.findMany({
         where: { salaId },
         select: {
@@ -292,6 +299,7 @@ export class salaEstudoController {
           conteudo: true,
           criadoEm: true,
           curtidas: true,
+          usuariosQueCurtiram: true,
           autor: {
             select: {
               id: true,
@@ -313,6 +321,9 @@ export class salaEstudoController {
         orderBy: { criadoEm: 'desc' }
       });
       const postsComStatus = await Promise.all(posts.map(async (post: any) => {
+        const usuariosQueCurtiram = Array.isArray(post.usuariosQueCurtiram)
+          ? post.usuariosQueCurtiram.map((id: any) => String(id))
+          : [];
         const denunciasCount = await this.prisma.denuncia.count({ where: { postId: post.id } });
         const autorNome = post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim();
         if (denunciasCount >= 5) {
@@ -325,6 +336,7 @@ export class salaEstudoController {
               nome: autorNome,
               foto: post.autor.foto,
             },
+            curtidoPeloUsuario: usuarioId ? usuariosQueCurtiram.includes(String(usuarioId)) : false,
             quantidadeComentarios: post.comentarios.length,
           };
         }
@@ -335,6 +347,7 @@ export class salaEstudoController {
             nome: autorNome,
             foto: post.autor.foto,
           },
+          curtidoPeloUsuario: usuarioId ? usuariosQueCurtiram.includes(String(usuarioId)) : false,
           quantidadeComentarios: post.comentarios.length,
         };
       }));
