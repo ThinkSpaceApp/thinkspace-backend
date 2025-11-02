@@ -292,6 +292,7 @@ model Post {
   salaId    String
   sala      SalaEstudo @relation(fields: [salaId], references: [id])
   curtidas  Int        @default(0)
+  usuariosQueCurtiram String[] @default([])
   tags      String[]
   criadoEm  DateTime   @default(now())
 

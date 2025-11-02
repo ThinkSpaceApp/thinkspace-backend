@@ -398,42 +398,35 @@ export class salaEstudoController {
     }
   }
 
-  @ApiOperation({ summary: "Curtir um post" })
-  @ApiResponse({ status: 201, description: "Post curtido com sucesso." })
-  @Post('post/:postId/curtir/:usuarioId')
-  async curtirPost(@Param('postId') postId: string, @Param('usuarioId') usuarioId: string, @Res() res: Response) {
-    try {
-      await this.prisma.post.update({
-        where: { id: postId },
-        data: { curtidas: { increment: 1 } },
-      });
-      return res.status(HttpStatus.CREATED).json({ message: 'Post curtido com sucesso.' });
-    } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao curtir post.', details: error });
-    }
-  }
 
-  @ApiOperation({ summary: "Remover curtida de um post" })
-  @ApiResponse({ status: 200, description: "Curtida removida com sucesso." })
-  @Post('post/:postId/descurtir/:usuarioId')
-  async descurtirPost(@Param('postId') postId: string, @Param('usuarioId') usuarioId: string, @Res() res: Response) {
+  @ApiOperation({ summary: "Curtir ou descurtir um post" })
+  @ApiResponse({ status: 200, description: "Status atualizado da curtida do post." })
+  @Post('post/:postId/curtir/:usuarioId')
+  async toggleCurtirPost(@Param('postId') postId: string, @Param('usuarioId') usuarioId: string, @Res() res: Response) {
     try {
-      const post = await this.prisma.post.findUnique({
-        where: { id: postId },
-        select: { curtidas: true },
-      });
+      const post = await this.prisma.post.findUnique({ where: { id: postId } });
       if (!post) {
         return res.status(HttpStatus.NOT_FOUND).json({ error: 'Post não encontrado.' });
       }
-      const atual = post.curtidas ?? 0;
-      const novoValor = atual > 0 ? atual - 1 : 0;
+      let usuariosQueCurtiram: string[] = post.usuariosQueCurtiram || [];
+      let curtiu: boolean;
+      if (usuariosQueCurtiram.includes(usuarioId)) {
+        usuariosQueCurtiram = usuariosQueCurtiram.filter(id => id !== usuarioId);
+        curtiu = false;
+      } else {
+        usuariosQueCurtiram.push(usuarioId);
+        curtiu = true;
+      }
       await this.prisma.post.update({
         where: { id: postId },
-        data: { curtidas: novoValor },
+        data: {
+          usuariosQueCurtiram: usuariosQueCurtiram,
+          curtidas: usuariosQueCurtiram.length,
+        },
       });
-      return res.status(HttpStatus.OK).json({ message: 'Curtida removida com sucesso.' });
+      return res.status(HttpStatus.OK).json({ curtiu, curtidas: usuariosQueCurtiram.length });
     } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao remover curtida.', details: error });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao atualizar curtida.', details: error });
     }
   }
   
