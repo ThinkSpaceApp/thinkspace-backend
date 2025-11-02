@@ -438,6 +438,7 @@ export class salaEstudoController {
   @Get('post/:postId')
   async getPostById(@Param('postId') postId: string, @Res() res: Response) {
     try {
+      const usuarioId = res.req.query.usuarioId as string | undefined;
       const post = await this.prisma.post.findUnique({
         where: { id: postId },
         select: {
@@ -445,6 +446,7 @@ export class salaEstudoController {
           conteudo: true,
           criadoEm: true,
           curtidas: true,
+          usuariosQueCurtiram: true,
           sala: {
             select: {
               id: true,
@@ -488,11 +490,13 @@ export class salaEstudoController {
       if (!post) {
         return res.status(HttpStatus.NOT_FOUND).json({ error: 'Post não encontrado.' });
       }
+      const curtidoPeloUsuario = usuarioId ? (post.usuariosQueCurtiram || []).includes(usuarioId) : false;
       const result = {
         id: post.id,
         conteudo: post.conteudo,
         criadoEm: post.criadoEm,
         curtidas: post.curtidas,
+        curtidoPeloUsuario,
         sala: post.sala,
         autor: {
           id: post.autor.id,
