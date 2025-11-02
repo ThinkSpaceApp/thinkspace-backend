@@ -1,4 +1,3 @@
-
 import { Controller, Get, Res, HttpStatus, Post, Put, Param, Body } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 import { Response } from "express";
@@ -563,4 +562,42 @@ export class salaEstudoController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar favoritos.', details: error });
     }
   }
+  static CriarComentarioDto = class {
+    postId!: string;
+    autorId!: string;
+    conteudo!: string;
+  };
+
+  @ApiOperation({ summary: "Criar um comentário em um post" })
+  @ApiResponse({ status: 201, description: "Comentário criado com sucesso." })
+  @ApiBody({
+    description: 'Campos obrigatórios para criar um comentário',
+    type: salaEstudoController.CriarComentarioDto,
+    examples: {
+      exemplo: {
+        summary: 'Exemplo de criação de comentário',
+        value: {
+          postId: 'uuid-do-post',
+          autorId: 'uuid-do-autor',
+          conteudo: 'Conteúdo do comentário'
+        }
+      }
+    }
+  })
+  @Post('comentario')
+  async criarComentario(@Body() body: { postId: string; autorId: string; conteudo: string }, @Res() res: Response) {
+    try {
+      const comentario = await this.prisma.comentario.create({
+        data: {
+          postId: body.postId,
+          autorId: body.autorId,
+          conteudo: body.conteudo,
+        },
+      });
+      return res.status(HttpStatus.CREATED).json({ comentario, message: 'Comentário criado com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar comentário.', details: error });
+    }
+  }
+  
 }
