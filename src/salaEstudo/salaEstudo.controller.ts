@@ -405,6 +405,7 @@ export class salaEstudoController {
           conteudo: body.conteudo,
         },
       });
+      return res.status(HttpStatus.CREATED).json({ post, message: 'Post criado com sucesso.' });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar post.', details: error });
     }
