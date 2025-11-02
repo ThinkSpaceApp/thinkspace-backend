@@ -534,7 +534,27 @@ export class salaEstudoController {
           conteudo: body.conteudo,
         },
       });
-      return res.status(HttpStatus.CREATED).json({ post, message: 'Post criado com sucesso.' });
+      const [autor, sala] = await Promise.all([
+        this.prisma.usuario.findUnique({
+          where: { id: post.autorId },
+          select: { foto: true, nomeCompleto: true, primeiroNome: true, sobrenome: true }
+        }),
+        this.prisma.salaEstudo.findUnique({
+          where: { id: post.salaId },
+          select: { nome: true }
+        })
+      ]);
+      return res.status(HttpStatus.CREATED).json({
+        post,
+        autor: {
+          foto: autor?.foto || null,
+          nome: autor?.nomeCompleto || `${autor?.primeiroNome || ''} ${autor?.sobrenome || ''}`.trim()
+        },
+        sala: {
+          nome: sala?.nome || null
+        },
+        message: 'Post criado com sucesso.'
+      });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar post.', details: error });
     }
