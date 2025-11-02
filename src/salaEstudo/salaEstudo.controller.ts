@@ -265,7 +265,7 @@ export class salaEstudoController {
 
   @ApiOperation({ summary: "Salvar ou remover salvamento de um post" })
   @ApiResponse({ status: 200, description: "Status atualizado do salvamento do post." })
-  @Post("post/:postId/toggle-salvar/:usuarioId")
+  @Post("post/:postId/salvar/:usuarioId")
   async toggleSalvarPost(@Param("postId") postId: string, @Param("usuarioId") usuarioId: string, @Res() res: Response) {
     try {
       const salvo = await this.prisma.postSalvo.findUnique({ where: { usuarioId_postId: { usuarioId, postId } } });
@@ -432,6 +432,12 @@ export class salaEstudoController {
   @ApiOperation({ summary: "Obter detalhes de um post pelo id" })
   @ApiResponse({ status: 200, description: "Detalhes do post encontrado." })
   @ApiResponse({ status: 404, description: "Post não encontrado." })
+  @ApiQuery({
+    name: 'usuarioId',
+    required: false,
+    description: 'ID do usuário logado para saber se curtiu o post',
+    type: String
+  })
   @Get('post/:postId')
   async getPostById(@Param('postId') postId: string, @Res() res: Response) {
     try {
