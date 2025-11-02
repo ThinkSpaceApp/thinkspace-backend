@@ -1,5 +1,5 @@
 import { Controller, Get, Res, HttpStatus, Post, Put, Param, Body } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from "@nestjs/swagger";
 import { Response } from "express";
 import { salaEstudoService } from "./salaEstudo.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -29,9 +29,16 @@ export class salaEstudoController {
 
   @ApiOperation({ summary: "Listar todos os posts da plataforma com perfil do autor, nome, curtidas, comentários e quantidades" })
   @ApiResponse({ status: 200, description: "Lista de todos os posts gerais da plataforma." })
+  @ApiQuery({
+    name: 'usuarioId',
+    required: false,
+    description: 'ID do usuário logado para saber se curtiu cada post',
+    type: String
+  })
   @Get('posts-gerais')
-  async getAllPostsGerais(@Res() res: Response, @Param('usuarioId') usuarioId?: string) {
+  async getAllPostsGerais(@Res() res: Response) {
     try {
+      const usuarioId = res.req.query.usuarioId as string | undefined;
       const posts = await this.prisma.post.findMany({
         select: {
           id: true,
@@ -75,25 +82,30 @@ export class salaEstudoController {
       if (!posts || posts.length === 0) {
         return res.status(HttpStatus.OK).json({ message: 'Não há nenhuma postagem no servidor.' });
       }
-      const result = posts.map((post: any) => ({
-        id: post.id,
-        conteudo: post.conteudo,
-        criadoEm: post.criadoEm,
-        curtidas: post.curtidas,
-        curtidoPeloUsuario: usuarioId ? (post.usuariosQueCurtiram || []).includes(usuarioId) : false,
-        sala: {
-          id: post.sala?.id,
-          nome: post.sala?.nome,
-        },
-        autor: {
-          id: post.autor.id,
-          nome: post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim(),
-          foto: post.autor.foto,
-          perfil: post.autor.PerfilUsuario?.[0] || null,
-        },
-        comentarios: post.comentarios,
-        quantidadeComentarios: post.comentarios.length,
-      }));
+      const result = posts.map((post: any) => {
+        const usuariosQueCurtiram = Array.isArray(post.usuariosQueCurtiram)
+          ? post.usuariosQueCurtiram.map((id: any) => String(id))
+          : [];
+        return {
+          id: post.id,
+          conteudo: post.conteudo,
+          criadoEm: post.criadoEm,
+          curtidas: post.curtidas,
+          curtidoPeloUsuario: usuarioId ? usuariosQueCurtiram.includes(String(usuarioId)) : false,
+          sala: {
+            id: post.sala?.id,
+            nome: post.sala?.nome,
+          },
+          autor: {
+            id: post.autor.id,
+            nome: post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim(),
+            foto: post.autor.foto,
+            perfil: post.autor.PerfilUsuario?.[0] || null,
+          },
+          comentarios: post.comentarios,
+          quantidadeComentarios: post.comentarios.length,
+        };
+      });
       return res.status(HttpStatus.OK).json(result);
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar posts gerais.', details: error });
