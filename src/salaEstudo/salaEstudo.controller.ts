@@ -237,6 +237,60 @@ export class salaEstudoController {
     }
   }
 
+  @ApiOperation({ summary: "Excluir um comentário" })
+  @ApiResponse({ status: 200, description: "Comentário excluído com sucesso." })
+  @ApiResponse({ status: 404, description: "Comentário não encontrado." })
+  @Delete('comentario/:comentarioId')
+  async excluirComentario(@Param('comentarioId') comentarioId: string, @Res() res: Response) {
+    try {
+      const comentario = await this.prisma.comentario.findUnique({ where: { id: comentarioId } });
+      if (!comentario) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Comentário não encontrado.' });
+      }
+      await this.prisma.comentario.delete({ where: { id: comentarioId } });
+      return res.status(HttpStatus.OK).json({ message: 'Comentário excluído com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao excluir comentário.', details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Atualizar um comentário" })
+  @ApiResponse({ status: 200, description: "Comentário atualizado com sucesso." })
+  @ApiResponse({ status: 404, description: "Comentário não encontrado." })
+  @ApiBody({
+    description: 'Conteúdo atualizado do comentário',
+    schema: {
+      type: 'object',
+      properties: {
+        conteudo: { type: 'string', example: 'Novo conteúdo do comentário' }
+      },
+      required: ['conteudo']
+    }
+  })
+  @Put('comentario/:comentarioId')
+  async atualizarComentario(
+    @Param('comentarioId') comentarioId: string,
+    @Body() body: { conteudo: string },
+    @Res() res: Response
+  ) {
+    try {
+      if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.trim().length < 3) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do comentário deve ter pelo menos 3 caracteres.' });
+      }
+      const comentario = await this.prisma.comentario.findUnique({ where: { id: comentarioId } });
+      if (!comentario) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Comentário não encontrado.' });
+      }
+      const comentarioAtualizado = await this.prisma.comentario.update({
+        where: { id: comentarioId },
+        data: { conteudo: body.conteudo },
+      });
+      return res.status(HttpStatus.OK).json({ comentario: comentarioAtualizado, message: 'Comentário atualizado com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao atualizar comentário.', details: error });
+    }
+  }
+
   @ApiOperation({ summary: "Obter número de curtidas de um post" })
   @ApiResponse({ status: 200, description: "Número de curtidas do post." })
   @Get("post/:postId/curtidas")
