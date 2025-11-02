@@ -47,11 +47,9 @@ export class salaEstudoController {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Campos obrigatórios: nome, tipo, autorId.' });
       }
       const banners = [
-        "https://drive.google.com/uc?export=view&id=1F4JEudWi2s5SeR7l1fr3HQdRce3OfVUr",
-        "https://drive.google.com/uc?export=view&id=14tQ6NCUUyO5sOOUXZSPyjNTaFnt0BP8O",
-        "https://drive.google.com/uc?export=view&id=1ZgCAbkKHGQkDep7oQ0b6waClOTWkgnL4",
-        "https://drive.google.com/uc?export=view&id=1kZ2Td9iUwSty03h-cENMKD2AyI5wLoHk",
-        "https://drive.google.com/uc?export=view&id=1FSqNzJp319i0eo_3AMMNlizf5nUeHRLA"
+        "https://i.imgur.com/XEpO0Vi.jpeg",
+        "https://i.imgur.com/DxYeoLP.jpeg",
+        "https://i.imgur.com/qeTMqbR.jpeg",
       ];
       const banner = banners[Math.floor(Math.random() * banners.length)];
       const sala = await this.prisma.salaEstudo.create({
