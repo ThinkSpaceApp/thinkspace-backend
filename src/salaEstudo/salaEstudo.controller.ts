@@ -499,4 +499,68 @@ export class salaEstudoController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar post.', details: error });
     }
   }
+
+  @ApiOperation({ summary: "Listar posts salvos (favoritos) de um usuário" })
+  @ApiResponse({ status: 200, description: "Lista de posts salvos pelo usuário." })
+  @Get('usuario/:usuarioId/favoritos')
+  async getFavoritosUsuario(@Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      const salvos = await this.prisma.postSalvo.findMany({
+        where: { usuarioId },
+        select: { postId: true },
+      });
+      const postIds = salvos.map((s: any) => s.postId);
+      if (postIds.length === 0) {
+        return res.status(HttpStatus.OK).json({ message: 'Nenhum material ou mensagem foi salvo.' });
+      }
+      const posts = await this.prisma.post.findMany({
+        where: { id: { in: postIds } },
+        select: {
+          id: true,
+          conteudo: true,
+          criadoEm: true,
+          curtidas: true,
+          usuariosQueCurtiram: true,
+          sala: { select: { id: true, nome: true } },
+          autor: {
+            select: {
+              id: true,
+              primeiroNome: true,
+              sobrenome: true,
+              nomeCompleto: true,
+              foto: true,
+              PerfilUsuario: { select: { avatar: true, nivel: true, xp: true } }
+            }
+          },
+          comentarios: {
+            select: { id: true, conteudo: true, criadoEm: true, autorId: true }
+          },
+        },
+        orderBy: { criadoEm: 'desc' }
+      });
+      const result = posts.map((post: any) => ({
+        id: post.id,
+        conteudo: post.conteudo,
+        criadoEm: post.criadoEm,
+        curtidas: post.curtidas,
+        curtidoPeloUsuario: (post.usuariosQueCurtiram || []).includes(usuarioId),
+        sala: {
+          id: post.sala?.id,
+          nome: post.sala?.nome,
+        },
+        autor: {
+          id: post.autor.id,
+          nome: post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim(),
+          foto: post.autor.foto,
+          perfil: post.autor.PerfilUsuario?.[0] || null,
+        },
+        comentarios: post.comentarios,
+        quantidadeComentarios: post.comentarios.length,
+        salvo: true,
+      }));
+      return res.status(HttpStatus.OK).json(result);
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar favoritos.', details: error });
+    }
+  }
 }
