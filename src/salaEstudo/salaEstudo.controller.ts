@@ -540,6 +540,42 @@ export class salaEstudoController {
     }
   }
 
+  @ApiOperation({ summary: "Atualizar um post" })
+  @ApiResponse({ status: 200, description: "Post atualizado com sucesso." })
+  @ApiResponse({ status: 404, description: "Post não encontrado." })
+  @ApiBody({
+    description: 'Conteúdo atualizado do post',
+    schema: {
+      type: 'object',
+      properties: {
+        conteudo: { type: 'string', example: 'Novo conteúdo do post' }
+      },
+      required: ['conteudo']
+    }
+  })
+  @Put('post/:postId')
+  async atualizarPost(
+    @Param('postId') postId: string,
+    @Body() body: { conteudo: string },
+    @Res() res: Response
+  ) {
+    try {
+      if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.trim().length < 5) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do post deve ter pelo menos 5 caracteres.' });
+      }
+      const post = await this.prisma.post.findUnique({ where: { id: postId } });
+      if (!post) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Post não encontrado.' });
+      }
+      const postAtualizado = await this.prisma.post.update({
+        where: { id: postId },
+        data: { conteudo: body.conteudo },
+      });
+      return res.status(HttpStatus.OK).json({ post: postAtualizado, message: 'Post atualizado com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao atualizar post.', details: error });
+    }
+  }
 
   @ApiOperation({ summary: "Curtir ou descurtir um post" })
   @ApiResponse({ status: 200, description: "Status atualizado da curtida do post." })
