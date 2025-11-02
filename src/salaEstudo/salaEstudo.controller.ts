@@ -1,4 +1,4 @@
-import { Controller, Get, Res, HttpStatus, Post, Put, Param, Body } from "@nestjs/common";
+import { Controller, Get, Res, HttpStatus, Post, Put, Param, Body, Delete } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from "@nestjs/swagger";
 import { Response } from "express";
 import { salaEstudoService } from "./salaEstudo.service";
@@ -527,6 +527,26 @@ export class salaEstudoController {
       return res.status(HttpStatus.OK).json(result);
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar post.', details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Excluir um post e remover referências de salvamentos e curtidas" })
+  @ApiResponse({ status: 200, description: "Post excluído com sucesso." })
+  @ApiResponse({ status: 404, description: "Post não encontrado." })
+  @Delete('post/:postId')
+  async excluirPost(@Param('postId') postId: string, @Res() res: Response) {
+    try {
+      const post = await this.prisma.post.findUnique({ where: { id: postId } });
+      if (!post) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Post não encontrado.' });
+      }
+      await this.prisma.postSalvo.deleteMany({ where: { postId } });
+      await this.prisma.denuncia.deleteMany({ where: { postId } });
+      await this.prisma.comentario.deleteMany({ where: { postId } });
+      await this.prisma.post.delete({ where: { id: postId } });
+      return res.status(HttpStatus.OK).json({ message: 'Post excluído com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao excluir post.', details: error });
     }
   }
 
