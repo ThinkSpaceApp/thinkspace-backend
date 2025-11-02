@@ -31,7 +31,7 @@ export class salaEstudoController {
   @ApiOperation({ summary: "Listar todos os posts da plataforma com perfil do autor, nome, curtidas, comentários e quantidades" })
   @ApiResponse({ status: 200, description: "Lista de todos os posts gerais da plataforma." })
   @Get('posts-gerais')
-  async getAllPostsGerais(@Res() res: Response) {
+  async getAllPostsGerais(@Res() res: Response, @Param('usuarioId') usuarioId?: string) {
     try {
       const posts = await this.prisma.post.findMany({
         select: {
@@ -39,6 +39,7 @@ export class salaEstudoController {
           conteudo: true,
           criadoEm: true,
           curtidas: true,
+          usuariosQueCurtiram: true,
           sala: {
             select: {
               id: true,
@@ -80,6 +81,7 @@ export class salaEstudoController {
         conteudo: post.conteudo,
         criadoEm: post.criadoEm,
         curtidas: post.curtidas,
+        curtidoPeloUsuario: usuarioId ? (post.usuariosQueCurtiram || []).includes(usuarioId) : false,
         sala: {
           id: post.sala?.id,
           nome: post.sala?.nome,
