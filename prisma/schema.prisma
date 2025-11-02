@@ -308,6 +308,8 @@ model Comentario {
   autorId   String
   autor     Usuario  @relation(fields: [autorId], references: [id], onDelete: Cascade)
   criadoEm  DateTime @default(now())
+  usuariosQueCurtiram String[] @default([])
+  curtidas  Int      @default(0)
 
   denuncias Denuncia[]
 }

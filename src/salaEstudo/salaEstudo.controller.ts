@@ -223,17 +223,92 @@ export class salaEstudoController {
 
   @ApiOperation({ summary: "Listar comentários de um post" })
   @ApiResponse({ status: 200, description: "Lista de comentários do post." })
+  @ApiQuery({
+    name: 'usuarioId',
+    required: false,
+    description: 'ID do usuário logado para saber se curtiu cada comentário',
+    type: String
+  })
   @Get("post/:postId/comentarios")
   async getComentariosByPost(@Param("postId") postId: string, @Res() res: Response) {
     try {
-  const denunciasCount = await this.prisma.denuncia.count({ where: { postId: postId } });
+      const usuarioId = res.req.query.usuarioId as string | undefined;
+      const denunciasCount = await this.prisma.denuncia.count({ where: { postId: postId } });
       if (denunciasCount >= 5) {
         return res.status(HttpStatus.OK).json({ status: "CONTEÚDO EM ANÁLISE E PODE SER OFENSIVO", comentarios: [] });
       }
-  const comentarios = await this.prisma.comentario.findMany({ where: { postId: postId } });
-      return res.status(HttpStatus.OK).json(comentarios);
+      const comentarios = await this.prisma.comentario.findMany({
+        where: { postId: postId },
+        select: {
+          id: true,
+          conteudo: true,
+          criadoEm: true,
+          curtidas: true,
+          usuariosQueCurtiram: true,
+          autor: {
+            select: {
+              id: true,
+              nomeCompleto: true,
+              primeiroNome: true,
+              sobrenome: true,
+              foto: true,
+            }
+          },
+        },
+        orderBy: { criadoEm: 'asc' }
+      });
+      const comentariosFormatados = comentarios.map((comentario: any) => {
+        const usuariosQueCurtiram = Array.isArray(comentario.usuariosQueCurtiram)
+          ? comentario.usuariosQueCurtiram.map((id: any) => String(id))
+          : [];
+        return {
+          id: comentario.id,
+          conteudo: comentario.conteudo,
+          criadoEm: comentario.criadoEm,
+          curtidas: comentario.curtidas,
+          quantidadeCurtidas: usuariosQueCurtiram.length,
+          curtidoPeloUsuario: usuarioId ? usuariosQueCurtiram.includes(String(usuarioId)) : false,
+          autor: {
+            id: comentario.autor.id,
+            nome: comentario.autor.nomeCompleto || `${comentario.autor.primeiroNome} ${comentario.autor.sobrenome}`.trim(),
+            foto: comentario.autor.foto,
+          },
+        };
+      });
+      return res.status(HttpStatus.OK).json(comentariosFormatados);
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao buscar comentários.", details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Curtir ou descurtir um comentário" })
+  @ApiResponse({ status: 200, description: "Status atualizado da curtida do comentário." })
+  @Post('comentario/:comentarioId/curtir/:usuarioId')
+  async toggleCurtirComentario(@Param('comentarioId') comentarioId: string, @Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      const comentario = await this.prisma.comentario.findUnique({ where: { id: comentarioId } });
+      if (!comentario) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Comentário não encontrado.' });
+      }
+      let usuariosQueCurtiram: string[] = (comentario as any).usuariosQueCurtiram || [];
+      let curtiu: boolean;
+      if (usuariosQueCurtiram.includes(usuarioId)) {
+        usuariosQueCurtiram = usuariosQueCurtiram.filter(id => id !== usuarioId);
+        curtiu = false;
+      } else {
+        usuariosQueCurtiram.push(usuarioId);
+        curtiu = true;
+      }
+      await this.prisma.comentario.update({
+        where: { id: comentarioId },
+        data: {
+          usuariosQueCurtiram: usuariosQueCurtiram,
+          curtidas: usuariosQueCurtiram.length,
+        },
+      });
+      return res.status(HttpStatus.OK).json({ curtiu, curtidas: usuariosQueCurtiram.length });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao atualizar curtida do comentário.', details: error });
     }
   }
 
@@ -274,8 +349,8 @@ export class salaEstudoController {
     @Res() res: Response
   ) {
     try {
-      if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.trim().length < 3) {
-        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do comentário deve ter pelo menos 3 caracteres.' });
+      if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.trim().length < 2) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do comentário deve ter pelo menos 2 caracteres.' });
       }
       const comentario = await this.prisma.comentario.findUnique({ where: { id: comentarioId } });
       if (!comentario) {
@@ -693,6 +768,9 @@ export class salaEstudoController {
   @Post('comentario')
   async criarComentario(@Body() body: { postId: string; autorId: string; conteudo: string }, @Res() res: Response) {
     try {
+      if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.trim().length < 5) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do comentário deve ter pelo menos 5 caracteres.' });
+      }
       const comentario = await this.prisma.comentario.create({
         data: {
           postId: body.postId,
