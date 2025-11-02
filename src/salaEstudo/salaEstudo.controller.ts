@@ -23,6 +23,51 @@ export class CriarSalaEstudoDto {
 @ApiTags("Sala de Estudo")
 @Controller("sala-estudo")
 export class salaEstudoController {
+  @ApiOperation({ summary: "Criar uma nova sala de estudo" })
+  @ApiResponse({ status: 201, description: "Sala de estudo criada com sucesso." })
+  @ApiBody({
+    description: 'Campos obrigatórios para criar uma sala de estudo',
+    type: CriarSalaEstudoDto,
+    examples: {
+      exemplo: {
+        summary: 'Exemplo de criação de sala',
+        value: {
+          nome: 'Sala de Matemática',
+          descricao: 'Espaço para discutir matemática',
+          tipo: 'PUBLICA',
+          autorId: 'uuid-do-autor'
+        }
+      }
+    }
+  })
+  @Post()
+  async criarSalaEstudo(@Body() body: CriarSalaEstudoDto, @Res() res: Response) {
+    try {
+      if (!body.nome || !body.tipo || !body.autorId) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Campos obrigatórios: nome, tipo, autorId.' });
+      }
+      const banners = [
+        "https://drive.google.com/uc?export=view&id=1F4JEudWi2s5SeR7l1fr3HQdRce3OfVUr",
+        "https://drive.google.com/uc?export=view&id=14tQ6NCUUyO5sOOUXZSPyjNTaFnt0BP8O",
+        "https://drive.google.com/uc?export=view&id=1ZgCAbkKHGQkDep7oQ0b6waClOTWkgnL4",
+        "https://drive.google.com/uc?export=view&id=1kZ2Td9iUwSty03h-cENMKD2AyI5wLoHk",
+        "https://drive.google.com/uc?export=view&id=1FSqNzJp319i0eo_3AMMNlizf5nUeHRLA"
+      ];
+      const banner = banners[Math.floor(Math.random() * banners.length)];
+      const sala = await this.prisma.salaEstudo.create({
+        data: {
+          nome: body.nome,
+          descricao: body.descricao || '',
+          tipo: body.tipo,
+          moderadorId: body.autorId,
+          banner: banner,
+        }
+      });
+      return res.status(HttpStatus.CREATED).json({ sala, message: 'Sala de estudo criada com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar sala de estudo.', details: error });
+    }
+  }
   constructor(
     private readonly salaEstudoService: salaEstudoService,
     private readonly prisma: PrismaService,
