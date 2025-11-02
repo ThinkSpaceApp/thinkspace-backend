@@ -1009,4 +1009,35 @@ export class salaEstudoController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar detalhes do material publicado na sala.', details: error });
     }
   }
+
+  @ApiOperation({ summary: "Registrar acesso a uma sala de estudo pelo usuário" })
+  @ApiResponse({ status: 200, description: "Sala registrada como acessada recentemente." })
+  @Post('usuario/:usuarioId/acessar-sala/:salaId')
+  async registrarAcessoSala(
+    @Param('usuarioId') usuarioId: string,
+    @Param('salaId') salaId: string,
+    @Res() res: Response
+  ) {
+    try {
+      const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+      if (!usuario) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Usuário não encontrado.' });
+      }
+      const sala = await this.prisma.salaEstudo.findUnique({ where: { id: salaId } });
+      if (!sala) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Sala de estudo não encontrada.' });
+      }
+      let ultimas = Array.isArray(usuario.ultimasSalasAcessadas) ? [...usuario.ultimasSalasAcessadas] : [];
+      ultimas = ultimas.filter(id => id !== salaId);
+      ultimas.unshift(salaId);
+      if (ultimas.length > 10) ultimas = ultimas.slice(0, 10);
+      await this.prisma.usuario.update({
+        where: { id: usuarioId },
+        data: { ultimasSalasAcessadas: ultimas }
+      });
+      return res.status(HttpStatus.OK).json({ message: 'Sala registrada como acessada recentemente.', ultimasSalasAcessadas: ultimas });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao registrar acesso à sala.', details: error });
+    }
+  }
 }
