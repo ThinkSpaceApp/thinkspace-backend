@@ -544,10 +544,21 @@ export class salaEstudoController {
       const salas = await this.prisma.salaEstudo.findMany({
         where: { id: { in: usuario.ultimasSalasAcessadas } },
       });
-      const salasOrdenadas = usuario.ultimasSalasAcessadas
-        .map((id) => salas.find((s) => s.id === id))
-        .filter(Boolean);
-      return res.status(HttpStatus.OK).json(salasOrdenadas);
+      const salasComQuantidade = await Promise.all(
+        usuario.ultimasSalasAcessadas
+          .map((id) => salas.find((s) => s.id === id))
+          .filter(Boolean)
+          .map(async (sala: any) => {
+            const quantidadeEstudantes = await this.prisma.membroSala.count({
+              where: {
+                salaId: sala.id,
+                usuario: { funcao: "ESTUDANTE" },
+              },
+            });
+            return { ...sala, quantidadeEstudantes };
+          })
+      );
+      return res.status(HttpStatus.OK).json(salasComQuantidade);
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar salas recentes.', details: error });
     }
