@@ -195,6 +195,7 @@ export class salaEstudoController {
       if (!posts || posts.length === 0) {
         return res.status(HttpStatus.OK).json({ message: 'Não há nenhuma postagem no servidor.' });
       }
+      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad", "ee82a2ff"];
       const result = posts.map((post: any) => {
         const usuariosQueCurtiram = Array.isArray(post.usuariosQueCurtiram)
           ? post.usuariosQueCurtiram.map((id: any) => String(id))
@@ -217,7 +218,13 @@ export class salaEstudoController {
           } else {
             iniciais = "U";
           }
-          foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=7C3AED&color=fff`;
+          let corBg = paletteBg[0];
+          if (post.autor.id) {
+            const chars: string[] = Array.from(post.autor.id);
+            const hash = chars.reduce((acc, c) => acc + c.charCodeAt(0), 0);
+            corBg = paletteBg[hash % paletteBg.length];
+          }
+          foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
         }
         return {
           id: post.id,
