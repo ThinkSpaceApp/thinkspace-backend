@@ -61,9 +61,78 @@ export class salaEstudoController {
           banner: banner,
         }
       });
+      await this.prisma.membroSala.create({
+        data: {
+          salaId: sala.id,
+          usuarioId: body.autorId,
+        }
+      });
       return res.status(HttpStatus.CREATED).json({ sala, message: 'Sala de estudo criada com sucesso.' });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar sala de estudo.', details: error });
+    }
+  }
+  @ApiOperation({ summary: "Seguir uma sala de estudo" })
+  @ApiResponse({ status: 201, description: "Usuário agora faz parte da sala." })
+  @ApiResponse({ status: 400, description: "Usuário já faz parte da sala." })
+  @Post('sala/:salaId/seguir/:usuarioId')
+  async seguirSalaEstudo(
+    @Param('salaId') salaId: string,
+    @Param('usuarioId') usuarioId: string,
+    @Res() res: Response
+  ) {
+    try {
+      const membro = await this.prisma.membroSala.findFirst({
+        where: {
+          salaId: salaId,
+          usuarioId: usuarioId,
+        }
+      });
+      if (membro) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Usuário já faz parte da sala.' });
+      }
+      await this.prisma.membroSala.create({
+        data: {
+          salaId,
+          usuarioId,
+        }
+      });
+      return res.status(HttpStatus.CREATED).json({ message: 'Usuário agora faz parte da sala.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao seguir sala de estudo.', details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Listar salas que o usuário segue (participa)" })
+  @ApiResponse({ status: 200, description: "Lista de salas que o usuário participa." })
+  @Get('usuario/:usuarioId/salas-participando')
+  async getSalasQueUsuarioParticipa(@Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      const membros = await this.prisma.membroSala.findMany({
+        where: { usuarioId },
+        select: { salaId: true }
+      });
+      const salaIds = membros.map(m => m.salaId);
+      if (salaIds.length === 0) {
+        return res.status(HttpStatus.OK).json([]);
+      }
+      const salas = await this.prisma.salaEstudo.findMany({
+        where: { id: { in: salaIds } },
+      });
+      const salasComQuantidade = await Promise.all(
+        salas.map(async (sala: any) => {
+          const quantidadeEstudantes = await this.prisma.membroSala.count({
+            where: {
+              salaId: sala.id,
+              usuario: { funcao: "ESTUDANTE" },
+            },
+          });
+          return { ...sala, quantidadeEstudantes };
+        })
+      );
+      return res.status(HttpStatus.OK).json(salasComQuantidade);
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar salas que o usuário participa.', details: error });
     }
   }
   constructor(
