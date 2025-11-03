@@ -176,30 +176,33 @@ export class salaEstudoController {
         }
       });
 
-      const ultimosUsuarios = await this.prisma.usuario.findMany({
-        where: { funcao: "ESTUDANTE" },
-        orderBy: { ultimoLogin: "desc" },
-        take: 4,
-        select: {
-          primeiroNome: true,
-          sobrenome: true,
-          foto: true,
-          id: true,
-          nomeCompleto: true,
-          email: true,
-        },
-      });
       const palette = ["#7C3AED", "#a18ddfff", "#ee82a2ff", "#8e44ad"];
       const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
 
       const salasComInfo = await Promise.all(salas.map(async (sala: any, idx: number) => {
-        const quantidadeEstudantes = await this.prisma.membroSala.count({
+        const membrosEstudantes = await this.prisma.membroSala.findMany({
           where: {
             salaId: sala.id,
             usuario: { funcao: "ESTUDANTE" },
           },
+          take: 4,
+          orderBy: { usuario: { ultimoLogin: "desc" } },
+          include: {
+            usuario: {
+              select: {
+                primeiroNome: true,
+                sobrenome: true,
+                foto: true,
+                id: true,
+                nomeCompleto: true,
+                email: true,
+              }
+            }
+          }
         });
-        const avatares = ultimosUsuarios.map((u, uidx) => {
+        const quantidadeEstudantes = membrosEstudantes.length;
+        const avatares = membrosEstudantes.map((m, uidx) => {
+          const u = m.usuario;
           if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
             return u.foto;
           }
