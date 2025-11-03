@@ -400,10 +400,37 @@ export class salaEstudoController {
         },
         orderBy: { criadoEm: 'asc' }
       });
+      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
       const comentariosFormatados = comentarios.map((comentario: any) => {
         const usuariosQueCurtiram = Array.isArray(comentario.usuariosQueCurtiram)
           ? comentario.usuariosQueCurtiram.map((id: any) => String(id))
           : [];
+        let foto = comentario.autor.foto;
+        if (!foto || foto.includes("ui-avatars.com/api/?name=User")) {
+          let iniciais = "";
+          const nome = comentario.autor.primeiroNome?.trim() || "";
+          const sobrenome = comentario.autor.sobrenome?.trim() || "";
+          if (nome || sobrenome) {
+            iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+          } else if (comentario.autor.nomeCompleto) {
+            const partes = comentario.autor.nomeCompleto.trim().split(" ");
+            iniciais =
+              partes.length > 1
+                ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+                : `${partes[0][0]}`.toUpperCase();
+          } else if (comentario.autor.email) {
+            iniciais = comentario.autor.email.charAt(0).toUpperCase();
+          } else {
+            iniciais = "U";
+          }
+          let corBg = paletteBg[0];
+          if (comentario.autor.id) {
+            const chars: string[] = Array.from(comentario.autor.id);
+            const hash = chars.reduce((acc, c) => acc + c.charCodeAt(0), 0);
+            corBg = paletteBg[hash % paletteBg.length];
+          }
+          foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
+        }
         return {
           id: comentario.id,
           conteudo: comentario.conteudo,
@@ -414,7 +441,7 @@ export class salaEstudoController {
           autor: {
             id: comentario.autor.id,
             nome: comentario.autor.nomeCompleto || `${comentario.autor.primeiroNome} ${comentario.autor.sobrenome}`.trim(),
-            foto: comentario.autor.foto,
+            foto: foto,
           },
         };
       });
@@ -1216,14 +1243,29 @@ export class salaEstudoController {
                 select: { nome: true, cor: true, icone: true }
               })
             : null;
+          let autor = item.autor;
+          if (!autor && item.autorId) {
+            autor = await this.prisma.usuario.findUnique({
+              where: { id: item.autorId },
+              select: { id: true, nomeCompleto: true, primeiroNome: true, sobrenome: true, foto: true }
+            });
+          }
+          let nomeAutor = '';
+          if (autor?.nomeCompleto && autor.nomeCompleto.trim()) {
+            nomeAutor = autor.nomeCompleto.trim();
+          } else if ((autor?.primeiroNome && autor.primeiroNome.trim()) || (autor?.sobrenome && autor.sobrenome.trim())) {
+            nomeAutor = `${autor?.primeiroNome?.trim() || ''} ${autor?.sobrenome?.trim() || ''}`.trim();
+          } else if (item.autorId) {
+            nomeAutor = 'Usuário';
+          }
           return {
             id: item.materialId,
             atribuidoEm: item.atribuidoEm,
             tags: item.tags,
             autor: {
-              id: item.autor?.id || item.autorId,
-              nome: item.autor?.nomeCompleto || `${item.autor?.primeiroNome || ''} ${item.autor?.sobrenome || ''}`.trim(),
-              foto: item.autor?.foto || item.avatarAutor || null
+              id: autor?.id || item.autorId,
+              nome: nomeAutor,
+              foto: autor?.foto || item.avatarAutor || null
             },
             materia: materia,
             material: item.material
