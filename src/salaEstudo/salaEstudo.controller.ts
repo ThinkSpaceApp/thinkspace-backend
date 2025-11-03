@@ -873,6 +873,43 @@ export class salaEstudoController {
       if (!post) {
         return res.status(HttpStatus.NOT_FOUND).json({ error: 'Post não encontrado.' });
       }
+      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
+      let nomeAutor = '';
+      if (post.autor?.nomeCompleto && post.autor.nomeCompleto.trim()) {
+        nomeAutor = post.autor.nomeCompleto.trim();
+      } else if ((post.autor?.primeiroNome && post.autor.primeiroNome.trim()) || (post.autor?.sobrenome && post.autor.sobrenome.trim())) {
+        nomeAutor = `${post.autor?.primeiroNome?.trim() || ''} ${post.autor?.sobrenome?.trim() || ''}`.trim();
+      } else if (post.autor?.email) {
+        nomeAutor = post.autor.email;
+      } else {
+        nomeAutor = 'Usuário';
+      }
+      let foto = post.autor.foto;
+      if (!foto || foto.includes("ui-avatars.com/api/?name=User")) {
+        let iniciais = "";
+        const nome = post.autor.primeiroNome?.trim() || "";
+        const sobrenome = post.autor.sobrenome?.trim() || "";
+        if (nome || sobrenome) {
+          iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+        } else if (post.autor.nomeCompleto) {
+          const partes = post.autor.nomeCompleto.trim().split(" ");
+          iniciais =
+            partes.length > 1
+              ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+              : `${partes[0][0]}`.toUpperCase();
+        } else if (post.autor.email) {
+          iniciais = post.autor.email.charAt(0).toUpperCase();
+        } else {
+          iniciais = "U";
+        }
+        let corBg = paletteBg[0];
+        if (post.autor.id) {
+          const chars = Array.from(post.autor.id);
+          const hash = chars.reduce((acc, c) => acc + c.charCodeAt(0), 0);
+          corBg = paletteBg[hash % paletteBg.length];
+        }
+        foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
+      }
       const curtidoPeloUsuario = usuarioId ? (post.usuariosQueCurtiram || []).includes(usuarioId) : false;
       const result = {
         id: post.id,
@@ -883,8 +920,8 @@ export class salaEstudoController {
         sala: post.sala,
         autor: {
           id: post.autor.id,
-          nome: post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim(),
-          foto: post.autor.foto,
+          nome: nomeAutor,
+          foto: foto,
           email: post.autor.email,
           perfil: post.autor.PerfilUsuario?.[0] || null,
         },
