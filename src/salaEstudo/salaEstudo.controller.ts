@@ -195,7 +195,7 @@ export class salaEstudoController {
       if (!posts || posts.length === 0) {
         return res.status(HttpStatus.OK).json({ message: 'Não há nenhuma postagem no servidor.' });
       }
-      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad", "ee82a2ff"];
+      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
       const result = posts.map((post: any) => {
         const usuariosQueCurtiram = Array.isArray(post.usuariosQueCurtiram)
           ? post.usuariosQueCurtiram.map((id: any) => String(id))
