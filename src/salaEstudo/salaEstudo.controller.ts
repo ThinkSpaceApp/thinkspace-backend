@@ -1166,4 +1166,45 @@ export class salaEstudoController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao registrar acesso à sala.', details: error });
     }
   }
+    @ApiOperation({ summary: "Listar materiais de uma sala de estudo" })
+    @ApiResponse({ status: 200, description: "Lista de materiais da sala." })
+    @Get('sala/:salaId/materiais')
+    async getMateriaisSala(@Param('salaId') salaId: string, @Res() res: Response) {
+      try {
+        if (!salaId) {
+          return res.status(HttpStatus.BAD_REQUEST).json({ error: 'salaId é obrigatório.' });
+        }
+        const materiaisSala = await this.prisma.salaEstudoMaterial.findMany({
+          where: { salaId },
+          include: {
+            material: true,
+            sala: true
+          },
+          orderBy: { atribuidoEm: 'desc' }
+        });
+        const result = await Promise.all(materiaisSala.map(async (item: any) => {
+          const materia = item.materiaId
+            ? await this.prisma.materia.findUnique({
+                where: { id: item.materiaId },
+                select: { nome: true, cor: true, icone: true }
+              })
+            : null;
+          return {
+            id: item.materialId,
+            atribuidoEm: item.atribuidoEm,
+            tags: item.tags,
+            autor: {
+              id: item.autor?.id || item.autorId,
+              nome: item.autor?.nomeCompleto || `${item.autor?.primeiroNome || ''} ${item.autor?.sobrenome || ''}`.trim(),
+              foto: item.autor?.foto || item.avatarAutor || null
+            },
+            materia: materia,
+            material: item.material
+          };
+        }));
+        return res.status(HttpStatus.OK).json(result);
+      } catch (error) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar materiais da sala.', details: error });
+      }
+    }
 }
