@@ -199,6 +199,26 @@ export class salaEstudoController {
         const usuariosQueCurtiram = Array.isArray(post.usuariosQueCurtiram)
           ? post.usuariosQueCurtiram.map((id: any) => String(id))
           : [];
+        let foto = post.autor.foto;
+        if (!foto || foto.includes("ui-avatars.com/api/?name=User")) {
+          let iniciais = "";
+          const nome = post.autor.primeiroNome?.trim() || "";
+          const sobrenome = post.autor.sobrenome?.trim() || "";
+          if (nome || sobrenome) {
+            iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+          } else if (post.autor.nomeCompleto) {
+            const partes = post.autor.nomeCompleto.trim().split(" ");
+            iniciais =
+              partes.length > 1
+                ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+                : `${partes[0][0]}`.toUpperCase();
+          } else if (post.autor.email) {
+            iniciais = post.autor.email.charAt(0).toUpperCase();
+          } else {
+            iniciais = "U";
+          }
+          foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=7C3AED&color=fff`;
+        }
         return {
           id: post.id,
           conteudo: post.conteudo,
@@ -212,7 +232,7 @@ export class salaEstudoController {
           autor: {
             id: post.autor.id,
             nome: post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim(),
-            foto: post.autor.foto,
+            foto: foto,
             perfil: post.autor.PerfilUsuario?.[0] || null,
           },
           comentarios: post.comentarios,
