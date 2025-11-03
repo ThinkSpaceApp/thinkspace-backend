@@ -1170,7 +1170,7 @@ export class salaEstudoController {
           quantidadeFlashcards: materialOriginal.quantidadeFlashcards
         }
       });
-      return res.status(HttpStatus.CREATED).json({ material: novoMaterial, message: 'Material adicionado ao acervo do usuário com sucesso.' });
+      return res.status(HttpStatus.CREATED).json({ success: true, material: novoMaterial, message: 'Material adicionado ao acervo do usuário com sucesso.' });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao adicionar material ao usuário.', details: error });
     }
