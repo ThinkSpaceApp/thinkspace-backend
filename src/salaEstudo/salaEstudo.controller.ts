@@ -1313,4 +1313,28 @@ export class salaEstudoController {
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar materiais da sala.', details: error });
       }
     }
+
+  @ApiOperation({ summary: "Excluir uma sala de estudo" })
+  @ApiResponse({ status: 200, description: "Sala de estudo excluída com sucesso." })
+  @ApiResponse({ status: 403, description: "Usuário não tem permissão para excluir esta sala." })
+  @ApiResponse({ status: 404, description: "Sala de estudo não encontrada." })
+  @Delete('sala/:salaId/excluir/:usuarioId')
+  async excluirSalaEstudo(@Param('salaId') salaId: string, @Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      const sala = await this.prisma.salaEstudo.findUnique({ where: { id: salaId } });
+      if (!sala) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Sala de estudo não encontrada.' });
+      }
+      if (sala.moderadorId !== usuarioId) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Apenas o moderador da sala pode excluí-la.' });
+      }
+      await this.prisma.membroSala.deleteMany({ where: { salaId } });
+      await this.prisma.salaEstudoMaterial.deleteMany({ where: { salaId } });
+      await this.prisma.post.deleteMany({ where: { salaId } });
+      await this.prisma.salaEstudo.delete({ where: { id: salaId } });
+      return res.status(HttpStatus.OK).json({ message: 'Sala de estudo excluída com sucesso. Os materiais publicados permanecem disponíveis para seus autores e usuários que copiaram.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao excluir sala de estudo.', details: error });
+    }
+  }
 }
