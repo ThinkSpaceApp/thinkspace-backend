@@ -3,6 +3,31 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from "@nestjs/s
 import { Response } from "express";
 import { salaEstudoService } from "./salaEstudo.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { IsNotEmpty, IsEnum } from "class-validator";
+import { sendDenunciaEmail, sendPostRemovidoEmail } from "./emailDenuncia";
+
+  export enum MotivoDenuncia {
+  SPAM_ENGANOSO = "Spam ou enganoso",
+  DESINFORMACAO = "Desinformação",
+  ATOS_PERIGOSOS = "Atos perigosos ou nocivos",
+  INCITACAO_ODIO = "Conteúdo de incitação ao ódio ou abusivo",
+  ASSEDIO_BULLYING = "Assédio ou bullying",
+  TERRORISMO = "Promove terrorismo",
+  CONTEUDO_SEXUAL = "Conteúdo sexual",
+  CONTEUDO_VIOLENTO = "Conteúdo violento ou repulsivo",
+  SUICIDIO_AUTOMUTILACAO = "Suicídio, automutilação ou transtornos alimentares",
+  ABUSO_INFANTIL = "Abuso infantil"
+}
+
+  export class CriarDenunciaDto {
+  @IsNotEmpty()
+  postId!: string;
+  @IsNotEmpty()
+  denuncianteId!: string;
+  @IsEnum(MotivoDenuncia)
+  motivo!: MotivoDenuncia;
+}
+
 
 export class CriarSalaEstudoDto {
   nome!: string;
@@ -363,6 +388,116 @@ export class salaEstudoController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao buscar denúncias.", details: error });
     }
   }
+
+  @ApiOperation({ summary: "Denunciar um post" })
+  @ApiResponse({ status: 201, description: "Denúncia registrada com sucesso." })
+  @ApiBody({
+    description: 'Campos obrigatórios para denunciar um post',
+    schema: {
+      type: 'object',
+      properties: {
+        postId: { type: 'string' },
+        denuncianteId: { type: 'string' },
+        motivo: {
+          type: 'string',
+          enum: Object.values(MotivoDenuncia),
+          description: 'Motivo da denúncia'
+        }
+      },
+      required: ['postId', 'denuncianteId', 'motivo']
+    }
+  })
+  @Post('post/denunciar')
+  async denunciarPost(@Body() body: CriarDenunciaDto, @Res() res: Response) {
+    try {
+      if (!body.postId || !body.denuncianteId || !body.motivo) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Campos obrigatórios: postId, denuncianteId, motivo.' });
+      }
+      const denunciaExistente = await this.prisma.denuncia.findFirst({
+        where: {
+          postId: body.postId,
+          denuncianteId: body.denuncianteId,
+        }
+      });
+      if (denunciaExistente) {
+        return res.status(HttpStatus.CONFLICT).json({ error: 'Você já denunciou este post.' });
+      }
+      const denuncia = await this.prisma.denuncia.create({
+        data: {
+          postId: body.postId,
+          denuncianteId: body.denuncianteId,
+          motivo: body.motivo,
+        }
+      });
+      const usuario = await this.prisma.usuario.findUnique({
+        where: { id: body.denuncianteId },
+        select: { nomeCompleto: true, email: true }
+      });
+      const post = await this.prisma.post.findUnique({
+        where: { id: body.postId },
+        select: { conteudo: true }
+      });
+      const emailResult = await sendDenunciaEmail({
+        to: 'suporte.thinkspace@gmail.com',
+        usuario: { nome: usuario?.nomeCompleto || 'Desconhecido', email: usuario?.email || 'Desconhecido' },
+        post: { conteudo: post?.conteudo || '' },
+        motivo: body.motivo,
+        denunciaId: denuncia.id
+      });
+
+      return res.status(HttpStatus.CREATED).json({ denuncia, message: 'Denúncia registrada com sucesso.', email: emailResult });
+
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao registrar denúncia.', details: error });
+    }
+  }
+
+  @Get('admin/denuncia/:denunciaId/confirmar')
+  async confirmarDenuncia(@Param('denunciaId') denunciaId: string, @Res() res: Response) {
+    try {
+      const denuncia = await this.prisma.denuncia.findUnique({
+        where: { id: denunciaId },
+        select: { postId: true, motivo: true, denuncianteId: true }
+      });
+      if (!denuncia) {
+        return res.status(404).send('Denúncia não encontrada.');
+      }
+      if (!denuncia.postId) {
+        return res.status(400).send('Denúncia não possui um post associado.');
+      }
+      const post = await this.prisma.post.findUnique({
+        where: { id: denuncia.postId },
+        select: { id: true, conteudo: true, autorId: true }
+      });
+      if (!post) {
+        return res.status(404).send('Post já removido ou não encontrado.');
+      }
+      const usuario = await this.prisma.usuario.findUnique({
+        where: { id: post.autorId },
+        select: { nomeCompleto: true, email: true }
+      });
+      await this.prisma.post.delete({ where: { id: post.id } });
+
+      await this.prisma.notificacao.create({
+        data: {
+          usuarioId: post.autorId,
+          titulo: 'Denúncia por violação na comunidade',
+          mensagem: `Seu post foi removido por violar as diretrizes da comunidade.\n\nMotivo: ${denuncia.motivo}\n\nConteúdo denunciado: ${post.conteudo}`,
+        }
+      });
+
+      await sendPostRemovidoEmail({
+        to: 'suporte.thinkspace@gmail.com',
+        usuario: { nome: usuario?.nomeCompleto || 'Desconhecido', email: usuario?.email || 'Desconhecido' },
+        post: { conteudo: post.conteudo }
+      });
+
+      return res.send('<h2>Post removido e usuário notificado com sucesso.</h2>');
+    } catch (error) {
+      return res.status(500).send('Erro ao processar denúncia.');
+    }
+  }
+
 
   @ApiOperation({ summary: "Listar comentários de um post" })
   @ApiResponse({ status: 200, description: "Lista de comentários do post." })
