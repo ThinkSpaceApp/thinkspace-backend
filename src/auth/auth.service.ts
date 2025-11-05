@@ -122,6 +122,7 @@ export class AuthService {
       objetivoNaPlataforma: string;
       areaDeInteresse: string;
       instituicaoNome: string;
+      aceitouTermos: boolean;
     },
   ) {
     const temp = tempRegisterStore[email];
@@ -130,6 +131,7 @@ export class AuthService {
     temp.objetivoNaPlataforma = data.objetivoNaPlataforma;
     temp.areaDeInteresse = data.areaDeInteresse;
     temp.instituicaoNome = data.instituicaoNome;
+    temp.aceitouTermos = data.aceitouTermos;
     temp.etapa = "verificacao";
     // Gera código de 5 dígitos e salva corretamente
     temp.codigoVerificado = await this.gerarCodigoVerificadoUnico();
@@ -236,6 +238,7 @@ export class AuthService {
         atualizadoEm: new Date(),
         codigoVerificado: gerarCodigoUnico(),
         codigoExpiracao: new Date(),
+        aceitouTermos: temp.aceitouTermos,
       });
 
       delete tempRegisterStore[email];

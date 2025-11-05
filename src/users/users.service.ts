@@ -111,6 +111,7 @@ export class UsersService {
         areaDeInteresse: userData.areaDeInteresse || "",
         codigoVerificado: userData.codigoVerificado || "",
         codigoExpiracao: userData.codigoExpiracao ? new Date(userData.codigoExpiracao) : new Date(),
+        aceitouTermos: userData.aceitouTermos === true,
       },
     });
 

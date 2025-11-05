@@ -91,6 +91,7 @@ export class AuthController {
         objetivoNaPlataforma: { type: "string" },
         areaDeInteresse: { type: "string" },
         instituicaoNome: { type: "string" },
+        aceitouTermos: { type: "boolean", description: "Usuário aceitou os termos de uso" },
       },
       required: [
         "email",
@@ -98,6 +99,7 @@ export class AuthController {
         "objetivoNaPlataforma",
         "areaDeInteresse",
         "instituicaoNome",
+        "aceitouTermos",
       ],
     },
   })
@@ -110,17 +112,22 @@ export class AuthController {
       objetivoNaPlataforma: string;
       areaDeInteresse: string;
       instituicaoNome: string;
+      aceitouTermos: boolean;
     },
   ) {
-    const { email, escolaridade, objetivoNaPlataforma, areaDeInteresse, instituicaoNome } = body;
+    const { email, escolaridade, objetivoNaPlataforma, areaDeInteresse, instituicaoNome, aceitouTermos } = body;
     if (!email || !escolaridade || !objetivoNaPlataforma || !areaDeInteresse || !instituicaoNome) {
       throw new BadRequestException("Todos os campos obrigatórios devem ser preenchidos.");
+    }
+    if (aceitouTermos !== true) {
+      throw new BadRequestException("É obrigatório aceitar os termos de uso para completar o cadastro.");
     }
     return this.authService.registrarStep3Completar(email, {
       escolaridade,
       objetivoNaPlataforma,
       areaDeInteresse,
       instituicaoNome,
+      aceitouTermos,
     });
   }
 
