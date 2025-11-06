@@ -184,8 +184,8 @@ export class HomeController {
             }
           });
         }
-        if (xpAcumulada < 0) xpAcumulada = 0;
-        const barraProgresso = Math.min(100, Math.round((xpAcumulada / 1000) * 100));
+  if (xpAcumulada < 0) xpAcumulada = 0;
+  const barraProgresso = Math.min(100, Math.round((xpAcumulada / 100) * 100));
         return {
           ...materia,
           xpAcumulada,
