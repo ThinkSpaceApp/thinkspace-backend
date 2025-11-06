@@ -1092,8 +1092,8 @@ export class salaEstudoController {
         }
         let corBg = paletteBg[0];
         if (post.autor.id) {
-          const chars = Array.from(post.autor.id);
-          const hash = chars.reduce((acc, c) => acc + c.charCodeAt(0), 0);
+          const chars: string[] = Array.from(post.autor.id);
+          const hash = chars.reduce((acc: number, c) => acc + c.charCodeAt(0), 0);
           corBg = paletteBg[hash % paletteBg.length];
         }
         foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
@@ -1171,6 +1171,7 @@ export class salaEstudoController {
               sobrenome: true,
               nomeCompleto: true,
               foto: true,
+              email: true,
               PerfilUsuario: { select: { avatar: true, nivel: true, xp: true } }
             }
           },
@@ -1180,26 +1181,65 @@ export class salaEstudoController {
         },
         orderBy: { criadoEm: 'desc' }
       });
-      const result = posts.map((post: any) => ({
-        id: post.id,
-        conteudo: post.conteudo,
-        criadoEm: post.criadoEm,
-        curtidas: post.curtidas,
-        curtidoPeloUsuario: (post.usuariosQueCurtiram || []).includes(usuarioId),
-        sala: {
-          id: post.sala?.id,
-          nome: post.sala?.nome,
-        },
-        autor: {
-          id: post.autor.id,
-          nome: post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim(),
-          foto: post.autor.foto,
-          perfil: post.autor.PerfilUsuario?.[0] || null,
-        },
-        comentarios: post.comentarios,
-        quantidadeComentarios: post.comentarios.length,
-        salvo: true,
-      }));
+      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
+      const result = posts.map((post: any) => {
+        let nomeAutor = '';
+        if (post.autor?.nomeCompleto && post.autor.nomeCompleto.trim()) {
+          nomeAutor = post.autor.nomeCompleto.trim();
+        } else if ((post.autor?.primeiroNome && post.autor.primeiroNome.trim()) || (post.autor?.sobrenome && post.autor.sobrenome.trim())) {
+          nomeAutor = `${post.autor?.primeiroNome?.trim() || ''} ${post.autor?.sobrenome?.trim() || ''}`.trim();
+        } else if (post.autor?.email) {
+          nomeAutor = post.autor.email;
+        } else {
+          nomeAutor = 'Usuário';
+        }
+        let foto = post.autor.foto;
+        if (!foto || foto.includes("ui-avatars.com/api/?name=User")) {
+          let iniciais = "";
+          const nome = post.autor.primeiroNome?.trim() || "";
+          const sobrenome = post.autor.sobrenome?.trim() || "";
+          if (nome || sobrenome) {
+            iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+          } else if (post.autor.nomeCompleto) {
+            const partes = post.autor.nomeCompleto.trim().split(" ");
+            iniciais =
+              partes.length > 1
+                ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+                : `${partes[0][0]}`.toUpperCase();
+          } else if (post.autor.email) {
+            iniciais = post.autor.email.charAt(0).toUpperCase();
+          } else {
+            iniciais = "U";
+          }
+          let corBg = paletteBg[0];
+          if (post.autor.id) {
+            const chars: string[] = Array.from(post.autor.id);
+            const hash = chars.reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+            corBg = paletteBg[hash % paletteBg.length];
+          }
+          foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
+        }
+        return {
+          id: post.id,
+          conteudo: post.conteudo,
+          criadoEm: post.criadoEm,
+          curtidas: post.curtidas,
+          curtidoPeloUsuario: (post.usuariosQueCurtiram || []).includes(usuarioId),
+          sala: {
+            id: post.sala?.id,
+            nome: post.sala?.nome,
+          },
+          autor: {
+            id: post.autor.id,
+            nome: nomeAutor,
+            foto: foto,
+            perfil: post.autor.PerfilUsuario?.[0] || null,
+          },
+          comentarios: post.comentarios,
+          quantidadeComentarios: post.comentarios.length,
+          salvo: true,
+        };
+      });
       return res.status(HttpStatus.OK).json(result);
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar favoritos.', details: error });
