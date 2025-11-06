@@ -274,8 +274,15 @@ export class MateriaisController {
       throw new BadRequestException("Nome designado e nome da matéria são obrigatórios.");
     }
     const userId = (req.user as any).userId;
-    
-    // Removido filtro antigo, revisar depois
+    const materialExistente = await this.materiaisService["prisma"].materialEstudo.findFirst({
+      where: {
+        autorId: userId,
+        titulo: body.nomeDesignado,
+      },
+    });
+    if (materialExistente) {
+      throw new BadRequestException("Você já possui um material com esse nome. Escolha outro nome.");
+    }
     const progresso = await this.materiaisService.getProgressoMaterial(userId);
     const origem = progresso.origem;
     const tipoMaterial = progresso.tipoMaterial;
