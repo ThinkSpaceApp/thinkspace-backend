@@ -88,6 +88,21 @@ export class MateriaisController {
   async listarMateriais(@Req() req: Request) {
     const { filtro } = req.query as { filtro?: string };
     let materiais = await this.materiaisService.listarPorUsuario((req.user as any).userId);
+    const { tempoEstudo } = req.query as { tempoEstudo?: string };
+    if (tempoEstudo) {
+      const updates = (Array.isArray(tempoEstudo) ? tempoEstudo : tempoEstudo.split(","))
+        .map((str) => str.split(":"))
+        .filter((arr) => arr.length === 4)
+        .map(([id, h, m, s]) => ({ id, valor: `${h}:${m}:${s}` }));
+      for (const { id, valor } of updates) {
+        await this.materiaisService["prisma"].materialEstudo.update({
+          where: { id },
+          data: { tempoEstudo: valor },
+        });
+        const mat = materiais.find((m) => m.id === id);
+        if (mat) mat.tempoEstudo = valor;
+      }
+    }
 
     if (filtro) {
       let filtros = Array.isArray(filtro) ? filtro : filtro.split(",");
@@ -114,10 +129,24 @@ export class MateriaisController {
           );
         }
         if (f === "maiorTempoEstudo") {
-          materiais = materiais.sort((a, b) => (b.tempoAtivo || 0) - (a.tempoAtivo || 0));
+          materiais = materiais.sort((a, b) => {
+            const toSec = (t: string | null) => {
+              if (!t) return 0;
+              const [h, m, s] = t.split(":").map(Number);
+              return (h || 0) * 3600 + (m || 0) * 60 + (s || 0);
+            };
+            return toSec(b.tempoEstudo) - toSec(a.tempoEstudo);
+          });
         }
         if (f === "menorTempoEstudo") {
-          materiais = materiais.sort((a, b) => (a.tempoAtivo || 0) - (b.tempoAtivo || 0));
+          materiais = materiais.sort((a, b) => {
+            const toSec = (t: string | null) => {
+              if (!t) return 0;
+              const [h, m, s] = t.split(":").map(Number);
+              return (h || 0) * 3600 + (m || 0) * 60 + (s || 0);
+            };
+            return toSec(a.tempoEstudo) - toSec(b.tempoEstudo);
+          });
         }
       });
     }
@@ -125,7 +154,7 @@ export class MateriaisController {
       message: materiais.length
         ? "Materiais encontrados com sucesso."
         : "Nenhum material encontrado.",
-      materiais,
+      materiais: materiais.map((m) => ({ ...m, tempoEstudo: m.tempoEstudo || "00:00:00" })),
     };
   }
 

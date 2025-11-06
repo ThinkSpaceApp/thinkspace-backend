@@ -1,4 +1,3 @@
-
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { NivelEscolaridade, ObjetivoPlataforma, Usuario } from "@prisma/client";
