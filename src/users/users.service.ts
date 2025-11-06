@@ -408,6 +408,8 @@ export class UsersService {
     const hoje = new Date();
     const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 });
     const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: userId }, select: { criadoEm: true } });
+    const dataCriacao = usuario?.criadoEm ? new Date(usuario.criadoEm) : null;
 
     const atividades = await this.prisma.atividadeUsuario.findMany({
       where: {
@@ -423,7 +425,11 @@ export class UsersService {
     for (let i = 0; i < 7; i++) {
       const dia = addDays(inicioSemana, i);
       let status = 0;
-      if (dia > hoje) {
+      if (dataCriacao && dia < startOfWeek(dataCriacao, { weekStartsOn: 0 })) {
+        status = 0;
+      } else if (dataCriacao && dia < dataCriacao) {
+        status = 0;
+      } else if (dia > hoje) {
         status = 0;
       } else if (isSameDay(dia, hoje)) {
         const atividadeDia = atividades.find((a) => isSameDay(a.data, dia));
