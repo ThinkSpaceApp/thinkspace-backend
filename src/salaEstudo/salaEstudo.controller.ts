@@ -762,11 +762,38 @@ export class salaEstudoController {
         },
         orderBy: { criadoEm: 'desc' }
       });
+      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
       const postsComStatus = await Promise.all(posts.map(async (post: any) => {
         const usuariosQueCurtiram = Array.isArray(post.usuariosQueCurtiram)
           ? post.usuariosQueCurtiram.map((id: any) => String(id))
           : [];
         const denunciasCount = await this.prisma.denuncia.count({ where: { postId: post.id } });
+        let foto = post.autor.foto;
+        if (!foto || foto.includes("ui-avatars.com/api/?name=User")) {
+          let iniciais = "";
+          const nome = post.autor.primeiroNome?.trim() || "";
+          const sobrenome = post.autor.sobrenome?.trim() || "";
+          if (nome || sobrenome) {
+            iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+          } else if (post.autor.nomeCompleto) {
+            const partes = post.autor.nomeCompleto.trim().split(" ");
+            iniciais =
+              partes.length > 1
+                ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+                : `${partes[0][0]}`.toUpperCase();
+          } else if (post.autor.email) {
+            iniciais = post.autor.email.charAt(0).toUpperCase();
+          } else {
+            iniciais = "U";
+          }
+          let corBg = paletteBg[0];
+          if (post.autor.id) {
+            const chars: string[] = Array.from(post.autor.id);
+            const hash: number = chars.reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+            corBg = paletteBg[hash % paletteBg.length];
+          }
+          foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
+        }
         const autorNome = post.autor.nomeCompleto || `${post.autor.primeiroNome} ${post.autor.sobrenome}`.trim();
         if (denunciasCount >= 5) {
           return {
@@ -776,7 +803,7 @@ export class salaEstudoController {
             autor: {
               id: post.autor.id,
               nome: autorNome,
-              foto: post.autor.foto,
+              foto: foto,
             },
             curtidoPeloUsuario: usuarioId ? usuariosQueCurtiram.includes(String(usuarioId)) : false,
             quantidadeComentarios: post.comentarios.length,
@@ -787,7 +814,7 @@ export class salaEstudoController {
           autor: {
             id: post.autor.id,
             nome: autorNome,
-            foto: post.autor.foto,
+            foto: foto,
           },
           curtidoPeloUsuario: usuarioId ? usuariosQueCurtiram.includes(String(usuarioId)) : false,
           quantidadeComentarios: post.comentarios.length,
@@ -1501,7 +1528,8 @@ export class salaEstudoController {
           },
           orderBy: { atribuidoEm: 'desc' }
         });
-        const result = await Promise.all(materiaisSala.map(async (item: any) => {
+        const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
+        const result = await Promise.all(materiaisSala.map(async (item: any, idx: number) => {
           const materia = item.materiaId
             ? await this.prisma.materia.findUnique({
                 where: { id: item.materiaId },
@@ -1512,7 +1540,7 @@ export class salaEstudoController {
           if (!autor && item.autorId) {
             autor = await this.prisma.usuario.findUnique({
               where: { id: item.autorId },
-              select: { id: true, nomeCompleto: true, primeiroNome: true, sobrenome: true, foto: true }
+              select: { id: true, nomeCompleto: true, primeiroNome: true, sobrenome: true, foto: true, email: true }
             });
           }
           let nomeAutor = '';
@@ -1520,8 +1548,38 @@ export class salaEstudoController {
             nomeAutor = autor.nomeCompleto.trim();
           } else if ((autor?.primeiroNome && autor.primeiroNome.trim()) || (autor?.sobrenome && autor.sobrenome.trim())) {
             nomeAutor = `${autor?.primeiroNome?.trim() || ''} ${autor?.sobrenome?.trim() || ''}`.trim();
-          } else if (item.autorId) {
+          } else if (autor?.email) {
+            nomeAutor = autor.email;
+          } else {
             nomeAutor = 'Usuário';
+          }
+          let foto = autor?.foto || item.avatarAutor || null;
+          if (!foto || foto.includes("ui-avatars.com/api/?name=User")) {
+            let iniciais = "";
+            const nome = autor?.primeiroNome?.trim() || "";
+            const sobrenome = autor?.sobrenome?.trim() || "";
+            if (nome || sobrenome) {
+              iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+            } else if (autor?.nomeCompleto) {
+              const partes = autor.nomeCompleto.trim().split(" ");
+              iniciais =
+                partes.length > 1
+                  ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+                  : `${partes[0][0]}`.toUpperCase();
+            } else if (autor?.email) {
+              iniciais = autor.email.charAt(0).toUpperCase();
+            } else {
+              iniciais = "U";
+            }
+            let corBg = paletteBg[0];
+            if (autor?.id) {
+              const chars: string[] = Array.from(autor.id);
+              const hash = chars.reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+              corBg = paletteBg[hash % paletteBg.length];
+            } else {
+              corBg = paletteBg[idx % paletteBg.length];
+            }
+            foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
           }
           return {
             id: item.materialId,
@@ -1530,7 +1588,7 @@ export class salaEstudoController {
             autor: {
               id: autor?.id || item.autorId,
               nome: nomeAutor,
-              foto: autor?.foto || item.avatarAutor || null
+              foto: foto
             },
             materia: materia,
             material: item.material
