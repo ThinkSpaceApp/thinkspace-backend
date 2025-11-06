@@ -286,9 +286,9 @@ export class MateriaisController {
     const progresso = await this.materiaisService.getProgressoMaterial(userId);
     const origem = progresso.origem;
     const tipoMaterial = progresso.tipoMaterial;
-    const materia = await this.materiaisService.buscarMateriaPorNome(body.nomeMateria);
+    const materia = await this.materiaisService.buscarMateriaPorNome(body.nomeMateria, userId);
     if (!materia) {
-      throw new BadRequestException("Matéria não encontrada pelo nome informado.");
+      throw new BadRequestException("Matéria não encontrada pelo nome informado para este usuário.");
     }
     const materiaId = materia.id;
     if (body.quantidadeQuestoes !== undefined) {

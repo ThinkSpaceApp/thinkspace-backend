@@ -297,9 +297,9 @@ export class MateriaisService {
   async limparProgressoMaterial(userId: string) {
     this.progressoMaterial.delete(userId);
   }
-  async buscarMateriaPorNome(nome: string) {
+  async buscarMateriaPorNome(nome: string, usuarioId: string) {
     return this.prisma.materia.findFirst({
-      where: { nome },
+      where: { nome, usuarioId },
     });
   }
   constructor(
