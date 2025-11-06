@@ -2,11 +2,27 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { toZonedTime } from "date-fns-tz";
 import { getNivelInfo } from "../experiencia/niveis-xp";
+import { SalaEstudoHelperService } from "../salaEstudo/salaEstudo.helper";
 
 @Injectable()
 export class MetricasService {
-  async getRanking() {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly salaEstudoHelper: SalaEstudoHelperService,
+  ) {}
+
+  async getRanking(salaId?: string) {
+    let userIds: string[] | undefined = undefined;
+    if (salaId) {
+      const membros = await this.prisma.membroSala.findMany({
+        where: { salaId },
+        select: { usuarioId: true },
+      });
+      userIds = membros.map(m => m.usuarioId);
+      if (!userIds.length) return [];
+    }
     const topExp = await this.prisma.experienciaUsuario.findMany({
+      where: userIds ? { usuarioId: { in: userIds } } : undefined,
       orderBy: { xp: "desc" },
       take: 10,
       include: {
@@ -61,7 +77,6 @@ export class MetricasService {
       };
     });
   }
-  constructor(private readonly prisma: PrismaService) {}
 
   async getMetricasAluno(userId: string, weeksAgo: number = 0) {
     const timeZone = "America/Sao_Paulo";

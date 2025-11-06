@@ -6,8 +6,8 @@ export class MetricasController {
   constructor(private readonly metricasService: MetricasService) {}
 
   @Get("ranking")
-  async getRanking() {
-    return await this.metricasService.getRanking();
+  async getRanking(@Query("salaId") salaId?: string) {
+    return await this.metricasService.getRanking(salaId);
   }
 
   @Get(":userId")
