@@ -199,6 +199,7 @@ model MaterialEstudo {
   @@map("MaterialEstudo")
   ChatMensagem ChatMensagem[]
   atividadesUsuario AtividadeUsuario[]
+  finalizado Boolean @default(false)
   @@unique([autorId, titulo])
 }
 

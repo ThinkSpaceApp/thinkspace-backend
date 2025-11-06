@@ -338,8 +338,32 @@ export class MateriaisController {
   @Get(":id")
   async obterMaterial(@Req() req: Request, @Param("id") id: string) {
     try {
-      const material = await this.materiaisService.obterPorId(id, (req.user as any).userId);
-      return { message: "Material encontrado com sucesso.", material };
+      const userId = (req.user as any).userId;
+      const material = await this.materiaisService.obterPorId(id, userId);
+      let finalizado = false;
+      if (material && material.quizzesJson) {
+        let respostasQuiz: Record<string, string> = {};
+        if (material.respostasQuizJson) {
+          try {
+            respostasQuiz = JSON.parse(material.respostasQuizJson);
+          } catch {
+            respostasQuiz = {};
+          }
+        }
+        const quizzes = JSON.parse(material.quizzesJson);
+        const totalQuestoes = quizzes.length;
+        const respondidas = Object.keys(respostasQuiz).length;
+        finalizado = respondidas === totalQuestoes && totalQuestoes > 0;
+        if (Object.prototype.hasOwnProperty.call(material, 'finalizado')) {
+          if (material.finalizado !== finalizado) {
+            await this.materiaisService["prisma"].materialEstudo.update({
+              where: { id },
+              data: { finalizado },
+            });
+          }
+        }
+      }
+      return { message: "Material encontrado com sucesso.", material: { ...material, finalizado } };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException("Material não encontrado.");
