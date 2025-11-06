@@ -1272,4 +1272,46 @@ export class MateriaisController {
     );
     return result;
   }
+
+  @ApiOperation({ summary: "Adicionar tempo de estudo ao material" })
+  @ApiResponse({ status: 200, description: "Tempo de estudo atualizado com sucesso." })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        tempo: { type: "string", example: "00:30:00", description: "Tempo a somar no formato HH:MM:SS" },
+      },
+      required: ["tempo"],
+    },
+  })
+  @Post('tempo-estudo/:id')
+  async adicionarTempoEstudo(@Param('id') id: string, @Body() body: { tempo: string }) {
+    function somarTempos(t1: string, t2: string): string {
+      const [h1, m1, s1] = t1.split(":").map(Number);
+      const [h2, m2, s2] = t2.split(":").map(Number);
+      let totalS = (s1 || 0) + (s2 || 0);
+      let totalM = (m1 || 0) + (m2 || 0) + Math.floor(totalS / 60);
+      let totalH = (h1 || 0) + (h2 || 0) + Math.floor(totalM / 60);
+      totalS = totalS % 60;
+      totalM = totalM % 60;
+      return `${String(totalH).padStart(2, '0')}:${String(totalM).padStart(2, '0')}:${String(totalS).padStart(2, '0')}`;
+    }
+    if (!body.tempo || !/^\d{2}:\d{2}:\d{2}$/.test(body.tempo)) {
+      throw new BadRequestException("O tempo deve ser enviado no formato HH:MM:SS");
+    }
+    const material = await this.materiaisService["prisma"].materialEstudo.findUnique({ where: { id } });
+    if (!material) {
+      throw new BadRequestException("Material não encontrado");
+    }
+    const tempoAtual = material.tempoEstudo || "00:00:00";
+    const tempoSomado = somarTempos(tempoAtual, body.tempo);
+    await this.materiaisService["prisma"].materialEstudo.update({
+      where: { id },
+      data: { tempoEstudo: tempoSomado },
+    });
+    return {
+      message: "Tempo de estudo atualizado com sucesso.",
+      tempoEstudo: tempoSomado,
+    };
+  }
 }
