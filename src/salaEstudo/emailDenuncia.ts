@@ -21,7 +21,7 @@ export async function sendDenunciaEmail({ to, usuario, post, motivo, denunciaId 
         <p><b>Motivo:</b> ${motivo}</p>
         <p><b>Conteúdo do post:</b> ${post.conteudo}</p>
         <div style="margin-top:20px;">
-          <a href="https://api.thinkspace.app.br/admin/denuncia/${denunciaId}/confirmar" style="background:#e74c3c;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;margin-right:10px;">Post é ofensivo</a>
+          <a href="https://api.thinkspace.app.br/sala-estudo/admin/denuncia/${denunciaId}/confirmar" style="background:#e74c3c;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;margin-right:10px;">Post é ofensivo</a>
           <a href="https://api.thinkspace.app.br/admin/denuncia/${denunciaId}/ignorar" style="background:#2ecc40;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;">Não é ofensivo</a>
         </div>
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
