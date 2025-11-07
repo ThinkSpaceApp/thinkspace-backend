@@ -84,7 +84,7 @@ export class salaEstudoController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao consultar status dos termos.', details: error });
     }
   }
-  
+
   @ApiOperation({ summary: "Criar uma nova sala de estudo" })
   @ApiResponse({ status: 201, description: "Sala de estudo criada com sucesso." })
   @ApiBody({
@@ -1299,6 +1299,49 @@ export class salaEstudoController {
     }
   }
   
+  @ApiOperation({ summary: "Excluir material de uma sala de estudo" })
+  @ApiResponse({ status: 200, description: "Material excluído da sala com sucesso." })
+  @ApiResponse({ status: 403, description: "Usuário não tem permissão para excluir este material." })
+  @ApiResponse({ status: 404, description: "Material não encontrado na sala." })
+  @Delete('sala/:salaId/material/:materialId/excluir/:usuarioId')
+  async excluirMaterialSala(
+    @Param('salaId') salaId: string,
+    @Param('materialId') materialId: string,
+    @Param('usuarioId') usuarioId: string,
+    @Res() res: Response
+  ) {
+    try {
+      const publicado = await this.prisma.salaEstudoMaterial.findFirst({
+        where: { salaId, materialId }
+      });
+      if (!publicado) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Material não encontrado na sala.' });
+      }
+      const material = await this.prisma.materialEstudo.findUnique({ where: { id: materialId } });
+      if (!material) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Material não encontrado.' });
+      }
+      const sala = await this.prisma.salaEstudo.findUnique({ where: { id: salaId } });
+      if (!sala) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Sala de estudo não encontrada.' });
+      }
+      if (material.autorId !== usuarioId && sala.moderadorId !== usuarioId) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Você não tem permissão para excluir este material.' });
+      }
+      await this.prisma.salaEstudoMaterial.delete({
+        where: { 
+          materialId_salaId: {
+            materialId: materialId,
+            salaId: salaId
+          }
+        }
+      });
+      return res.status(HttpStatus.OK).json({ message: 'Material excluído da sala com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao excluir material da sala.', details: error });
+    }
+  }
+
   @ApiOperation({ summary: "Obter detalhes de um post pelo id" })
   @ApiResponse({ status: 200, description: "Detalhes do post encontrado." })
   @ApiResponse({ status: 404, description: "Post não encontrado." })
