@@ -3,7 +3,11 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class CalendarioService {
-  constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) {}
+
+  async findEventoByTitulo(usuarioId: string, titulo: string) {
+    return await this.prisma.calendario.findFirst({ where: { usuarioId, titulo } });
+  }
 
   async getCalendarioMes(usuarioId: string, mes: number, ano: number) {
     const dataInicio = new Date(ano, mes - 1, 1);

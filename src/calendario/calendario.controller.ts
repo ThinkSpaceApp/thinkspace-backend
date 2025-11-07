@@ -165,6 +165,12 @@ export class CalendarioController {
       }
     }
 
+    if (body.titulo) {
+      const eventoExistente = await this.calendarioService.findEventoByTitulo(body.usuarioId, body.titulo);
+      if (eventoExistente) {
+        throw new BadRequestException('Já existe um evento/anotação com esse nome para este usuário. Escolha um título diferente.');
+      }
+    }
     try {
       return await this.calendarioService.criarEventoCalendario(body.usuarioId, body);
     } catch (error: any) {
