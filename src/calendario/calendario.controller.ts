@@ -138,6 +138,20 @@ export class CalendarioController {
     if (!body.data || !body.cor || !body.usuarioId) {
       throw new BadRequestException('Data, cor e usuarioId são obrigatórios.');
     }
+
+    if (body.notificar) {
+      let dataEvento: Date;
+      if (body.horario) {
+        dataEvento = new Date(`${body.data}T${body.horario}`);
+      } else {
+        dataEvento = new Date(body.data);
+      }
+      const agora = new Date();
+      if (dataEvento < agora) {
+        throw new BadRequestException('Não é possível agendar notificação para eventos em datas/horários passados.');
+      }
+    }
+
     return this.calendarioService.criarEventoCalendario(body.usuarioId, body);
   }
 }
