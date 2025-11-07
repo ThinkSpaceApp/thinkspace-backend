@@ -147,36 +147,21 @@ export class CalendarioService {
         if (diffMs > 0) {
           setTimeout(async () => {
             try {
-              const webhookUrl = 'https://api.thinkspace.app.br/notificacoes/webhook';
-              const payload = {
-                notificacaoId: notificacao.id,
-                usuarioId,
-                titulo: evento.titulo,
-                subtitulo: evento.subtitulo || undefined,
-                mensagem: evento.titulo,
-                descricao: evento.descricao || undefined,
-                dataAnotacao: evento.dataInicio,
-                cor: evento.cor,
-                materiaId: evento.materiaId || undefined,
-                tipo: evento.tipo || 'OUTRO',
-                criadoEm: evento.criadoEm,
-              };
-              await fetch(webhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-              });
               await this.prisma.notificacao.update({
                 where: { id: notificacao.id },
                 data: { lida: false },
               });
-              console.log(`Webhook de notificação disparado para usuário ${usuarioId}: ${evento.titulo}`);
+              console.log(`Notificação lançada para usuário ${usuarioId}: ${evento.titulo}`);
             } catch (err) {
-              console.error('Erro ao disparar webhook de notificação:', err);
+              console.error('Erro ao lançar notificação:', err);
             }
           }, diffMs);
         } else {
-          console.log(`Disparar notificação imediata para usuário ${usuarioId}: ${evento.titulo}`);
+          await this.prisma.notificacao.update({
+            where: { id: notificacao.id },
+            data: { lida: false },
+          });
+          console.log(`Notificação imediata lançada para usuário ${usuarioId}: ${evento.titulo}`);
         }
       }
 

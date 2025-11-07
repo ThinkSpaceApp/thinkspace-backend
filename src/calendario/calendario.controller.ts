@@ -152,6 +152,13 @@ export class CalendarioController {
       }
     }
 
-    return this.calendarioService.criarEventoCalendario(body.usuarioId, body);
+    try {
+      return await this.calendarioService.criarEventoCalendario(body.usuarioId, body);
+    } catch (error: any) {
+      if (error?.code === 'P2002' && error?.meta?.target?.includes('usuarioId_titulo')) {
+        throw new BadRequestException('Já existe um evento/anotação com esse nome para este usuário. Escolha um título diferente.');
+      }
+      throw error;
+    }
   }
 }
