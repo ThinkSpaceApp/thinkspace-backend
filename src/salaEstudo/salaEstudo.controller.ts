@@ -60,6 +60,7 @@ export class salaEstudoController {
           nome: 'Sala de Matemática',
           descricao: 'Espaço para discutir matemática',
           tipo: 'PUBLICA',
+          topicos: ['Álgebra', 'Geometria', 'Trigonometria'],
           autorId: 'uuid-do-autor'
         }
       }
@@ -68,8 +69,20 @@ export class salaEstudoController {
   @Post()
   async criarSalaEstudo(@Body() body: CriarSalaEstudoDto, @Res() res: Response) {
     try {
-      if (!body.nome || !body.tipo || !body.autorId) {
-        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Campos obrigatórios: nome, tipo, autorId.' });
+      if (!body.nome || typeof body.nome !== 'string' || body.nome.trim().length === 0) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O nome da sala é obrigatório e não pode ser nulo ou vazio.' });
+      }
+      if (!body.descricao || typeof body.descricao !== 'string' || body.descricao.trim().length === 0) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'A descrição da sala é obrigatória e não pode ser nula ou vazia.' });
+      }
+      if (!body.tags || !Array.isArray(body.tags) || body.tags.length === 0) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'É obrigatório informar pelo menos um tópico para a sala.' });
+      }
+      if (body.tags.length > 5) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Não é permitido mais de 5 tópicos por sala.' });
+      }
+      if (!body.tipo || !body.autorId) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Campos obrigatórios: tipo, autorId.' });
       }
       const banners = [
         "https://i.imgur.com/XEpO0Vi.jpeg",
@@ -80,9 +93,10 @@ export class salaEstudoController {
       const sala = await this.prisma.salaEstudo.create({
         data: {
           nome: body.nome,
-          descricao: body.descricao || '',
+          descricao: body.descricao,
           tipo: body.tipo,
           moderadorId: body.autorId,
+          topicos: body.tags,
           banner: banner,
         }
       });
