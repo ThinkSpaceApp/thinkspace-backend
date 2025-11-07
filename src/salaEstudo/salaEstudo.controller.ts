@@ -518,7 +518,7 @@ export class salaEstudoController {
               usuarioId: usuarioId,
             }
           });
-          usuarioSegue = !!membro;
+          usuarioSegue = membro ? true : false;
         }
 
         const avatares = ultimosMembrosEstudantes.map((m, uidx) => {
