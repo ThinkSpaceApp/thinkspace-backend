@@ -1338,8 +1338,11 @@ export class salaEstudoController {
       });
       return res.status(HttpStatus.OK).json({ message: 'Material excluído da sala com sucesso.' });
     } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao excluir material da sala.', details: error });
-    }
+    const errMsg = (error as any)?.message;
+    const errStack = (error as any)?.stack;
+    console.error('Erro ao excluir material da sala:', errMsg, errStack, error);
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao excluir material da sala.', details: errMsg || error });
+      }
   }
 
   @ApiOperation({ summary: "Obter detalhes de um post pelo id" })
@@ -1681,7 +1684,10 @@ export class salaEstudoController {
       });
       return res.status(HttpStatus.CREATED).json({ publicado, message: 'Material publicado na sala com sucesso.' });
     } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao publicar material na sala.', details: error });
+  const errMsg = (error as any)?.message;
+  const errStack = (error as any)?.stack;
+  console.error('Erro ao publicar material na sala:', errMsg, errStack, error);
+  return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao publicar material na sala.', details: errMsg || error });
     }
   }
 
