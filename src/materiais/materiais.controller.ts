@@ -281,6 +281,9 @@ export class MateriaisController {
       },
     });
     if (materialExistente) {
+      if (materialExistente.materiaId !== undefined && materialExistente.materiaId !== null && materialExistente.materiaId !== body.materiaId) {
+        throw new BadRequestException("Você não pode anexar um mesmo material a duas matérias diferentes. Crie um novo material para essa matéria.");
+      }
       throw new BadRequestException("Você já possui um material com esse nome. Escolha outro nome.");
     }
     const progresso = await this.materiaisService.getProgressoMaterial(userId);
