@@ -114,7 +114,10 @@ export class salaEstudoController {
         }
       });
       if (membro) {
-        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Usuário já faz parte da sala.' });
+        await this.prisma.membroSala.delete({
+          where: { usuarioId_salaId: { usuarioId, salaId } }
+        });
+        return res.status(HttpStatus.OK).json({ message: 'Usuário deixou de seguir a sala.' });
       }
       await this.prisma.membroSala.create({
         data: {
@@ -124,7 +127,7 @@ export class salaEstudoController {
       });
       return res.status(HttpStatus.CREATED).json({ message: 'Usuário agora faz parte da sala.' });
     } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao seguir sala de estudo.', details: error });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao seguir/desseguir sala de estudo.', details: error });
     }
   }
 
