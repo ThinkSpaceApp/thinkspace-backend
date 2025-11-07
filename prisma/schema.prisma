@@ -120,6 +120,7 @@ model Usuario {
   areaDeInteresse      String?
   objetivoNaPlataforma ObjetivoPlataforma? @default(OUTRO)
   aceitouTermos        Boolean             @default(false)
+  aceitouTermosComunidade Boolean          @default(false)
   criadoEm             DateTime            @default(now())
   atualizadoEm         DateTime            @updatedAt
   suspenso             Boolean             @default(false)

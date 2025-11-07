@@ -48,6 +48,43 @@ export class CriarSalaEstudoDto {
 @ApiTags("Sala de Estudo")
 @Controller("sala-estudo")
 export class salaEstudoController {
+  @ApiOperation({ summary: "Aceitar termos de uso da comunidade" })
+  @ApiResponse({ status: 200, description: "Termos aceitos com sucesso." })
+  @Post('usuario/:usuarioId/aceitar-termos-comunidade')
+  async aceitarTermosComunidade(@Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+      if (!usuario) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Usuário não encontrado.' });
+      }
+      if (usuario.aceitouTermosComunidade) {
+        return res.status(HttpStatus.OK).json({ message: 'Usuário já aceitou os termos de uso da comunidade.' });
+      }
+      await this.prisma.usuario.update({
+        where: { id: usuarioId },
+        data: { aceitouTermosComunidade: true }
+      });
+      return res.status(HttpStatus.OK).json({ message: 'Termos de uso da comunidade aceitos com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao aceitar termos de uso.', details: error });
+    }
+  }
+
+  @ApiOperation({ summary: "Ver status dos termos de uso da comunidade" })
+  @ApiResponse({ status: 200, description: "Status de aceite dos termos." })
+  @Get('usuario/:usuarioId/status-termos-comunidade')
+  async statusTermosComunidade(@Param('usuarioId') usuarioId: string, @Res() res: Response) {
+    try {
+      const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId }, select: { aceitouTermosComunidade: true } });
+      if (!usuario) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Usuário não encontrado.' });
+      }
+      return res.status(HttpStatus.OK).json({ aceitouTermosComunidade: usuario.aceitouTermosComunidade });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao consultar status dos termos.', details: error });
+    }
+  }
+  
   @ApiOperation({ summary: "Criar uma nova sala de estudo" })
   @ApiResponse({ status: 201, description: "Sala de estudo criada com sucesso." })
   @ApiBody({
@@ -68,6 +105,10 @@ export class salaEstudoController {
   })
   @Post()
   async criarSalaEstudo(@Body() body: CriarSalaEstudoDto, @Res() res: Response) {
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: body.autorId } });
+    if (!usuario?.aceitouTermosComunidade) {
+      return res.status(HttpStatus.FORBIDDEN).json({ error: 'Você precisa aceitar os termos de uso da comunidade para interagir nas salas de estudo.' });
+    }
     try {
       if (!body.nome || typeof body.nome !== 'string' || body.nome.trim().length === 0) {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O nome da sala é obrigatório e não pode ser nulo ou vazio.' });
@@ -184,6 +225,10 @@ export class salaEstudoController {
     @Res() res: Response
   ) {
     try {
+      const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+      if (!usuario?.aceitouTermosComunidade) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Você precisa aceitar os termos de uso da comunidade para interagir nas salas de estudo.' });
+      }
       const membro = await this.prisma.membroSala.findFirst({
         where: {
           salaId: salaId,
@@ -1146,6 +1191,10 @@ export class salaEstudoController {
   @Post('post')
   async criarPost(@Body() body: CriarPostDto, @Res() res: Response) {
     try {
+      const usuario = await this.prisma.usuario.findUnique({ where: { id: body.autorId } });
+      if (!usuario?.aceitouTermosComunidade) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Você precisa aceitar os termos de uso da comunidade para interagir nas salas de estudo.' });
+      }
       if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.replace(/\s/g, '').length < 5) {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do post deve ter pelo menos 5 caracteres não vazios.' });
       }
