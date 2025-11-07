@@ -115,14 +115,14 @@ export class salaEstudoController {
     }
   })
 
-  @Patch('sala/:salaId/editar')
+  @Patch('sala/:salaId/editar/:usuarioId')
   async editarSalaEstudo(
     @Param('salaId') salaId: string,
+    @Param('usuarioId') usuarioId: string,
     @Body() body: { nome?: string; descricao?: string; topicos?: string[] },
     @Res() res: Response
   ) {
     try {
-      const usuarioId = (res.req as any).user?.id;
       if (!usuarioId) {
         return res.status(HttpStatus.FORBIDDEN).json({ error: 'Usuário não autenticado.' });
       }
