@@ -268,14 +268,30 @@ export class MateriasController {
       return { message: "O usuário não possui nehuma matéria recente" };
     }
 
-    const materiasRecentes = materiasOrdenadas.slice(0, 5).map((materia, idx) => ({
-      indice: idx + 1,
-      nome: materia.nome,
-      id: materia.id,
-      cor: materia.cor,
-      icone: materia.icone,
-      ultimaRevisao: materia.ultimaRevisao,
-      tempoAtivo: materia.tempoAtivo,
+    const materiasRecentes = await Promise.all(materiasOrdenadas.slice(0, 5).map(async (materia, idx) => {
+      let materiais: any[] = [];
+      if (typeof this.usersService.findMateriaisByAutorId === 'function') {
+        materiais = await this.usersService.findMateriaisByAutorId(userId);
+        materiais = materiais.filter((mat: any) => mat.materiaId === materia.id);
+      }
+      const tempoAtivoTotalMin = materiais.reduce((acc: number, mat: any) => {
+        let tempoStr = mat.tempoEstudo;
+        if (!tempoStr && typeof mat.tempoEstudo !== 'string' && typeof mat.tempoEstudo !== 'number') tempoStr = null;
+        if (typeof tempoStr === 'string' && tempoStr.includes(':')) {
+          const [h, m, s] = tempoStr.split(':').map(Number);
+          return acc + (isNaN(h) || isNaN(m) || isNaN(s) ? 0 : (h * 60 + m + Math.floor(s / 60)));
+        }
+        return acc;
+      }, 0);
+      return {
+        indice: idx + 1,
+        nome: materia.nome,
+        id: materia.id,
+        cor: materia.cor,
+        icone: materia.icone,
+        ultimaRevisao: materia.ultimaRevisao,
+        tempoAtivo: tempoAtivoTotalMin,
+      };
     }));
 
     return { materiasRecentes };
