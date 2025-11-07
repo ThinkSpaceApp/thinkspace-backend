@@ -283,9 +283,16 @@ export class salaEstudoController {
         
   @ApiOperation({ summary: "Listar todas as salas de estudo" })
   @ApiResponse({ status: 200, description: "Lista de salas de estudo." })
+  @ApiQuery({
+    name: 'usuarioId',
+    required: false,
+    description: 'ID do usuário logado para saber se ele segue cada sala',
+    type: String
+  })
   @Get()
   async getAllSalasEstudo(@Res() res: Response) {
     try {
+      const usuarioId = res.req.query.usuarioId as string | undefined;
       const salas = await this.prisma.salaEstudo.findMany({
         select: {
           id: true,
@@ -302,7 +309,6 @@ export class salaEstudoController {
 
       const palette = ["#7C3AED", "#a18ddfff", "#ee82a2ff", "#8e44ad"];
       const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
-
 
       const salasComInfo = await Promise.all(salas.map(async (sala: any, idx: number) => {
         const ultimosMembrosEstudantes = await this.prisma.membroSala.findMany({
@@ -333,6 +339,17 @@ export class salaEstudoController {
           }
         });
 
+        let usuarioSegue = false;
+        if (usuarioId) {
+          const membro = await this.prisma.membroSala.findFirst({
+            where: {
+              salaId: sala.id,
+              usuarioId: usuarioId,
+            }
+          });
+          usuarioSegue = !!membro;
+        }
+
         const avatares = ultimosMembrosEstudantes.map((m, uidx) => {
           const u = m.usuario;
           if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
@@ -361,6 +378,7 @@ export class salaEstudoController {
           ...sala,
           quantidadeEstudantes,
           avataresUltimosUsuarios: avatares,
+          usuarioSegue,
         };
       }));
 
@@ -375,14 +393,31 @@ export class salaEstudoController {
   @ApiOperation({ summary: "Obter sala de estudo por id" })
   @ApiResponse({ status: 200, description: "Sala de estudo encontrada." })
   @ApiResponse({ status: 404, description: "Sala de estudo não encontrada." })
+  @ApiQuery({
+    name: 'usuarioId',
+    required: false,
+    description: 'ID do usuário logado para saber se ele segue a sala',
+    type: String
+  })
   @Get(":id")
   async getSalaEstudoById(@Param("id") id: string, @Res() res: Response) {
     try {
+      const usuarioId = res.req.query.usuarioId as string | undefined;
       const sala = await this.prisma.salaEstudo.findUnique({ where: { id } });
       if (!sala) {
         return res.status(HttpStatus.NOT_FOUND).json({ error: "Sala de estudo não encontrada." });
       }
-      return res.status(HttpStatus.OK).json(sala);
+      let usuarioSegue = false;
+      if (usuarioId) {
+        const membro = await this.prisma.membroSala.findFirst({
+          where: {
+            salaId: id,
+            usuarioId: usuarioId,
+          }
+        });
+        usuarioSegue = !!membro;
+      }
+      return res.status(HttpStatus.OK).json({ ...sala, usuarioSegue });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Erro ao buscar sala.", details: error });
     }
