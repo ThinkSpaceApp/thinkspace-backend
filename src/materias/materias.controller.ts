@@ -89,9 +89,11 @@ export class MateriasController {
       const materiaisRelacionados = Array.isArray(materia.materiais) ? materia.materiais : [];
       const materiaisUnicos = [...materiaisRelacionados, ...materiaisDiretos.filter(md => !materiaisRelacionados.some(mr => mr.id === md.id))];
       const tempoAtivoTotalMin = materiaisUnicos.reduce((acc, mat) => {
-        if (typeof mat.tempoEstudo === 'string' && mat.tempoEstudo.includes(':')) {
-          const [h, m, s] = mat.tempoEstudo.split(':').map(Number);
-          return acc + Math.floor((h * 60) + m + (s ? s / 60 : 0));
+        let tempoStr = mat.tempoEstudo;
+        if (!tempoStr && typeof mat.tempoEstudo !== 'string' && typeof mat.tempoEstudo !== 'number') tempoStr = null;
+        if (typeof tempoStr === 'string' && tempoStr.includes(':')) {
+          const [h, m, s] = tempoStr.split(':').map(Number);
+          return acc + (isNaN(h) || isNaN(m) || isNaN(s) ? 0 : (h * 60 + m + Math.floor(s / 60)));
         }
         return acc;
       }, 0);
