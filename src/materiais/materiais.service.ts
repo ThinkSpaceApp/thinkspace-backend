@@ -516,8 +516,9 @@ export class MateriaisService {
   }
 
   async excluir(id: string, userId: string) {
-    await this.obterPorId(id, userId);
-    return this.prisma.materialEstudo.delete({ where: { id } });
+  await this.obterPorId(id, userId);
+  await this.prisma.salaEstudoMaterial.deleteMany({ where: { materialId: id } });
+  return this.prisma.materialEstudo.delete({ where: { id } });
   }
 
   async processarPdfEgerarResumo({
