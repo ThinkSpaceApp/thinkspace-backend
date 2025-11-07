@@ -1618,7 +1618,7 @@ export class salaEstudoController {
           resumoIA: materialOriginal.resumoIA,
           flashcardsJson: materialOriginal.flashcardsJson,
           quizzesJson: materialOriginal.quizzesJson,
-          respostasQuizJson: materialOriginal.respostasQuizJson,
+          respostasQuizJson: null,
           chatHistoryJson: materialOriginal.chatHistoryJson as any,
           quantidadeQuestoes: materialOriginal.quantidadeQuestoes,
           quantidadeFlashcards: materialOriginal.quantidadeFlashcards
