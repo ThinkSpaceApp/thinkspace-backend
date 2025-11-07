@@ -1,4 +1,4 @@
-import { Controller, Get, Res, HttpStatus, Post, Put, Param, Body, Delete } from "@nestjs/common";
+import { Controller, Get, Res, HttpStatus, Post, Put, Param, Body, Delete, Patch } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from "@nestjs/swagger";
 import { Response } from "express";
 import { salaEstudoService } from "./salaEstudo.service";
@@ -97,6 +97,59 @@ export class salaEstudoController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar sala de estudo.', details: error });
     }
   }
+
+  @ApiOperation({ summary: "Editar sala de estudo" })
+  @ApiResponse({ status: 200, description: "Sala de estudo editada com sucesso." })
+  @ApiResponse({ status: 403, description: "Usuário não tem permissão para editar esta sala." })
+  @ApiResponse({ status: 404, description: "Sala de estudo não encontrada." })
+  @ApiBody({
+    description: 'Campos para editar sala',
+    schema: {
+      type: 'object',
+      properties: {
+        nome: { type: 'string', example: 'Novo nome da sala' },
+        descricao: { type: 'string', example: 'Nova descrição' },
+        topicos: { type: 'array', items: { type: 'string' }, example: ['Novo tópico 1', 'Novo tópico 2'] }
+      },
+      required: []
+    }
+  })
+
+  @Patch('sala/:salaId/editar')
+  async editarSalaEstudo(
+    @Param('salaId') salaId: string,
+    @Body() body: { nome?: string; descricao?: string; topicos?: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const usuarioId = (res.req as any).user?.id;
+      if (!usuarioId) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Usuário não autenticado.' });
+      }
+      const sala = await this.prisma.salaEstudo.findUnique({ where: { id: salaId } });
+      if (!sala) {
+        return res.status(HttpStatus.NOT_FOUND).json({ error: 'Sala de estudo não encontrada.' });
+      }
+      if (sala.moderadorId !== usuarioId) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Apenas o moderador pode editar esta sala.' });
+      }
+      const data: any = {};
+      if (body.nome !== undefined) data.nome = body.nome;
+      if (body.descricao !== undefined) data.descricao = body.descricao;
+      if (body.topicos !== undefined) data.topicos = body.topicos;
+      if (Object.keys(data).length === 0) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Nenhum campo para atualizar.' });
+      }
+      const salaAtualizada = await this.prisma.salaEstudo.update({
+        where: { id: salaId },
+        data
+      });
+      return res.status(HttpStatus.OK).json({ sala: salaAtualizada, message: 'Sala de estudo editada com sucesso.' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao editar sala de estudo.', details: error });
+    }
+  }
+  
   @ApiOperation({ summary: "Seguir uma sala de estudo" })
   @ApiResponse({ status: 201, description: "Usuário agora faz parte da sala." })
   @ApiResponse({ status: 400, description: "Usuário já faz parte da sala." })
