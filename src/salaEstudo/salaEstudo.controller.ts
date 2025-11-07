@@ -134,8 +134,18 @@ export class salaEstudoController {
         return res.status(HttpStatus.FORBIDDEN).json({ error: 'Apenas o moderador pode editar esta sala.' });
       }
       const data: any = {};
-      if (body.nome !== undefined) data.nome = body.nome;
-      if (body.descricao !== undefined) data.descricao = body.descricao;
+      if (body.nome !== undefined) {
+        if (typeof body.nome !== 'string' || body.nome.trim().length === 0) {
+          return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O nome da sala não pode ser vazio ou apenas espaços.' });
+        }
+        data.nome = body.nome;
+      }
+      if (body.descricao !== undefined) {
+        if (typeof body.descricao !== 'string' || body.descricao.trim().length === 0) {
+          return res.status(HttpStatus.BAD_REQUEST).json({ error: 'A descrição da sala não pode ser vazia ou apenas espaços.' });
+        }
+        data.descricao = body.descricao;
+      }
       if (body.topicos !== undefined) data.topicos = body.topicos;
       if (Object.keys(data).length === 0) {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Nenhum campo para atualizar.' });
