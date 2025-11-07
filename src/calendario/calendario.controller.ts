@@ -139,6 +139,19 @@ export class CalendarioController {
       throw new BadRequestException('Data, cor e usuarioId são obrigatórios.');
     }
 
+    const MAX_TITULO = 60;
+    const MAX_SUBTITULO = 60;
+    const MAX_ANOTACAO = 300;
+    if (body.titulo && body.titulo.length > MAX_TITULO) {
+      throw new BadRequestException(`O título do evento deve ter no máximo ${MAX_TITULO} caracteres.`);
+    }
+    if (body.subtitulo && body.subtitulo.length > MAX_SUBTITULO) {
+      throw new BadRequestException(`O subtítulo do evento deve ter no máximo ${MAX_SUBTITULO} caracteres.`);
+    }
+    if (body.anotacao && body.anotacao.length > MAX_ANOTACAO) {
+      throw new BadRequestException(`A anotação/descrição do evento deve ter no máximo ${MAX_ANOTACAO} caracteres.`);
+    }
+
     if (body.notificar) {
       let dataEvento: Date;
       if (body.horario) {
