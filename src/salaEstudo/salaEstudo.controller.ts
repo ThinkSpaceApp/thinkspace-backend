@@ -1606,6 +1606,9 @@ export class salaEstudoController {
       if (!materialOriginal) {
         return res.status(HttpStatus.NOT_FOUND).json({ error: 'Material de estudo não encontrado.' });
       }
+      if (materialOriginal.autorId === usuarioId) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Você não pode adicionar ao seu acervo um material que você mesmo criou.' });
+      }
       const materia = await this.prisma.materia.findFirst({
         where: {
           id: body.materiaId,
