@@ -154,7 +154,15 @@ export class MateriaisController {
       message: materiais.length
         ? "Materiais encontrados com sucesso."
         : "Nenhum material encontrado.",
-      materiais: materiais.map((m) => ({ ...m, tempoEstudo: m.tempoEstudo || "00:00:00" })),
+      materiais: materiais.map((m) => {
+        let tempoAtivo = 0;
+        let tempoStr = m.tempoEstudo || "00:00:00";
+        if (typeof tempoStr === 'string' && tempoStr.includes(':')) {
+          const [h, min, s] = tempoStr.split(':').map(Number);
+          tempoAtivo = (isNaN(h) || isNaN(min) || isNaN(s)) ? 0 : (h * 60 + min + Math.floor(s / 60));
+        }
+        return { ...m, tempoEstudo: tempoStr, tempoAtivo };
+      }),
     };
   }
 
