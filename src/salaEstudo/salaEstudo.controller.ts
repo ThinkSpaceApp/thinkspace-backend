@@ -146,19 +146,127 @@ export class salaEstudoController {
       }
       const salas = await this.prisma.salaEstudo.findMany({
         where: { id: { in: salaIds } },
+        select: {
+          id: true,
+          nome: true,
+          descricao: true,
+          tipo: true,
+          banner: true,
+          moderadorId: true,
+          assunto: true,
+          criadoEm: true,
+          topicos: true,
+          moderador: {
+            select: {
+              id: true,
+              nomeCompleto: true,
+              primeiroNome: true,
+              sobrenome: true,
+              foto: true,
+              PerfilUsuario: {
+                select: {
+                  avatar: true,
+                  nivel: true,
+                  xp: true,
+                }
+              }
+            }
+          }
+        }
       });
-      const salasComQuantidade = await Promise.all(
-        salas.map(async (sala: any) => {
-          const quantidadeEstudantes = await this.prisma.membroSala.count({
+      const paletteBg = ["7C3AED", "A78BFA", "ee8bc3ff", "8e44ad"];
+      const salasComInfo = await Promise.all(
+        salas.map(async (sala: any, idx: number) => {
+          const ultimosMembrosEstudantes = await this.prisma.membroSala.findMany({
             where: {
               salaId: sala.id,
               usuario: { funcao: "ESTUDANTE" },
             },
+            take: 4,
+            orderBy: { usuario: { ultimoLogin: "desc" } },
+            include: {
+              usuario: {
+                select: {
+                  primeiroNome: true,
+                  sobrenome: true,
+                  foto: true,
+                  id: true,
+                  nomeCompleto: true,
+                  email: true,
+                }
+              }
+            }
           });
-          return { ...sala, quantidadeEstudantes };
+          const quantidadeEstudantes = await this.prisma.membroSala.count({
+            where: {
+              salaId: sala.id,
+              usuario: { funcao: "ESTUDANTE" },
+            }
+          });
+          const avataresUltimosUsuarios = ultimosMembrosEstudantes.map((m, uidx) => {
+            const u = m.usuario;
+            if (u.foto && !u.foto.includes("ui-avatars.com/api/?name=User")) {
+              return u.foto;
+            }
+            let iniciais = "";
+            const nome = u.primeiroNome?.trim() || "";
+            const sobrenome = u.sobrenome?.trim() || "";
+            if (nome || sobrenome) {
+              iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+            } else if (u.nomeCompleto) {
+              const partes = u.nomeCompleto.trim().split(" ");
+              iniciais =
+                partes.length > 1
+                  ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+                  : `${partes[0][0]}`.toUpperCase();
+            } else if (u.email) {
+              iniciais = u.email.charAt(0).toUpperCase();
+            } else {
+              iniciais = "U";
+            }
+            const corBg = paletteBg[uidx % paletteBg.length];
+            return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
+          });
+          let foto = sala.moderador?.foto;
+          if (!foto || foto.includes("ui-avatars.com/api/?name=User")) {
+            let iniciais = "";
+            const nome = sala.moderador?.primeiroNome?.trim() || "";
+            const sobrenome = sala.moderador?.sobrenome?.trim() || "";
+            if (nome || sobrenome) {
+              iniciais = `${nome.charAt(0)}${sobrenome.charAt(0)}`.toUpperCase();
+            } else if (sala.moderador?.nomeCompleto) {
+              const partes = sala.moderador.nomeCompleto.trim().split(" ");
+              iniciais =
+                partes.length > 1
+                  ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
+                  : `${partes[0][0]}`.toUpperCase();
+            } else if (sala.moderador?.email) {
+              iniciais = sala.moderador.email.charAt(0).toUpperCase();
+            } else {
+              iniciais = "U";
+            }
+            let corBg = paletteBg[0];
+            if (sala.moderador?.id) {
+              const chars: string[] = Array.from(sala.moderador.id);
+              const hash = chars.reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+              corBg = paletteBg[hash % paletteBg.length];
+            }
+            foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=${corBg}&color=fff`;
+          }
+          return {
+            ...sala,
+            moderador: {
+              id: sala.moderador?.id,
+              nome: sala.moderador?.nomeCompleto || `${sala.moderador?.primeiroNome || ''} ${sala.moderador?.sobrenome || ''}`.trim(),
+              foto: foto,
+              perfil: sala.moderador?.PerfilUsuario?.[0] || null,
+            },
+            quantidadeEstudantes,
+            avataresUltimosUsuarios,
+          };
         })
       );
-      return res.status(HttpStatus.OK).json(salasComQuantidade);
+      return res.status(HttpStatus.OK).json(salasComInfo);
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar salas que o usuário participa.', details: error });
     }
