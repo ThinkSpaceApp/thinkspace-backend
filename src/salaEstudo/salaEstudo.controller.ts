@@ -1122,6 +1122,9 @@ export class salaEstudoController {
   @Post('post')
   async criarPost(@Body() body: CriarPostDto, @Res() res: Response) {
     try {
+      if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.replace(/\s/g, '').length < 5) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do post deve ter pelo menos 5 caracteres não vazios.' });
+      }
       const post = await this.prisma.post.create({
         data: {
           salaId: body.salaId,
@@ -1496,8 +1499,8 @@ export class salaEstudoController {
   @Post('comentario')
   async criarComentario(@Body() body: { postId: string; autorId: string; conteudo: string }, @Res() res: Response) {
     try {
-      if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.trim().length < 5) {
-        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do comentário deve ter pelo menos 5 caracteres.' });
+      if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.replace(/\s/g, '').length < 2) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do comentário deve ter pelo menos 2 caracteres não vazios.' });
       }
       const comentario = await this.prisma.comentario.create({
         data: {
