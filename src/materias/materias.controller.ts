@@ -144,11 +144,18 @@ export class MateriasController {
     @Req() req: Request,
     @Body() body: { nome: string; cor: string; icone: string },
   ) {
-    if (!body.nome || !body.cor || !body.icone) {
+    if (body.nome == null || body.cor == null || body.icone == null) {
       throw new BadRequestException("Nome, cor e ícone são obrigatórios.");
     }
+    const nomeTrimmed = body.nome.trim();
+    if (nomeTrimmed.length === 0) {
+      throw new BadRequestException("O nome da matéria não pode ser formado apenas por espaços.");
+    }
+    if (nomeTrimmed.length < 3 || nomeTrimmed.length > 60) {
+      throw new BadRequestException("O nome da matéria deve ter entre 3 e 60 caracteres.");
+    }
     const userId = (req.user as any).userId;
-    const nomeNormalizado = body.nome.replace(/\s+/g, "").toUpperCase();
+    const nomeNormalizado = nomeTrimmed.replace(/\s+/g, "").toUpperCase();
     const materiaExistente = await this.usersService.getMateriasByUserId(userId);
     if (
       materiaExistente.some((m) => m.nome.replace(/\s+/g, "").toUpperCase() === nomeNormalizado)
