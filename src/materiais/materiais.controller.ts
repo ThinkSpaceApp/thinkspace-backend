@@ -313,14 +313,21 @@ export class MateriaisController {
     if (!Array.isArray(body.topicos)) {
       body.topicos = [];
     }
-    if (!body.nomeDesignado || !body.nomeMateria) {
-      throw new BadRequestException("Nome designado e nome da matéria são obrigatórios.");
+    const nome = body.nomeDesignado;
+    if (typeof nome !== "string" || !nome.trim()) {
+      throw new BadRequestException("O nome do material não pode ser nulo ou vazio.");
+    }
+    if (nome.length < 3 || nome.length > 60) {
+      throw new BadRequestException("O nome do material deve ter entre 3 e 60 caracteres.");
+    }
+    if (!body.nomeMateria) {
+      throw new BadRequestException("Nome da matéria é obrigatório.");
     }
     const userId = (req.user as any).userId;
     const materialExistente = await this.materiaisService["prisma"].materialEstudo.findFirst({
       where: {
         autorId: userId,
-        titulo: body.nomeDesignado,
+        titulo: nome,
       },
     });
     if (materialExistente) {
