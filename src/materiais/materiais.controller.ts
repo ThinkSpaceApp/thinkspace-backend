@@ -466,6 +466,15 @@ export class MateriaisController {
 
   @ApiOperation({ summary: "Editar material" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        nomeDesignado: { type: "string", description: "Novo nome designado para o material" }
+      },
+      required: ["nomeDesignado"]
+    }
+  })
   @ApiResponse({ status: 200, description: "Material atualizado com sucesso." })
   @ApiResponse({ status: 404, description: "Material não encontrado." })
   @Patch(":id")
