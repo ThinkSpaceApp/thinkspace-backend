@@ -1201,22 +1201,19 @@ export class salaEstudoController {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do post deve ter pelo menos 5 caracteres não vazios.' });
       }
 
-      const hfApiUrl = "https://router.huggingface.co/hf-inference/tabularisai/multilingual-sentiment-analysis";
-      const hfToken = process.env.HUGGINGFACE_API_KEY;
+      // Usando o InferenceClient do pacote @huggingface/inference
+      const { InferenceClient } = require("@huggingface/inference");
+      const hfToken = process.env.HUGGINGFACE_API_KEY || process.env.HF_TOKEN;
+      const client = new InferenceClient(hfToken);
       let sentimentoPermitido = false;
       let sentimentoResult = null;
       try {
-        const resp = await fetch(hfApiUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${hfToken}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ inputs: body.conteudo })
+        const output = await client.textClassification({
+          model: "tabularisai/multilingual-sentiment-analysis",
+          inputs: body.conteudo,
+          provider: "hf-inference",
         });
-        const result = await resp.json();
-        sentimentoResult = result[0];
-        if (Array.isArray(sentimentoResult)) sentimentoResult = sentimentoResult[0];
+        sentimentoResult = Array.isArray(output) ? output[0] : output;
         const label = sentimentoResult?.label?.toLowerCase();
         if (label === "neutral" || label === "positive" || label === "very positive") {
           sentimentoPermitido = true;
