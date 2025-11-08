@@ -1200,6 +1200,34 @@ export class salaEstudoController {
       if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.replace(/\s/g, '').length < 5) {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do post deve ter pelo menos 5 caracteres não vazios.' });
       }
+
+      const hfApiUrl = "https://router.huggingface.co/hf-inference/tabularisai/multilingual-sentiment-analysis";
+      const hfToken = process.env.HUGGINGFACE_API_KEY;
+      let sentimentoPermitido = false;
+      let sentimentoResult = null;
+      try {
+        const resp = await fetch(hfApiUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${hfToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ inputs: body.conteudo })
+        });
+        const result = await resp.json();
+        sentimentoResult = result[0];
+        if (Array.isArray(sentimentoResult)) sentimentoResult = sentimentoResult[0];
+        const label = sentimentoResult?.label?.toLowerCase();
+        if (label === "neutral" || label === "positive" || label === "very positive") {
+          sentimentoPermitido = true;
+        }
+      } catch (sentimentErr) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Não foi possível analisar o sentimento do post. Tente novamente mais tarde." });
+      }
+      if (!sentimentoPermitido) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "O conteúdo do post não é permitido. Por favor, escreva de forma neutra ou positiva." });
+      }
+
       const post = await this.prisma.post.create({
         data: {
           salaId: body.salaId,
