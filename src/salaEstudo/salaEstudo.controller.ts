@@ -33,7 +33,7 @@ export class CriarSalaEstudoDto {
   nome!: string;
   descricao?: string;
   tipo!: 'PUBLICA' | 'PRIVADA';
-  tags!: string[];
+  topicos!: string[];
   autorId!: string;
   // banner removido da doc: valor sempre fixo pelo backend
 }
@@ -116,10 +116,10 @@ export class salaEstudoController {
       if (!body.descricao || typeof body.descricao !== 'string' || body.descricao.trim().length === 0) {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'A descrição da sala é obrigatória e não pode ser nula ou vazia.' });
       }
-      if (!body.tags || !Array.isArray(body.tags) || body.tags.length === 0) {
+      if (!body.topicos || !Array.isArray(body.topicos) || body.topicos.length === 0) {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'É obrigatório informar pelo menos um tópico para a sala.' });
       }
-      if (body.tags.length > 5) {
+      if (body.topicos.length > 5) {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Não é permitido mais de 5 tópicos por sala.' });
       }
       if (!body.tipo || !body.autorId) {
@@ -137,7 +137,7 @@ export class salaEstudoController {
           descricao: body.descricao,
           tipo: body.tipo,
           moderadorId: body.autorId,
-          topicos: body.tags,
+          topicos: body.topicos,
           banner: banner,
         }
       });
