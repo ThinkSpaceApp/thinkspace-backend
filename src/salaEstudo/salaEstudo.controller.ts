@@ -145,9 +145,11 @@ export class salaEstudoController {
         data: {
           salaId: sala.id,
           usuarioId: body.autorId,
+          funcao: "MODERADOR",
         }
       });
-      return res.status(HttpStatus.CREATED).json({ sala, message: 'Sala de estudo criada com sucesso.' });
+        const userId = body.autorId;
+        return res.status(HttpStatus.CREATED).json({ message: "Sala criada com sucesso.", sala });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao criar sala de estudo.', details: error });
     }
