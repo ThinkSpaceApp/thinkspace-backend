@@ -1647,6 +1647,28 @@ export class salaEstudoController {
       if (!body.conteudo || typeof body.conteudo !== 'string' || body.conteudo.replace(/\s/g, '').length < 2) {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do comentário deve ter pelo menos 2 caracteres não vazios.' });
       }
+      const { InferenceClient } = require("@huggingface/inference");
+      const hfToken = process.env.HUGGINGFACE_API_KEY || process.env.HF_TOKEN;
+      const client = new InferenceClient(hfToken);
+      let sentimentoPermitido = false;
+      let sentimentoResult = null;
+      try {
+        const output = await client.textClassification({
+          model: "tabularisai/multilingual-sentiment-analysis",
+          inputs: body.conteudo,
+          provider: "hf-inference",
+        });
+        sentimentoResult = Array.isArray(output) ? output[0] : output;
+        const label = sentimentoResult?.label?.toLowerCase();
+        if (label === "neutral" || label === "positive" || label === "very positive") {
+          sentimentoPermitido = true;
+        }
+      } catch (sentimentErr) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Não foi possível analisar o sentimento do comentário. Tente novamente mais tarde." });
+      }
+      if (!sentimentoPermitido) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "O conteúdo do comentário não é permitido. Por favor, escreva de forma neutra ou positiva." });
+      }
       const comentario = await this.prisma.comentario.create({
         data: {
           postId: body.postId,
