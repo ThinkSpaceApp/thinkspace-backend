@@ -1201,7 +1201,6 @@ export class salaEstudoController {
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'O conteúdo do post deve ter pelo menos 5 caracteres não vazios.' });
       }
 
-      // Usando o InferenceClient do pacote @huggingface/inference
       const { InferenceClient } = require("@huggingface/inference");
       const hfToken = process.env.HUGGINGFACE_API_KEY || process.env.HF_TOKEN;
       const client = new InferenceClient(hfToken);
