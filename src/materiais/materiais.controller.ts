@@ -36,6 +36,41 @@ import { uploadPdfConfig } from "./config/upload.config";
 @UseGuards(AuthGuard("jwt"))
 @Controller("materiais")
 export class MateriaisController {
+  @ApiOperation({ summary: "Atualizar a matéria de um material" })
+  @ApiResponse({ status: 200, description: "Matéria do material atualizada com sucesso." })
+  @ApiResponse({ status: 404, description: "Material não encontrado." })
+  @ApiBody({
+    description: 'Novo id da matéria',
+    schema: {
+      type: 'object',
+      properties: {
+        materiaId: { type: 'string', example: 'uuid-da-nova-materia' }
+      },
+      required: ['materiaId']
+    }
+  })
+  @Patch('material/:materialId/mudar-materia')
+  async mudarMateriaDoMaterial(
+    @Param('materialId') materialId: string,
+    @Body() body: { materiaId: string }
+  ) {
+    try {
+      if (!body.materiaId || typeof body.materiaId !== 'string') {
+        return { error: 'O campo materiaId é obrigatório.' };
+      }
+      const material = await this.materiaisService['prisma'].materialEstudo.findUnique({ where: { id: materialId } });
+      if (!material) {
+        return { error: 'Material não encontrado.' };
+      }
+      const materialAtualizado = await this.materiaisService['prisma'].materialEstudo.update({
+        where: { id: materialId },
+        data: { materiaId: body.materiaId }
+      });
+      return { material: materialAtualizado, message: 'Matéria do material atualizada com sucesso.' };
+    } catch (error) {
+      return { error: 'Erro ao atualizar matéria do material.', details: error };
+    }
+  }
   @ApiOperation({ summary: "Concluir material e ganhar XP por participação" })
   @ApiParam({ name: "id", required: true, description: "ID do material" })
   @ApiResponse({ status: 200, description: "Material concluído e XP concedida." })
