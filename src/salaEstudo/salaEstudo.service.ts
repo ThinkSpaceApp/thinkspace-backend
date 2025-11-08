@@ -45,6 +45,25 @@ export class salaEstudoService {
       });
     }
 
+    const users = await this.prisma.usuario.findMany();
+    for (const user of users) {
+      const existingMember = await this.prisma.membroSala.findFirst({
+        where: {
+          usuarioId: user.id,
+          salaId: defaultRoom.id,
+        },
+      });
+      if (!existingMember) {
+        await this.prisma.membroSala.create({
+          data: {
+            usuarioId: user.id,
+            salaId: defaultRoom.id,
+            funcao: user.id === "1bbaf1f7-746a-4574-b53c-038349d62a6e" ? "MODERADOR" : "MEMBRO",
+          },
+        });
+      }
+    }
+
     return { sala: defaultRoom };
   }
 
