@@ -465,17 +465,32 @@ export class MateriaisController {
   async editarMaterial(
     @Req() req: Request,
     @Param("id") id: string,
-    @Body()
-    body: {
-      nomeDesignado?: string;
-      topicos?: string[];
-      caminhoArquivo?: string;
-      assunto?: string;
-    },
+    @Body() body: { nomeDesignado?: string },
   ) {
     try {
-      const material = await this.materiaisService.editar(id, (req.user as any).userId, body);
-      return { message: "Material atualizado com sucesso.", material };
+      const userId = (req.user as any).userId;
+      const novoNome = body.nomeDesignado;
+      if (typeof novoNome !== "string" || !novoNome.trim()) {
+        throw new BadRequestException("O nome do material não pode ser nulo ou vazio.");
+      }
+      if (novoNome.length < 3 || novoNome.length > 60) {
+        throw new BadRequestException("O nome do material deve ter entre 3 e 60 caracteres.");
+      }
+      const materialExistente = await this.materiaisService["prisma"].materialEstudo.findFirst({
+        where: {
+          autorId: userId,
+          titulo: novoNome,
+          NOT: { id: id },
+        },
+      });
+      if (materialExistente) {
+        throw new BadRequestException("Você já possui um material com esse nome. Escolha outro nome.");
+      }
+      const material = await this.materiaisService["prisma"].materialEstudo.update({
+        where: { id },
+        data: { titulo: novoNome },
+      });
+      return { message: "Nome do material atualizado com sucesso.", material };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException("Material não encontrado.");
