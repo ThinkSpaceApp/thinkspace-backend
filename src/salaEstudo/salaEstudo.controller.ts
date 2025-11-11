@@ -1214,7 +1214,7 @@ export class salaEstudoController {
         });
         sentimentoResult = Array.isArray(output) ? output[0] : output;
         const label = sentimentoResult?.label?.toLowerCase();
-        if (label === "neutral" || label === "positive" || label === "very positive") {
+        if (label === "neutral" || label === "positive" || label === "very positive" || label === "negative") {
           sentimentoPermitido = true;
         }
       } catch (sentimentErr) {
@@ -1660,7 +1660,7 @@ export class salaEstudoController {
         });
         sentimentoResult = Array.isArray(output) ? output[0] : output;
         const label = sentimentoResult?.label?.toLowerCase();
-        if (label === "neutral" || label === "positive" || label === "very positive") {
+        if (label === "neutral" || label === "positive" || label === "very positive" || label === "negative") {
           sentimentoPermitido = true;
         }
       } catch (sentimentErr) {
